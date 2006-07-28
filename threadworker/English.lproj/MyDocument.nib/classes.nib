@@ -1,0 +1,20 @@
+{
+    IBClasses = (
+        {
+            ACTIONS = {cancel = id; start = id; }; 
+            CLASS = Controller; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                "_cancelButton" = id; 
+                "_input" = id; 
+                "_pi" = id; 
+                "_startButton" = id; 
+                "_status" = id; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {CLASS = MyDocument; LANGUAGE = ObjC; SUPERCLASS = NSDocument; }
+    ); 
+    IBVersion = 1; 
+}

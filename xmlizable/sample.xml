@@ -1,0 +1,146 @@
+<?xml version="1.0" standalone="yes"?>
+<?xml-stylesheet type="text/xsl" href="xsl/default.xsl"?>
+
+<h:object h:class="java.util.LinkedList" xmlns:h="http://iharder.net/xmlizable">
+  <h:object h:class="java.lang.String">First item in my list</h:object>
+  <h:object h:class="java.lang.String">Second item in my list</h:object>
+  <h:object h:class="java.lang.String">Third item in my list</h:object>
+  <h:primitive-array type="int">24,9043,3</h:primitive-array>
+  <h:object h:class="javax.swing.JLabel" h:encoding="base64">
+rO0ABXNyABJqYXZheC5zd2luZy5KTGFiZWxMR4UpiK3A3gMADVoAD2Rpc2FibGVkSWNvblNldEkA
+E2hvcml6b250YWxBbGlnbm1lbnRJABZob3Jpem9udGFsVGV4dFBvc2l0aW9uSQALaWNvblRleHRH
+YXBJAAhtbmVtb25pY0kADW1uZW1vbmljSW5kZXhJABF2ZXJ0aWNhbEFsaWdubWVudEkAFHZlcnRp
+Y2FsVGV4dFBvc2l0aW9uTAAOYWNjZXNzaWJsZUljb250ACRMamF2YXgvYWNjZXNzaWJpbGl0eS9B
+Y2Nlc3NpYmxlSWNvbjtMAAtkZWZhdWx0SWNvbnQAEkxqYXZheC9zd2luZy9JY29uO0wADGRpc2Fi
+bGVkSWNvbnEAfgACTAAIbGFiZWxGb3J0ABRMamF2YS9hd3QvQ29tcG9uZW50O0wABHRleHR0ABJM
+amF2YS9sYW5nL1N0cmluZzt4cgAWamF2YXguc3dpbmcuSkNvbXBvbmVudAeeVmp4Ud4AAwAYSQAF
+ZmxhZ3NaABp2ZXJpZnlJbnB1dFdoZW5Gb2N1c1RhcmdldEwAB19ib3VuZHN0ABRMamF2YS9hd3Qv
+UmVjdGFuZ2xlO0wAEWFjY2Vzc2libGVDb250ZXh0dAAnTGphdmF4L2FjY2Vzc2liaWxpdHkvQWNj
+ZXNzaWJsZUNvbnRleHQ7TAAJYWN0aW9uTWFwdAAXTGphdmF4L3N3aW5nL0FjdGlvbk1hcDtMAAph
+bGlnbm1lbnRYdAARTGphdmEvbGFuZy9GbG9hdDtMAAphbGlnbm1lbnRZcQB+AAlMABBhbmNlc3Rv
+cklucHV0TWFwdAAWTGphdmF4L3N3aW5nL0lucHV0TWFwO0wAEGFuY2VzdG9yTm90aWZpZXJ0AB5M
+amF2YXgvc3dpbmcvQW5jZXN0b3JOb3RpZmllcjtMAAxhdXRvc2Nyb2xsZXJ0ABpMamF2YXgvc3dp
+bmcvQXV0b3Njcm9sbGVyO0wABmJvcmRlcnQAG0xqYXZheC9zd2luZy9ib3JkZXIvQm9yZGVyO0wA
+DWNoYW5nZVN1cHBvcnR0AC5MamF2YXgvc3dpbmcvZXZlbnQvU3dpbmdQcm9wZXJ0eUNoYW5nZVN1
+cHBvcnQ7TAAQY2xpZW50UHJvcGVydGllc3QAFUxqYXZhL3V0aWwvSGFzaHRhYmxlO0wADWZvY3Vz
+SW5wdXRNYXBxAH4ACkwACGh0bWxWaWV3dAASTGphdmEvbGFuZy9PYmplY3Q7TAANaW5wdXRWZXJp
+ZmllcnQAG0xqYXZheC9zd2luZy9JbnB1dFZlcmlmaWVyO0wADGxpc3RlbmVyTGlzdHQAJUxqYXZh
+eC9zd2luZy9ldmVudC9FdmVudExpc3RlbmVyTGlzdDtMAAttYXhpbXVtU2l6ZXQAFExqYXZhL2F3
+dC9EaW1lbnNpb247TAALbWluaW11bVNpemVxAH4AE0wAFHBhaW50SW1tZWRpYXRlbHlDbGlwcQB+
+AAZMAA1wcmVmZXJyZWRTaXplcQB+ABNMAAh0cmFuc2ZlcnQAHUxqYXZheC9zd2luZy9UcmFuc2Zl
+ckhhbmRsZXI7TAAVdmV0b2FibGVDaGFuZ2VTdXBwb3J0dAAiTGphdmEvYmVhbnMvVmV0b2FibGVD
+aGFuZ2VTdXBwb3J0O0wADndpbmRvd0lucHV0TWFwdAAfTGphdmF4L3N3aW5nL0NvbXBvbmVudElu
+cHV0TWFwO3hyABJqYXZhLmF3dC5Db250YWluZXJAB4Bz/RQMJwMAB0kAHmNvbnRhaW5lclNlcmlh
+bGl6ZWREYXRhVmVyc2lvbloADmZvY3VzQ3ljbGVSb290SQALbmNvbXBvbmVudHNbAAljb21wb25l
+bnR0ABVbTGphdmEvYXd0L0NvbXBvbmVudDtMAApkaXNwYXRjaGVydAAgTGphdmEvYXd0L0xpZ2h0
+d2VpZ2h0RGlzcGF0Y2hlcjtMAAlsYXlvdXRNZ3J0ABhMamF2YS9hd3QvTGF5b3V0TWFuYWdlcjtM
+AAdtYXhTaXplcQB+ABN4cgASamF2YS5hd3QuQ29tcG9uZW50leqmWdc8pJoDAB5JAB5jb21wb25l
+bnRTZXJpYWxpemVkRGF0YVZlcnNpb25aAAdlbmFibGVkSgAJZXZlbnRNYXNrWgAZZm9jdXNUcmF2
+ZXJzYWxLZXlzRW5hYmxlZFoACWZvY3VzYWJsZUkABmhlaWdodFoADWlnbm9yZVJlcGFpbnRJABxp
+c0ZvY3VzVHJhdmVyc2FibGVPdmVycmlkZGVuWgAIaXNQYWNrZWRaABFuYW1lRXhwbGljaXRseVNl
+dFoADW5ld0V2ZW50c09ubHlaAAV2YWxpZFoAB3Zpc2libGVJAAV3aWR0aEkAAXhJAAF5TAARYWNj
+ZXNzaWJsZUNvbnRleHRxAH4AB0wACmJhY2tncm91bmR0ABBMamF2YS9hd3QvQ29sb3I7TAANY2hh
+bmdlU3VwcG9ydHQAIkxqYXZhL2JlYW5zL1Byb3BlcnR5Q2hhbmdlU3VwcG9ydDtMAAZjdXJzb3J0
+ABFMamF2YS9hd3QvQ3Vyc29yO0wACmRyb3BUYXJnZXR0ABlMamF2YS9hd3QvZG5kL0Ryb3BUYXJn
+ZXQ7WwASZm9jdXNUcmF2ZXJzYWxLZXlzdAAQW0xqYXZhL3V0aWwvU2V0O0wABGZvbnR0AA9MamF2
+YS9hd3QvRm9udDtMAApmb3JlZ3JvdW5kcQB+ABxMAAZsb2NhbGV0ABJMamF2YS91dGlsL0xvY2Fs
+ZTtMAAdtaW5TaXplcQB+ABNMAARuYW1lcQB+AARMAAhwZWVyRm9udHEAfgAhTAAGcG9wdXBzdAAS
+TGphdmEvdXRpbC9WZWN0b3I7TAAIcHJlZlNpemVxAH4AE3hwAAAABAEAAAAAAAAQCAEBAAAAAAAA
+AAAAAAABAAEAAAAAAAAAAAAAAABwc3IAIGphdmF4LnN3aW5nLnBsYWYuQ29sb3JVSVJlc291cmNl
+a1P5n/Lq5pICAAB4cgAOamF2YS5hd3QuQ29sb3IBpReDEI8zdQIABUYABmZhbHBoYUkABXZhbHVl
+TAACY3N0ABtMamF2YS9hd3QvY29sb3IvQ29sb3JTcGFjZTtbAAlmcmdidmFsdWV0AAJbRlsABmZ2
+YWx1ZXEAfgAoeHAAAAAA/8zMzHBwcHBwcHBzcgAfamF2YXguc3dpbmcucGxhZi5Gb250VUlSZXNv
+dXJjZQFCxIfBIotHAgAAeHIADWphdmEuYXd0LkZvbnTFoTXmzN5WcwMABkkAGWZvbnRTZXJpYWxp
+emVkRGF0YVZlcnNpb25GAAlwb2ludFNpemVJAARzaXplSQAFc3R5bGVMABRmUmVxdWVzdGVkQXR0
+cmlidXRlc3EAfgAPTAAEbmFtZXEAfgAEeHAAAAABQUAAAAAAAAwAAAABc3IAE2phdmEudXRpbC5I
+YXNodGFibGUTuw8lIUrkuAMAAkYACmxvYWRGYWN0b3JJAAl0aHJlc2hvbGR4cD9mZmYAAAAJdwgA
+AAALAAAABXNyABtqYXZhLmF3dC5mb250LlRleHRBdHRyaWJ1dGVreJ2MDegNRgIAAHhyAC9qYXZh
+LnRleHQuQXR0cmlidXRlZENoYXJhY3Rlckl0ZXJhdG9yJEF0dHJpYnV0ZYEedCbNRxdcAgABTAAE
+bmFtZXEAfgAEeHB0AAdwb3N0dXJlc3IAD2phdmEubGFuZy5GbG9hdNrtyaLbPPDsAgABRgAFdmFs
+dWV4cgAQamF2YS5sYW5nLk51bWJlcoaslR0LlOCLAgAAeHAAAAAAc3EAfgAvdAAGZmFtaWx5dAAG
+RGlhbG9nc3EAfgAvdAAGd2VpZ2h0c3EAfgAzQAAAAHNxAH4AL3QABHNpemVzcQB+ADNBQAAAc3EA
+fgAvdAAJdHJhbnNmb3Jtc3IAIGphdmEuYXd0LmZvbnQuVHJhbnNmb3JtQXR0cmlidXRlLpPJMJWp
++loDAAFMAAl0cmFuc2Zvcm10AB9MamF2YS9hd3QvZ2VvbS9BZmZpbmVUcmFuc2Zvcm07eHBzcgAd
+amF2YS5hd3QuZ2VvbS5BZmZpbmVUcmFuc2Zvcm0SeJEVStX/YgMABkQAA20wMEQAA20wMUQAA20w
+MkQAA20xMEQAA20xMUQAA20xMnhwP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/8AAA
+AAAAAAAAAAAAAAAAeHh4cQB+ADh4c3EAfgAlAAAAAP8AAABwcHBzcgAQamF2YS51dGlsLkxvY2Fs
+ZX74EWCcMPnsAwAESQAIaGFzaGNvZGVMAAdjb3VudHJ5cQB+AARMAAhsYW5ndWFnZXEAfgAETAAH
+dmFyaWFudHEAfgAEeHD/////dAACVVN0AAJlbnQAAHhwcHBwcHQABmZvY3VzTHNyADdqYXZheC5z
+d2luZy5KQ29tcG9uZW50JEVuYWJsZVNlcmlhbGl6YXRpb25Gb2N1c0xpc3RlbmVyfZ1/aL/1LZAD
+AAFMAAZ0aGlzJDB0ABhMamF2YXgvc3dpbmcvSkNvbXBvbmVudDt4cHEAfgAkeHBzcgAdamF2YS5h
+d3QuQ29tcG9uZW50T3JpZW50YXRpb27G6qdFoZxjzAIAAUkAC29yaWVudGF0aW9ueHAAAAAGcHB4
+AAAAAQAAAAAAdXIAFVtMamF2YS5hd3QuQ29tcG9uZW50OxUPiQ0W5qp1AgAAeHAAAAAAcHBwcHB4
+AABBoAFzcgASamF2YS5hd3QuUmVjdGFuZ2xlw7BqBRrKanQCAARJAAZoZWlnaHRJAAV3aWR0aEkA
+AXhJAAF5eHAAAAAAAAAAAAAAAAAAAAAAcHNyABVqYXZheC5zd2luZy5BY3Rpb25NYXCo4cX/epLQ
+1gMAAUwABnBhcmVudHEAfgAIeHBwdwQAAAAAeHNxAH4AMwAAAABwcHBwcHNyACxqYXZheC5zd2lu
+Zy5ldmVudC5Td2luZ1Byb3BlcnR5Q2hhbmdlU3VwcG9ydGNmwj6PgxGMAwACTAAIY2hpbGRyZW5x
+AH4AD0wABnNvdXJjZXEAfgAQeHIAIGphdmEuYmVhbnMuUHJvcGVydHlDaGFuZ2VTdXBwb3J0WNXS
+ZFdIYLsDAANJACpwcm9wZXJ0eUNoYW5nZVN1cHBvcnRTZXJpYWxpemVkRGF0YVZlcnNpb25MAAhj
+aGlsZHJlbnEAfgAPTAAGc291cmNlcQB+ABB4cAAAAAJwcQB+ACRweHBxAH4AJHB4c3EAfgAtP0AA
+AAAAAAF3CAAAAAIAAAAAeHNyABRqYXZheC5zd2luZy5JbnB1dE1hcLSoGxxmIdmfAwABTAAGcGFy
+ZW50cQB+AAp4cHB3BAAAAAB4cHBzcgAjamF2YXguc3dpbmcuZXZlbnQuRXZlbnRMaXN0ZW5lckxp
+c3SxNsZ9hOrWRAMAAHhwcHhwcHNxAH4AVAAAAAAAAAAAAAAAAAAAAABwcHBzcgAdamF2YXguc3dp
+bmcuQ29tcG9uZW50SW5wdXRNYXAYb3P784Uk9QIAAUwACWNvbXBvbmVudHEAfgBOeHEAfgBdcHcE
+AAAAAHhxAH4AJHgAAAAACgAAAAsAAAAEAAAAAP////8AAAAAAAAAAHBwcHB0AAxJJ20gYSBsYWJl
+bCF4</h:object>
+  <h:object h:class="java.lang.String">Put your mouse over a line to see its position and class</h:object>
+  <h:object h:class="java.util.HashMap">
+    <h:entry>
+      <h:key>
+        <h:object h:class="java.lang.String">best restaurants</h:object>
+      </h:key>
+      <h:value>
+        <h:object h:class="java.util.ArrayList">
+        <h:object h:class="java.lang.String">Taco Bell</h:object>
+        <h:object h:class="java.lang.String">Burger King</h:object>
+        <h:object h:class="java.lang.String">KFC</h:object>
+        <h:object h:class="java.lang.String">Jack in the Box</h:object>
+        <h:object h:class="java.lang.String">Carl's Jr.</h:object>
+        </h:object>
+      </h:value>
+    </h:entry>
+
+    <h:entry>
+      <h:key>
+        <h:object h:class="java.lang.String">system props</h:object>
+      </h:key>
+      <h:value>
+          <h:object h:class="java.util.Properties">
+            <h:entry>
+              <h:key>
+                <h:object h:class="java.lang.String">java.runtime.name</h:object>
+              </h:key>
+              <h:value>
+                <h:object h:class="java.lang.String">Java(TM) 2 Runtime Environment, Standard Edition</h:object>
+              </h:value>
+            </h:entry>
+            <h:entry>
+              <h:key>
+                <h:object h:class="java.lang.String">sun.boot.library.path</h:object>
+              </h:key>
+              <h:value>
+                <h:object h:class="java.lang.String">D:\java\jdk1.3\jre\bin</h:object>
+              </h:value>
+            </h:entry>
+            <h:entry>
+              <h:key>
+                <h:object h:class="java.lang.String">java.vm.version</h:object>
+              </h:key>
+              <h:value>
+                <h:object h:class="java.lang.String">1.3.0-C</h:object>
+              </h:value>
+            </h:entry>
+            <h:entry>
+              <h:key>
+                <h:object h:class="java.lang.String">java.vm.vendor</h:object>
+              </h:key>
+              <h:value>
+                <h:object h:class="java.lang.String">Sun Microsystems Inc.</h:object>
+              </h:value>
+            </h:entry>
+          </h:object>
+      </h:value>
+    </h:entry>
+  </h:object>
+
+</h:object>

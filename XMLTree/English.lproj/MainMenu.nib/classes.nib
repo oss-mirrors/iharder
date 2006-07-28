@@ -1,0 +1,26 @@
+{
+    IBClasses = (
+        {
+            ACTIONS = {checkAddress = id; findDescendent = id; updateURL = id; }; 
+            CLASS = Controller; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                address = NSTextField; 
+                checkAddressButton = NSButton; 
+                city = NSTextField; 
+                descendentName = NSTextField; 
+                descendentResult = NSTextField; 
+                findDescendentButton = NSButton; 
+                license = NSTextField; 
+                progress = NSProgressIndicator; 
+                rawResult = NSTextView; 
+                state = NSTextField; 
+                url = id; 
+                zip = NSTextField; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }
+    ); 
+    IBVersion = 1; 
+}

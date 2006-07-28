@@ -1,0 +1,400 @@
+<html>
+<head>
+<!-- Generated from XML source. Copyright 2001 Robert Harder. -->
+<title>Xmlize XSL tools</title>
+<meta http-equiv="Content-Type" content="text/html;CHARSET=iso-8859-1" />
+<meta http-equiv="Content-Language" content="EN" />
+<meta name="keywords" content="xml, xsl, java, xmlize, serialize, persistence" />
+<meta name="description" content="" />
+<meta name="abstract" content="" />
+<meta name="author" content="Robert Harder" />
+<meta name="copyright" content="Robert Harder, 2000" />
+<meta name="distribution" content="Global" />
+<meta name="revisit-after" content="7 days" />
+<meta name="robots" content="FOLLOW,INDEX" />
+<link rel="SHORTCUT ICON" href="../favicon.ico" />
+<base target="_parent" />
+<style type="text/css">
+<!--
+
+               body
+                 {  margin: 0;
+                 }
+
+
+               .iHarderNet
+                 {  font-family: arial, geneva, lucida sans unicode, helvetica;
+                    color: white;
+                    text-align: center;
+                    font-size: 14pt;
+                 }
+
+
+               .i_iHarder
+                 {  font-family: times new roman, courier;
+                    font-style:  italic;
+                    font-weight: bold;
+                    font-size: 12pt;
+                 }
+
+               .MainTitle
+                 {  color: white;
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 24pt;
+                    font-style: italic;
+                    margin-bottom: 4pt;
+                 }
+
+               .OpenTS_Home
+                 {  color: white;
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    text-align: center;
+                    font-weight: bold;
+                    font-size: 14pt;
+                    font-style: italic;
+                 }
+
+
+               .Menu
+                 {  margin-top: 10pt;
+                    margin-left: 6pt;
+                    text-indent: -6pt;
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    font-weight: bold;
+                    font-size: 10pt;
+                 }
+
+               .SubMenu
+                 {  margin-top: -5pt;
+                    margin-left: 4pt;
+                 }
+
+
+               .MenuItem
+                 {  margin-top: 10pt;
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    font-weight: bold;
+                    font-size: 10pt;
+                 }
+
+               .Menu A
+                 {  color: #000033;
+                 }
+
+               .Logo
+                 {  text-align: center;
+                 }
+
+.SubTitle
+{  font-family: Arial, san serif;
+   font-size: 16pt;
+   font-style: italic;
+   font-weight: bold;
+}
+
+
+               .SectionTitle
+                 {  margin-top: 1em;
+                    margin-left: 1em;
+                    margin-right: 50%;
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    font-weight: bold;
+                    font-size: larger;
+                    /*border-top: 4px double black;*/
+                    border-bottom: 4px double black;
+                 }
+
+               .MainSectionTitle
+                 {  margin-top: 1em;
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    font-weight: bold;
+                    font-size: 22pt;
+                    font-style: italic;
+                    border-bottom: 4px double black;
+                 }
+
+               .SectionBody
+                 {  margin-top: 1em;
+                 }
+
+               .MainSectionBody
+                 {  margin-top: 10pt;
+                 }
+
+               .MainPage
+                 {  margin: 4pt; 
+                    margin-right: 24pt;
+                 }
+
+               .FAQList_Question
+                 {  
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    font-weight: bold;
+                 }
+
+               .FAQ_Question
+                 {  
+                    font-family: arial, geneva, lucida sans unicode, helvetica;
+                    font-weight: bold;
+                 }
+
+               .FAQ_Answer
+                 {  
+                 }
+
+
+               .TopMenu
+                 {  margin-top: 20pt;
+                    margin-bottom: 10pt;
+                    border-bottom: 4px black;
+                    text-align: center
+                 }
+
+               .BottomMenu
+                 {  margin-top: 0.1in;
+                    border-top: 4px double black;
+                    margin-bottom: 10pt;
+                    border-bottom: 4px black;
+                    text-align: center
+                 }
+
+               p
+                 {  
+                    margin-top: 0.1in;
+                    text-indent: 1em;
+                 }
+
+               li
+                 {  margin-top: 0.2in;  
+                 }
+
+               ul
+                 {  margin-left: 0.25in;
+                    margin-top: 0.1in;
+                 }
+
+               tt
+                 {  font-size: larger;
+                 }
+
+               a
+                 {  color: #000055;
+                 }
+               a:hover
+                 {  background: lavender;
+                    text-decoration: none;
+                    color: black;
+                 }
+               
+             -->
+</style>
+</head>
+<body bgcolor="white">
+<table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
+<tr bgcolor="#000066" height="50">
+<td width="128" height="50">
+<div class="iHarderNet"><a href="http://www.iHarder.net"><span class="iHarderNet"><span class="i_iHarder">i</span>Harder.net</span></a></div>
+</td>
+<td width="*">
+<div class="MainTitle">
+<title-medium>Xmlizable XSL tools</title-medium>
+</div>
+</td>
+</tr>
+<tr>
+<td colspan="2">
+<div style="margin:0 ; border-top: 1px double black" />
+</td>
+</tr>
+<tr height="*">
+<td width="128" valign="top" bgcolor="#9090d0">
+<table width="100%" height="100%" cellpadding="2" cellspacing="0" border="0">
+<tr height="1">
+<td height="1" width="120" bgcolor="white" valign="center" align="center">
+<div class="SubTitle">
+      Xmlizable
+    </div>
+</td>
+</tr>
+<tr>
+<td valign="top" height="*" style="border-top: solid black 1px; border-right: solid black 1px">
+<div class="Menu">
+<a title="" href="../index.html">Summary</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="xmlizable.zip">Download now!</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../sample.xml">Sample Output</a>
+<div class="SubMenu">
+<div class="Menu">
+<a title="" href="../sample.xml">sample.xml</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../sample.html">sample.html</a>
+<div class="SubMenu">
+</div>
+</div>
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../xsl/index.html">XSL</a>
+<div class="SubMenu">
+<div class="Menu">
+<a title="" href="../xsl/default.xsl">default.xsl</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../xsl/identity.xsl">identity.xsl</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../xsl/object.xsl">object.xsl</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../xsl/map.xsl">map.xsl</a>
+<div class="SubMenu">
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../xsl/collection.xsl">collection.xsl</a>
+<div class="SubMenu">
+</div>
+</div>
+</div>
+</div>
+<div class="Menu">
+<a title="" href="../api/index.html">JavaDoc API</a>
+<div class="SubMenu">
+</div>
+</div>
+<p>
+<hr align="center" />
+</p>
+<div align="center" style="text-align:center">
+<a href="http://sourceforge.net">
+<img src="http://sourceforge.net/sflogo.php?group_id=23200" width="88" height="31" border="0" alt="SourceForge Logo" />
+</a>
+</div>
+<p />
+<div align="center" style="text-align:center">
+<a href="http://iharder.sourceforge.net/gotmoney.php">
+<img src="http://iharder.sourceforge.net/gotmoney.gif" width="88" height="32" border="0" alt="got money?" />
+</a>
+</div>
+</td>
+</tr>
+</table>
+</td>
+<td width="*" height="*" bgcolor="white" valign="top">
+<div class="MainPage">
+
+    <div class="MainSectionTitle">XSL sheets</div>
+<div class="MainSectionBody">
+        <p>
+          These stylesheets can be used to transform your Xmlized objects
+          into a handy HTML form. See the <a href="../sample.html">sample output</a>.
+        </p>
+        <ul>
+
+          <li>
+            <b>
+<a href="default.xsl">default.xsl</a>
+</b>. 
+            A skeleton HTML document that imports the following XSL documents.
+          </li>
+
+          <li>
+            <b>
+<a href="identity.xsl">identity.xsl</a>
+</b>. 
+            As the most general XSL template, it copies elements verbatim to the output
+            if no better XSL template is encountered (such as those below).
+          </li>
+
+          <li>
+            <b>
+<a href="object.xsl">object.xsl</a>
+</b>. 
+            Wraps a generic &lt;h:object&gt; tag in a &lt;span&gt; and gives the
+            &lt;span&gt; a 
+            <span title="Look! Your browser supports title tooltips!">title attribute 
+            for browsers that support tooltips.</span> The title includes the object's
+            name, if given (see map.xsl below), and the object's class name.
+          </li>
+
+          <li>
+            <b>
+<a href="array.xsl">array.xsl</a>
+</b>. 
+            Matches &lt;h:object-array&gt; and &lt;h:object-array&gt; tags.
+            The template creates an unordered-list &lt;ul&gt; with each object in the array
+            being wrapped in its own &lt;li&gt; tag.
+          </li>
+
+          <li>
+            <b>
+<a href="map.xsl">map.xsl</a>
+</b>. 
+            Matches &lt;h:object&gt; tags whose class is one of Java's Map implementations
+            such as <tt>java.util.HashMap</tt> and <tt>java.util.Properties</tt>.
+            A table is constructed with table headers "key" and "value", though these
+            values can be over-ridden by applying the template with the
+            &lt;xsl:with-param&gt; tag.
+            Each key/value pair in the Map is a row in the table.
+            When &lt;xsl:apply-templates&gt; is called on the value object, the key is
+            passed as the object's name which may subsequently appear in tooltips
+            (see object.xsl above).
+          </li>
+
+          <li>
+            <b>
+<a href="collection.xsl">collection.xsl</a>
+</b>. 
+            Matches &lt;h:object&gt; tags whose class is one of Java's Collection implementations
+            such as <tt>java.util.ArrayList</tt> and <tt>java.util.Vector</tt>.
+            The template creates an unordered-list &lt;ul&gt; with each object in the collection
+            being wrapped in its own &lt;li&gt; tag.
+            The objects' templates are applied with the Collection's name, if there is one,
+            and the order in which the object appears in the Collection.
+            For instance, the first object's name might be <em>things.to.buy[1]</em>.
+          </li>
+
+        </ul>
+      </div>
+
+  </div>
+</td>
+</tr>
+<tr>
+<td bgcolor="#9090d0" style="height: 1em; border-right: solid black 1px"> </td>
+<td>
+<div class="BottomMenu">
+<span class="Menu">
+<a title="" href="../index.html">Summary</a> | </span>
+<span class="Menu">
+<a title="" href="xmlizable.zip">Download now!</a> | </span>
+<span class="Menu">
+<a title="" href="../sample.xml">Sample Output</a> | </span>
+<span class="Menu">
+<a title="" href="../xsl/index.html">XSL</a> | </span>
+<span class="Menu">
+<a title="" href="../api/index.html">JavaDoc API</a> | </span>
+</div>
+</td>
+</tr>
+</table>
+</body>
+</html>

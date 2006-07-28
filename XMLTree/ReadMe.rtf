@@ -1,0 +1,249 @@
+{\rtf1\mac\ansicpg10000\cocoartf102
+{\fonttbl\f0\fnil\fcharset77 Verdana-Bold;\f1\fnil\fcharset77 Verdana;\f2\fmodern\fcharset77 CourierNewPSMT;
+\f3\fmodern\fcharset77 CourierNewPS-BoldMT;\f4\fmodern\fcharset77 CourierNewPS-ItalicMT;}
+{\colortbl;\red255\green255\blue255;\red0\green128\blue0;\red0\green0\blue255;\red255\green0\blue0;
+}
+\vieww12280\viewh12920\viewkind0
+\pard\ql\qnatural
+
+\f0\b\fs36 \cf0 XMLTree - v0.2
+\fs24 \
+
+\f1\b0 Objective-C wrapper around Apple's C-language XML parser\
+Author: Robert Harder\
+Copyright/License: Released into the Public Domain\
+\
+\
+\
+
+\f0\b\fs28 Introduction
+\fs24 \
+
+\f1\b0 \
+XML Tree provides an Objective-C wrapper for Apple's own C-language XML parser provided in Mac OS X. I much prefer working with Objective-C, so I was bothered to learn Apple didn't provide an Objective-C API (and if they do I'll be happy to label XMLTree obsolete).\
+\
+It's a work in progress meaning there are a lot of functions that Apple provides at the C-language level that I have not yet wrapped in a useful Objective-C way, but you can at least access basic element and attribute information for now.\
+\
+I've released this code into the Public Domain, so you don't have to worry about licensing or whatnot if you use it in your programs. Heck, I didn't even write the hard stuff: Apple did that! If you make any useful changes, I'd sure appreciate it if you'd send them back to me so I can add them to a new release for everyone.\
+\
+You can have SourceForge notify you when I release new versions of the software by following this link (you'll probably have to copy and paste it into a web browser): \
+\
+\pard\qc
+\cf0 http://sourceforge.net/project/filemodule_monitor.php?filemodule_id=67269\
+\pard\ql\qnatural
+\cf0 \
+For more information on Apple's C-language XML parser, try this link:\
+\
+\pard\qc
+\cf0 http://developer.apple.com/techpubs/macosx/CoreFoundation/XMLServices/XML_Services/index.html\
+\pard\ql\qnatural
+\cf0 \
+\
+\
+
+\f0\b\fs28 Example Usage
+\fs24 \
+
+\f1\b0 Let's work with a sample XML document. Let's say this XML document is available at some URL, maybe by a SOAP call or maybe it's just a document on web. I've applied some formatting to (hopefully) make it easier to read.\
+\
+\pard\ql\qnatural
+
+\f2 \cf0 <?
+\f3\b xml
+\f2\b0  
+\f4\i standalone
+\f2\i0 ="\cf2 yes\cf0 " 
+\f4\i version
+\f2\i0 ="\cf2 1.0\cf0 " ?>\
+<
+\f3\b Book
+\f2\b0  
+\f4\i ISBN
+\f2\i0 ="\cf2 1234567890\cf0 ">\
+ <
+\f3\b Title
+\f2\b0 >\cf3 How to Get People to Send you $20 for a Book\cf0 </
+\f3\b Title
+\f2\b0 >\
+ <
+\f3\b Author
+\f2\b0 >\cf3 John Doe\cf0 </
+\f3\b Author
+\f2\b0 >\
+ <
+\f3\b Chapters
+\f2\b0 >\
+  <
+\f3\b Chapter
+\f2\b0  
+\f4\i sequence
+\f2\i0 ="\cf2 1\cf0 ">\cf3 It was a dark and stormy night...\cf0 </
+\f3\b Chapter
+\f2\b0 >\
+  <
+\f3\b Chapter
+\f2\b0  
+\f4\i sequence
+\f2\i0 ="\cf2 2\cf0 ">\cf3 The Dilbert Principle maintains...\cf0 </
+\f3\b Chapter
+\f2\b0 >\
+ </
+\f3\b Chapters
+\f2\b0 >\
+</
+\f3\b Book
+\f2\b0 >\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+Here's how I would get this document, assuming the document is at the given URL:\
+\
+\pard\ql\qnatural
+
+\f3\b \cf0 NSURL
+\f2\b0  *\cf3 theURL\cf0  = [
+\f3\b NSURL
+\f2\b0  URLWithString:@"\cf2 http://www.example.com/books?ISBN=1234567890\cf0 "];\
+
+\f3\b XMLTree 
+\f2\b0 *\cf3 tree \cf0 = [[[
+\f3\b XMLTree
+\f2\b0  alloc] initWithURL:\cf3 theURL\cf0 ] retain];\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+Don't forget that you can access files as URL's too like so:\
+\
+\pard\ql\qnatural
+
+\f3\b \cf0 NSURL
+\f2\b0  *\cf3 theURL \cf0 = [
+\f3\b NSURL 
+\f2\b0 fileURLWithPath:@"\cf2 /Users/foo/TheBook.xml\cf0 "];\
+
+\f3\b XMLTree 
+\f2\b0 *\cf3 tree \cf0 = [[[
+\f3\b XMLTree
+\f2\b0  alloc] initWithURL:\cf3 theURL\cf0 ] retain];\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+I now have an XMLTree that represents the entire XML document. If I called 
+\f2 [\cf3 tree\cf0  type]
+\f1  it would return a value of 
+\f2 \cf4 1
+\f1 \cf0  which corresponds to 
+\f2 kCFXMLNodeTypeDocument
+\f1 . What is that? It's one of the predefined values that is available to you (and you didn't even know it!). The actual Apple-defined structure is this:\
+\
+\pard\ql\qnatural
+
+\f2 \cf0  enum CFXMLNodeTypeCode \{\
+     kCFXMLNodeTypeDocument = 1,\
+     kCFXMLNodeTypeElement = 2,\
+     kCFXMLNodeTypeAttribute = 3,\
+     kCFXMLNodeTypeProcessingInstruction = 4,\
+     kCFXMLNodeTypeComment = 5,\
+     kCFXMLNodeTypeText = 6,\
+     kCFXMLNodeTypeCDATASection = 7,\
+     kCFXMLNodeTypeDocumentFragment = 8,\
+     kCFXMLNodeTypeEntity = 9,\
+     kCFXMLNodeTypeEntityReference = 10,\
+     kCFXMLNodeTypeDocumentType = 11,\
+     kCFXMLNodeTypeWhitespace = 12,\
+     kCFXMLNodeTypeNotation = 13,\
+     kCFXMLNodeTypeElementTypeDeclaration = 14,\
+     kCFXMLNodeTypeAttributeListDeclaration = 15\
+ \};\
+\pard\ql\qnatural
+
+\f1 \cf0  \
+This tree that we just read in has two children: The 
+\f2 <?
+\f3\b xml 
+\f2\b0 ...?>
+\f1  processing instruction and the tree starting with the 
+\f2 <
+\f3\b Book
+\f2\b0 ...>
+\f1  element.\
+\
+You could get the processing instruction alone as its own XMLTree and the rest of the document as its own XMLTree like this:\
+\
+\pard\ql\qnatural
+
+\f3\b \cf0 XMLTree
+\f2\b0  *\cf3 piTree\cf0    = [\cf3 tree\cf0  childAtIndex:\cf4 0\cf0 ];\
+
+\f3\b XMLTree
+\f2\b0  *\cf3 bookTree \cf0 = [\cf3 tree\cf0  childAtIndex:\cf4 1\cf0 ];\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+Now we could get the book's ISBN number (of course we already knew it, right?) like so:\
+\
+
+\f0\b NString
+\f1\b0  *\cf3 isbn \cf0 = [\cf3 bookTree\cf0  attributeNamed:@"\cf2 ISB\cf0 N"];\
+\
+There's an easier way to get to basic components of your XML document though. It's the 
+\f2 descendentNamed:
+\f1  method. Skipping the 
+\f2 \cf3 piTree
+\f1 \cf0  and 
+\f2 \cf3 bookTree
+\f1 \cf0  steps, we could get the ISBN this way:\
+\
+\pard\ql\qnatural
+
+\f3\b \cf0 NSString
+\f2\b0  *
+\f1 \cf3 isbn
+\f2 \cf0  = [[\cf3 tree\cf0   descendentNamed:@"\cf2 Book\cf0 "] attributeNamed:@"ISBN"];\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+Similarly we could jump straight to the author this way:\
+\
+\pard\ql\qnatural
+
+\f3\b \cf0 NSString
+\f2\b0  *\cf3 author\cf0  = [\cf3 tree\cf0   descendentNamed:@"\cf2 Author\cf0 "];\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+Note that 
+\f2 descendentNamed:
+\f1  (and 
+\f2 childNamed:
+\f1 ) returns the first match, and 
+\f2 descendentNamed:
+\f1  performs a depth-first search, so a search for "Chapter" would return the dark and stormy night chapter:\
+\
+\pard\ql\qnatural
+
+\f3\b \cf0 NSString
+\f2\b0  *\cf3 firstChapter\cf0  = [\cf3 tree\cf0   descendentNamed:@"\cf2 Chapter\cf0 "];\
+\pard\ql\qnatural
+
+\f1 \cf0 \
+\
+\
+
+\f0\b\fs28 Known Shortcomings
+\fs24 \
+
+\f1\b0 \
+This is just my second release of XMLTree, so there are a lot of functions that Apple's C-language XML parser supports that XMLTree does not yet support. Basically XMLTree only provides basic access to elements and attributes. As I go along, I'll be adding support for other things like Processing Instructions and whatnot. If you make any useful changes, I'd appreciate it if you would share them with the rest of us and send your changes to me, but it's Public Domain so do whatever you want with it.\
+\
+\
+\
+
+\f0\b\fs28 Change Log
+\fs24 \
+
+\f1\b0 \
+v0.2 - I forget what's been added since the first release. I think we added some more child-access methods and we've begun work on an xpath-access method, but that's not complete. There are also some more ways to create XMLTrees.\
+\
+v0.1 - First Release.\
+}

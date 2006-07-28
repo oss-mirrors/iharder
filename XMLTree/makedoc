@@ -1,0 +1,2 @@
+#!/bin/sh
+headerdoc2html -o API XMLTree.h

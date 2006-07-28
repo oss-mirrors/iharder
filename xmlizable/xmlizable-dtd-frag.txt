@@ -1,0 +1,46 @@
+<!--
+    There are two kinds of elements - object and primitive - but each
+    element can be represented in its long or condensed form.
+
+    Also, this does not define an entire DTD, because it does not define
+    a root document element (DOCTYPE). The Xmlizable elements are intended
+    to be contained within your documents.
+
+    This DTD fragment is here so that you can cut and paste this fragment
+    into your document's DTD to ensure that your document can be validated.
+
+    Of course if you're not trying to validate your documents, then you can
+    ignore this DTD fragment altogether.
+
+  -->
+
+<!-- 'object' tag in long and condensed form. -->
+<!ELEMENT object ANY >
+<!ELEMENT o      ANY >
+
+<!-- Attribute list for long and condensed 'object' tags. -->
+<!ATTLIST object
+  class CDATA #IMPLIED
+  c     CDATA #IMPLIED >
+<!ATTLIST o
+  class CDATA #IMPLIED
+  c     CDATA #IMPLIED >
+
+
+
+<!-- 'primitive' tag in long and condensed form. -->
+<!ELEMENT primitive (#PCDATA) >
+<!ELEMENT p         (#PCDATA) >
+
+
+
+<!-- Attribute list for long and condensed 'primitive' tags. -->
+<!ENTITY % primitiveTypes " byte | char | short | int | long | float | double | b | c | s | i | l | f | d " >
+<!ATTLIST primitive
+  type  ( &primitiveTypes; ) >
+<!ATTLIST p
+  type  ( &primitiveTypes; ) >
+
+
+
+

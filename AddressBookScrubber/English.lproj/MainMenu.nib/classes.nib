@@ -1,0 +1,60 @@
+{
+    IBClasses = (
+        {
+            ACTIONS = {
+                CDYNECheckBoxChanged = id; 
+                configureCDYNE = id; 
+                defaultAreaCodeCheckBoxChanged = id; 
+                defaultCountryCodeCheckBoxChanged = id; 
+                doCDYNEServices = id; 
+                fixLabels = id; 
+                fixLabelsCheckBoxChanged = id; 
+                formatPhoneNumbers = id; 
+                formatPhoneNumbersCheckBoxChanged = id; 
+                formatPopupChanged = id; 
+                formatRadioChanged = id; 
+                launchBackup = id; 
+                scrubAddressBook = id; 
+            }; 
+            CLASS = ABSController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                CDYNECheckBox = NSButton; 
+                CDYNEConfigureButton = NSButton; 
+                CDYNEProgress = NSProgressIndicator; 
+                CDYNEStatus = NSTextField; 
+                defaultAreaCode = NSTextField; 
+                defaultAreaCodeCheckBox = NSButton; 
+                defaultCountryCode = NSTextField; 
+                defaultCountryCodeCheckBox = NSButton; 
+                fixLabelsCheckBox = NSButton; 
+                fixLabelsProgress = NSProgressIndicator; 
+                fixLabelsStatus = NSTextField; 
+                formatDashes = NSButtonCell; 
+                formatMatrix = NSMatrix; 
+                formatParens = NSButtonCell; 
+                formatPhoneNumbersCheckBox = NSButton; 
+                formatPhoneNumbersProgress = NSProgressIndicator; 
+                formatPhoneNumbersStatus = NSTextField; 
+                formatPopup = NSPopUpButton; 
+                launchBackupButton = NSButton; 
+                meImageView = NSImageView; 
+                scrubAddressBookButton = NSButton; 
+            }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {
+            ACTIONS = {OK = id; cancel = id; goToCDYNEDotCom = id; }; 
+            CLASS = CDYNEConfigSheetController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {
+                gatherLatLongCheckBox = NSButton; 
+                gatherZipPlus4CheckBox = NSButton; 
+                license = NSTextField; 
+            }; 
+            SUPERCLASS = NSWindowController; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }
+    ); 
+    IBVersion = 1; 
+}
