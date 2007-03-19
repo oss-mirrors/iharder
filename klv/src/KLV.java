@@ -7,6 +7,20 @@
 //
 import java.util.*;
 
+
+/**
+ *
+ *
+ * <p>All <tt>getValue...</tt> methods will return up to the number
+ * of bytes specified in the length fields ({@link getLength}) unless
+ * there are fewer bytes actually given than are intended. This is to make
+ * the code more robust for reading corrupted data. Too few bytes: those
+ * bytes are considered the value. Too many bytes: only up to {@link getLength}
+ * bytes are condidered the value.</p>
+ *
+ * @author Robert Harder
+ * @author rob@iharder.net
+ */
 public class KLV {
 
 
@@ -21,6 +35,9 @@ public class KLV {
     
     /** Indicates length field uses basic encoding rules (BER). Equal to decimal 8.  */
     public final static int LENGTH_FIELD_BER = 8;
+    
+    /** Default character set encoding to use is UTF-8. */
+    public final static String DEFAULT_CHARSET_NAME = "UTF-8";
 
 
     /**
@@ -62,10 +79,16 @@ public class KLV {
     }
     
     /**
-     * Creates a KLV set from the given byte array, the specified key length,
+     * <p>Creates a KLV set from the given byte array, the specified key length,
      * and the specified length field encoding. The byte array <tt>theBytes</tt>
      * is not copied or cloned, so be careful if you change the values within
-     * the array.
+     * the array.</p>
+     *
+     * <p>There is no checking to make sure that the bytes passed are consistent,
+     * particularly in regards to the total number of bytes versus the length
+     * specified in the length field. This is to make the code more robust
+     * in reading corrupted data. Check {@link isConsistent} to verify that the data is
+     * consistent.</p>
      *
      * @param theBytes The bytes that make up the entire KLV set
      * @param keyLength The number of bytes in the key.
@@ -86,16 +109,26 @@ public class KLV {
         
     }
 
+    
+    /**
+     * Returns the length of the key.
+     *
+     * @return length of key.
+     */
+    public int getKeyLength(){
+        return this.keyLength;
+    }
+    
+    
 
     /**
-     * Returns the key, if the key length is four bytes or less.
+     * Returns the first four bytes of the key as an int. If the key
+     * has fewer than four bytes, then as many bytes as are available
+     * will be used.
      *
      * @return the key
-     * @throw IllegalStateException if the key length is greater than four.
      */
     public int getShortKey(){
-        if( this.keyLength > 4 ) throw new IllegalStateException( "Key is too long to return as an int: " + this.keyLength + " bytes." );
-        
         int shortKey = 0;
         for( int i = 0; i < keyLength; i++ )
             shortKey |= (klvBytes[ i ] & 0xFF) << (keyLength*8 - i*8 - 8);
@@ -196,13 +229,14 @@ public class KLV {
             // Short BER form: 1 extra byte
             // Long BER form: variable extra bytes
             case LENGTH_FIELD_BER:
+                offset++; // Always at least one BER byte
                 int berField = klvBytes[ keyLength ] & 0xFF;
-                if( (berField & 0x80) == 0 ) offset += 1; // Short BER form
+                if( (berField & 0x80) == 0 ) break; // Short BER form
                 else{
                     int berLength = berField & 0x7F; // Low seven bits
                     offset += berLength;
-                    break;
                 }   // end else: long BER form
+                break;
             default:
                 throw new IllegalStateException( "Unknown length field encoding flag: " + this.lengthFieldEncoding );
         }   // end switch
@@ -212,16 +246,89 @@ public class KLV {
     
     
     /**
-     * Returns the value (payload) as a byte array.
-     * The bytes are copied from the original array.
+     * <p>Returns up to the number of bytes specified in the length 
+     * fields ({@link getLength}) unless there are fewer bytes actually 
+     * given than are intended. This is to make the code more robust for 
+     * reading corrupted data. 
+     * Too few bytes: whatever bytes are available are returned. 
+     * Too many bytes: only up to {@link getLength} bytes are returned.</p>
+     *
+     * <p>The bytes are copied from the original array.</p>
      *
      * @return the value
      */
     public byte[] getValue(){
-        int length = getLength();
-        byte[] value = new byte[length];
-        System.arraycopy(this.klvBytes,getValueOffset(), value,0,value.length);
+        int offset = getValueOffset();
+        int advertisedLength = getLength();
+        int actualLength = this.klvBytes.length - offset;
+        byte[] value = new byte[ actualLength > advertisedLength ? advertisedLength : actualLength ];
+        System.arraycopy(this.klvBytes,offset, value,0,value.length);
         return value;
+    }
+    
+    
+    
+    /**
+     * Returns up to the first four bytes of the value as a four-byte int.
+     * Be careful that Java assumes the highest bit (the 32nd) is a sign
+     * bit, but that's not necessarily what is meant to be represented.
+     *
+     * @return the value as an int
+     */
+    public int getValueAsInt(){
+        byte[] bytes = getValue();
+        int value = 0;
+        int length = bytes.length;
+        int shortLen = length < 4 ? length : 4;
+        for( int i = 0; i < shortLen; i++ )
+            value |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return value;
+    }   // end getValueAsInt
+    
+    
+    
+    /**
+     * Returns up to the first eight bytes of the value as an eight-byte long.
+     * Be careful that Java assumes the highest bit (the 64th) is a sign
+     * bit, but that's not necessarily what is meant to be represented.
+     *
+     * @return the value as a long
+     */
+    public long getValueAsLong(){
+        byte[] bytes = getValue();
+        long value = 0;
+        int length = bytes.length;
+        int shortLen = length < 8 ? length : 8;
+        for( int i = 0; i < shortLen; i++ )
+            value |= (long)(bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return value;
+    }   // end getValueAsLong
+    
+    
+    /**
+     * Returns the value as a String using KLV's default character set
+     * as defined by {@link #DEFAULT_CHARSET_NAME} or the computer's default
+     * charset if that is not available.
+     *
+     * @return value as a string
+     */
+    public String getValueAsString(){
+        try{
+            return getValueAsString( DEFAULT_CHARSET_NAME );
+        } catch( java.io.UnsupportedEncodingException exc ){
+            return new String( getValue() );
+        }   // end catch
+    }   // end getValueAsString
+        
+    
+    
+    /**
+     * Return the value as a String, interpreted with given encoding.
+     *
+     * @return value as String.
+     */
+    public String getValueAsString( String charsetName ) throws java.io.UnsupportedEncodingException{
+        return new String( getValue(), charsetName );
     }
     
     
