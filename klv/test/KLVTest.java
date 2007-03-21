@@ -179,6 +179,22 @@ public class KLVTest extends TestCase {
             assertEquals(i, klv.getLength() );
         }   // end for: i
         
+        
+        // Using byte offsets
+        // One fake byte, one byte key, one byte length, two byte payload
+        {   byte[] bytes = new byte[]{ 86, 42, 2, 23, 24 };
+            klv = new KLV( bytes, 1, KLV.KEY_LENGTH_ONE_BYTE, KLV.LENGTH_FIELD_ONE_BYTE );
+            assertEquals(42,klv.getShortKey()); // Key
+            assertEquals(1,klv.getBytesOffset());   // Offset
+            assertEquals(2,klv.getLength());    // Payload
+            byte[] value = klv.getValue();
+            assertEquals(2,value.length);       // Payload
+            assertEquals(23,value[0]);          // Payload
+            assertEquals(24,value[1]);          // Payload
+        }
+        
+        
+        
     }   // testGetLength
 
     
@@ -684,6 +700,37 @@ public class KLVTest extends TestCase {
         }
         
     }   // end testGetValueAsString
+    
+    
+    
+    /**
+     * Test of getKLV method, of class KLV.
+     */
+    public void testGetKLV() {
+        System.out.println("getKLV");
+        
+        KLV klv;
+        
+        // Make two sub KLVs:
+        //  Sub KLV 1: key length=1, length field=1, payload=2 bytes
+        //  Sub KLV 2: key length=1, length field=1, payload=2 bytes
+        {   byte[] bytes = new byte[]{
+                42, 8,          // Overall KLV
+                43, 2, 23, 24,  // Sub KLV 1
+                44, 2, 25, 26   // Sub KLV 2
+            };
+            klv = new KLV(bytes, KLV.KEY_LENGTH_ONE_BYTE, KLV.LENGTH_FIELD_ONE_BYTE);
+            KLV k1 = klv.getKLV( 43, KLV.KEY_LENGTH_ONE_BYTE, KLV.LENGTH_FIELD_ONE_BYTE);
+            KLV k2 = klv.getKLV( 44, KLV.KEY_LENGTH_ONE_BYTE, KLV.LENGTH_FIELD_ONE_BYTE);
+            assertNotNull(k1);
+            assertNotNull(k2);
+            assertEquals(42,klv.getShortKey());
+            assertEquals(43,k1.getShortKey());
+            assertEquals(44,k2.getShortKey());
+            
+        }
+        
+    }   // end testGetKLV
     
     
     
