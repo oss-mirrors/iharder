@@ -779,6 +779,70 @@ public class KLV {
      * @return <tt>this</tt>, to aid in stringing commands together.
      */
     public KLV addKLV( int subKey, int subKeyLength, int subLengthFieldEncoding, byte[] subData ){
+    if( subKeyLength < 0 || subKeyLength > 4 ) throw new IllegalArgumentException( "Key length must be from one to four bytes: " + subKeyLength );
+    if( subLengthFieldEncoding != KLV.LENGTH_FIELD_ONE_BYTE &&
+        subLengthFieldEncoding != KLV.LENGTH_FIELD_TWO_BYTES &&
+        subLengthFieldEncoding != KLV.LENGTH_FIELD_FOUR_BYTES &&
+        subLengthFieldEncoding != KLV.LENGTH_FIELD_BER )
+            throw new IllegalArgumentException( "Invalid length field encoding flag: " + subLengthFieldEncoding );
+    
+        // Old outer data
+        int oldOuterLength = getActualValueLength();    // Old payload length
+        int oldValueOffset = getValueOffset();          // Old value offset
+        int outerLengthFieldOffset = this.klvBytesOffset + this.keyLength; // Old length field starts here
+        int oldOuterLengthFieldLength = oldValueOffset - outerLengthFieldOffset; // Length of old length field encoding
+    
+        // Bytes for inner length encoding
+        byte[] subLengthBytes = makeLengthField( subLengthFieldEncoding, subData.length );
+        int subOverallLength = subKeyLength + subLengthBytes.length + subData.length;
+        
+        // Make sub KLV
+        //KLV klv = new KLV( subKey, subKeyLength, subLengthFieldEncoding, subData );
+        
+        // Bytes for outer length field -- drives a lot of other offset values
+        byte[] outerLengthBytes = makeLengthField( this.lengthFieldEncoding, oldOuterLength + subOverallLength );
+        int newOuterValueOffset = outerLengthFieldOffset + outerLengthBytes.length; // New value starts here
+        int subKeyOffset = newOuterValueOffset + oldOuterLength;
+        int subLengthFieldOffset = subKeyOffset + subKeyLength;
+        int subValueOffset = subLengthFieldOffset + subLengthBytes.length;
+        
+        // Total new bytes
+        byte[] newBytes = new byte[ this.keyLength + outerLengthBytes.length + oldOuterLength + subOverallLength ];
+        
+        // Copy outer key
+        System.arraycopy(this.klvBytes,this.klvBytesOffset, newBytes,0,this.keyLength);
+        
+        // Copy outer length field
+        System.arraycopy(outerLengthBytes,0, newBytes,this.keyLength,outerLengthBytes.length);
+        
+        // Copy old payload
+        System.arraycopy(this.klvBytes,oldValueOffset, newBytes,newOuterValueOffset,oldOuterLength);
+        
+        // Add new key
+        for( int i = 0; i < subKeyLength; i++ ){
+            newBytes[subKeyOffset + i] = (byte)(subKey >> (subKeyLength*8 - i*8 - 8));
+        }   // end for: i
+        
+        // Add new length field
+        for( int i = 0; i < subLengthBytes.length; i++ ){
+            newBytes[subLengthFieldOffset + i] = subLengthBytes[i];
+        }   // end for: i
+        
+        // Add new data
+        for( int i = 0; i < subData.length; i++ ){
+            newBytes[subValueOffset + i] = subData[i];
+        }   // end for: i
+        
+        // Replace underlying byte array
+        this.klvBytes = newBytes;   // Replace underlying byte array
+        purgeCache();               // Sub KLV elements use different underlying array now
+        
+        return this;
+        
+    }   // end addKLV
+    
+    /*
+    public KLV addKLV( int subKey, int subKeyLength, int subLengthFieldEncoding, byte[] subData ){
         if( subKeyLength < 0 || subKeyLength > 4 ) throw new IllegalArgumentException( "Key length must be from one to four bytes: " + subKeyLength );
         if( subLengthFieldEncoding != KLV.LENGTH_FIELD_ONE_BYTE &&
             subLengthFieldEncoding != KLV.LENGTH_FIELD_TWO_BYTES &&
@@ -837,8 +901,62 @@ public class KLV {
         return this;
         
     }   // end addKLV
+    */
     
     
+    public KLV addPayload( byte[] extraBytes ){
+        addPayload( extraBytes, 0, extraBytes.length );
+        return this;
+    }
+    
+    /**
+     * Adds the provided bytes to the payload and adjusts the length field.
+     * If the length field encoding does not support payloads as large
+     * as would result from adding <tt>extraBytes</tt>, 
+     * then an IllegalArgumentException is thrown.
+     *
+     * @param extraBytes New bytes to add
+     * @return <tt>this</tt>, to aid in stringing commands together.
+     */
+    public KLV addPayload( byte[] extraBytes, int extraOffset, int extraLength ){
+        if( extraOffset + extraLength > extraBytes.length )
+            throw new IllegalArgumentException( "Not enough bytes in array for requested offset and length." );
+        
+        
+        // Old outer data
+        int oldOuterLength = getActualValueLength();    // Old payload length
+        int oldValueOffset = getValueOffset();          // Old value offset
+        int outerLengthFieldOffset = this.klvBytesOffset + this.keyLength; // Old length field starts here
+        int oldOuterLengthFieldLength = oldValueOffset - outerLengthFieldOffset; // Length of old length field encoding
+        
+        // Bytes for outer length field -- drives a lot of other offset values
+        byte[] outerLengthBytes = makeLengthField( this.lengthFieldEncoding, oldOuterLength + extraLength);
+        int newOuterValueOffset = outerLengthFieldOffset + outerLengthBytes.length; // New value starts here
+        int offsetForExtraData = newOuterValueOffset + oldOuterLength;
+        
+        // Total new bytes
+        byte[] newBytes = new byte[ this.keyLength + outerLengthBytes.length + oldOuterLength + extraLength ];
+        
+        // Copy outer key
+        System.arraycopy(this.klvBytes,this.klvBytesOffset, newBytes,0,this.keyLength);
+        
+        // Copy outer length field
+        System.arraycopy(outerLengthBytes,0, newBytes,this.keyLength,outerLengthBytes.length);
+        
+        // Copy old payload
+        System.arraycopy(this.klvBytes,oldValueOffset, newBytes,newOuterValueOffset,oldOuterLength);
+        
+        // Add new payload
+        for( int i = 0; i < extraLength; i++ ){
+            newBytes[offsetForExtraData + i] = extraBytes[i];
+        }   // end for: i
+        
+        // Replace underlying byte array
+        this.klvBytes = newBytes;   // Replace underlying byte array
+        purgeCache();               // Sub KLV elements use different underlying array now
+        
+        return this;
+    }
     
     
     
