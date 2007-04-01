@@ -262,6 +262,35 @@ public class KLV {
     }   // end getKLV
     
     
+    
+    
+    /**
+     * Returns the underlying byte array that represents this KLV set.
+     * Some of the bytes may not be part of the KLV set.
+     * Be sure to check {@link #getBytesOffset}.
+     *
+     * @return all the bytes
+     * @see #getBytesOffset
+     * @see #getBytesLength
+     */
+    public byte[] getBytes(){
+        return this.klvBytes;
+    }
+    
+    
+    /**
+     * Returns the number of bytes offset from {@link #getBytes}
+     * where this KLV set actually begins.
+     * Be sure to check {@link #getBytes}.
+     *
+     * @return offset of bytes
+     * @see #getBytes
+     */
+    public int getBytesOffset(){
+        return this.klvBytesOffset;
+    }
+    
+    
 
     
     /**
@@ -341,6 +370,28 @@ public class KLV {
     public int getSubLengthFieldEncodingDefault(){
         return this.subLengthFieldEncodingDefault;
     }
+    
+    
+    /**
+     * Return offset to the length field.
+     *
+     * @return offset to length field.
+     */
+    public int getLengthFieldOffset(){
+        return this.klvBytesOffset + this.keyLength;
+    }
+    
+    
+    /**
+     * Returns the number of bytes used in the length
+     * field. Most interesting for BER encoding.
+     *
+     * @return number of bytes in length field
+     */
+    public int getLengthFieldLength(){
+        return getValueOffset() - getLengthFieldOffset();
+    }
+    
     
     
     
@@ -488,24 +539,6 @@ public class KLV {
     
     
     
-    /**
-     * Returns up to the first two bytes of the value as a two-byte char.
-     * Be careful that Java assumes the highest bit (the 16th) is a sign
-     * bit, but that's not necessarily what is meant to be represented.
-     *
-     * @return the value as a char
-     */
-    public char getValueAsChar(){
-        byte[] bytes = getValue();
-        char value = 0;
-        int length = bytes.length;
-        int shortLen = length < 2 ? length : 2;
-        for( int i = 0; i < shortLen; i++ )
-            value |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
-        return value;
-    }   // end getValueAsInt
-    
-    
     
     /**
      * Returns up to the first four bytes of the value as a four-byte int.
@@ -572,34 +605,6 @@ public class KLV {
     
     
     
-    /**
-     * Returns the underlying byte array that represents this KLV set.
-     * Some of the bytes may not be part of the KLV set.
-     * Be sure to check {@link #getBytesOffset}.
-     *
-     * @return all the bytes
-     * @see #getBytesOffset
-     * @see #getBytesLength
-     */
-    public byte[] getBytes(){
-        return this.klvBytes;
-    }
-    
-    
-    /**
-     * Returns the number of bytes offset from {@link #getBytes}
-     * where this KLV set actually begins.
-     * Be sure to check {@link #getBytes}.
-     *
-     * @return offset of bytes
-     * @see #getBytes
-     */
-    public int getBytesOffset(){
-        return this.klvBytesOffset;
-    }
-    
-    
-    
 /* ********  S E T   M E T H O D S  ******** */
     
     
@@ -640,6 +645,164 @@ public class KLV {
     }
     
     
+    
+    
+    /**
+     * Sets the key, adjusting the overall length as needed
+     * to accomodate the new key. If the new key is the same
+     * length as the old, then the new key replaces the old
+     * without copying the underlying byte array. Otherwise
+     * the underlying array is copied to make room.
+     *
+     * @param newKey The new key, up to four bytes
+     * @param newKeyLength Number of bytes in key (1-4)
+     * @return <tt>this</tt> to aid in stringing commands together
+     */
+    public KLV setKey( int newKey, int newKeyLength ){
+        if( newKeyLength < 0 || newKeyLength > 4 ) throw new IllegalArgumentException( "Key length must be from one to four bytes: " + newKeyLength );
+        
+        // Same key length?
+        if( this.keyLength == newKeyLength ){
+            for( int i = 0; i < newKeyLength; i++ ){
+                this.klvBytes[i] = (byte)( newKey >> 8*(newKeyLength - i - 1));
+            }   // end for: i
+        }   // end if: same key length
+        else{
+            // Prep length field
+            int valueLength = getActualValueLength();
+            byte[] lengthField = this.makeLengthField( this.lengthFieldEncoding, valueLength );
+            
+            // New byte array
+            byte[] newBytes = new byte[ newKeyLength + lengthField.length + valueLength ];
+            
+            // Add new key
+            for( int i = 0; i < newKeyLength; i++ ){
+                newBytes[i] = (byte)( newKey >> 8*(newKeyLength - i - 1));
+            }
+            
+            // Add new length field
+            for( int i = 0; i < lengthField.length; i++ ){
+                newBytes[newKeyLength+i] = lengthField[i];
+            }
+            
+            // Add old value
+            int valueOffset = getValueOffset();
+            for( int i = 0; i < valueLength; i++ ){
+                newBytes[newKeyLength+lengthField.length+i] = this.klvBytes[valueOffset+i];
+            }
+            
+            this.klvBytes = newBytes;
+            this.keyLength = newKeyLength;
+            this.klvBytesOffset = 0;
+            purgeCache();
+        }   // end else: new key length
+
+        return this;
+    }   // end setKey
+    
+    
+    
+    /**
+     * Sets the key, adjusting the overall length as needed
+     * to accomodate the new key. If the new key is the same
+     * length as the old, then the new key replaces the old
+     * without copying the underlying byte array. Otherwise
+     * the underlying array is copied to make room.
+     *
+     * @param newKey The new key
+     * @return <tt>this</tt> to aid in stringing commands together
+     */
+    public KLV setKey( byte[] newKey ){
+        if( newKey == null ) throw new NullPointerException( "Cannot set key to null." );
+        if( newKey.length == 0 ) throw new IllegalArgumentException( "Key length must not be zero." );
+        
+        // Same key length?
+        if( this.keyLength == newKey.length ){
+            for( int i = 0; i < this.keyLength; i++ ){
+                this.klvBytes[this.klvBytesOffset+i] = newKey[i];
+            }   // end for: i
+        }   // end if: same key length
+        else{
+            // Prep length field
+            int valueLength = getActualValueLength();
+            byte[] lengthField = this.makeLengthField( this.lengthFieldEncoding, valueLength );
+            
+            // New byte array
+            byte[] newBytes = new byte[ newKey.length + lengthField.length + valueLength ];
+            
+            // Add new key
+            for( int i = 0; i < newKey.length; i++ ){
+                newBytes[i] = newKey[i];
+            }
+            
+            // Add new length field
+            for( int i = 0; i < lengthField.length; i++ ){
+                newBytes[newKey.length+i] = lengthField[i];
+            }
+            
+            // Add old value
+            int valueOffset = getValueOffset();
+            for( int i = 0; i < valueLength; i++ ){
+                newBytes[newKey.length+lengthField.length+i] = this.klvBytes[valueOffset+i];
+            }
+            
+            this.klvBytes = newBytes;
+            this.keyLength = newKey.length;
+            this.klvBytesOffset = 0;
+            purgeCache();
+        }   // end else: new key length
+
+        return this;
+    }   // end setKey
+    
+    
+    /**
+     * Sets the length field encoding, adjusting the overall length as needed
+     * to accomodate the new encoding. 
+     * The underlying array is always copied to make room.
+     *
+     * @param newLengthFieldEncodingFlag new encoding
+     * @return <tt>this</tt> to aid in stringing commands together
+     */
+    public KLV setLengthFieldEncoding( int newLengthFieldEncodingFlag ){
+        if( newLengthFieldEncodingFlag != KLV.LENGTH_FIELD_ONE_BYTE &&
+            newLengthFieldEncodingFlag != KLV.LENGTH_FIELD_TWO_BYTES &&
+            newLengthFieldEncodingFlag != KLV.LENGTH_FIELD_FOUR_BYTES &&
+            newLengthFieldEncodingFlag != KLV.LENGTH_FIELD_BER )
+                throw new IllegalArgumentException( "Invalid length field encoding flag: " + newLengthFieldEncodingFlag );
+        
+        // Prep length field
+        int valueLength = getActualValueLength();
+        byte[] lengthField = this.makeLengthField( newLengthFieldEncodingFlag, valueLength );
+        
+        
+        // New byte array
+        byte[] newBytes = new byte[ this.keyLength + lengthField.length + valueLength ];
+
+        // Add key
+        for( int i = 0; i < this.keyLength; i++ ){
+            newBytes[i] = this.klvBytes[this.klvBytesOffset+i];
+        }
+
+        // Add new length field
+        for( int i = 0; i < lengthField.length; i++ ){
+            newBytes[this.keyLength+i] = lengthField[i];
+        }
+
+        // Add old value
+        int valueOffset = getValueOffset();
+        for( int i = 0; i < valueLength; i++ ){
+            newBytes[this.keyLength+lengthField.length+i] = this.klvBytes[valueOffset+i];
+        }
+        
+        // Update values
+        this.klvBytes = newBytes;
+        this.lengthFieldEncoding = newLengthFieldEncodingFlag;
+        this.klvBytesOffset = 0;
+        purgeCache();
+        
+        return this;
+    }
     
     
     
@@ -779,63 +942,36 @@ public class KLV {
      * @return <tt>this</tt>, to aid in stringing commands together.
      */
     public KLV addKLV( int subKey, int subKeyLength, int subLengthFieldEncoding, byte[] subData ){
-    if( subKeyLength < 0 || subKeyLength > 4 ) throw new IllegalArgumentException( "Key length must be from one to four bytes: " + subKeyLength );
-    if( subLengthFieldEncoding != KLV.LENGTH_FIELD_ONE_BYTE &&
-        subLengthFieldEncoding != KLV.LENGTH_FIELD_TWO_BYTES &&
-        subLengthFieldEncoding != KLV.LENGTH_FIELD_FOUR_BYTES &&
-        subLengthFieldEncoding != KLV.LENGTH_FIELD_BER )
-            throw new IllegalArgumentException( "Invalid length field encoding flag: " + subLengthFieldEncoding );
-    
-        // Old outer data
-        int oldOuterLength = getActualValueLength();    // Old payload length
-        int oldValueOffset = getValueOffset();          // Old value offset
-        int outerLengthFieldOffset = this.klvBytesOffset + this.keyLength; // Old length field starts here
-        int oldOuterLengthFieldLength = oldValueOffset - outerLengthFieldOffset; // Length of old length field encoding
+        if( subKeyLength < 0 || subKeyLength > 4 ) throw new IllegalArgumentException( "Key length must be from one to four bytes: " + subKeyLength );
+        if( subLengthFieldEncoding != KLV.LENGTH_FIELD_ONE_BYTE &&
+            subLengthFieldEncoding != KLV.LENGTH_FIELD_TWO_BYTES &&
+            subLengthFieldEncoding != KLV.LENGTH_FIELD_FOUR_BYTES &&
+            subLengthFieldEncoding != KLV.LENGTH_FIELD_BER )
+                throw new IllegalArgumentException( "Invalid length field encoding flag: " + subLengthFieldEncoding );
     
         // Bytes for inner length encoding
         byte[] subLengthBytes = makeLengthField( subLengthFieldEncoding, subData.length );
-        int subOverallLength = subKeyLength + subLengthBytes.length + subData.length;
         
-        // Make sub KLV
-        //KLV klv = new KLV( subKey, subKeyLength, subLengthFieldEncoding, subData );
-        
-        // Bytes for outer length field -- drives a lot of other offset values
-        byte[] outerLengthBytes = makeLengthField( this.lengthFieldEncoding, oldOuterLength + subOverallLength );
-        int newOuterValueOffset = outerLengthFieldOffset + outerLengthBytes.length; // New value starts here
-        int subKeyOffset = newOuterValueOffset + oldOuterLength;
-        int subLengthFieldOffset = subKeyOffset + subKeyLength;
-        int subValueOffset = subLengthFieldOffset + subLengthBytes.length;
-        
-        // Total new bytes
-        byte[] newBytes = new byte[ this.keyLength + outerLengthBytes.length + oldOuterLength + subOverallLength ];
-        
-        // Copy outer key
-        System.arraycopy(this.klvBytes,this.klvBytesOffset, newBytes,0,this.keyLength);
-        
-        // Copy outer length field
-        System.arraycopy(outerLengthBytes,0, newBytes,this.keyLength,outerLengthBytes.length);
-        
-        // Copy old payload
-        System.arraycopy(this.klvBytes,oldValueOffset, newBytes,newOuterValueOffset,oldOuterLength);
+        // Overall new bytes to add
+        byte[] extraPayload = new byte[ subKeyLength + subLengthBytes.length + subData.length ];
         
         // Add new key
         for( int i = 0; i < subKeyLength; i++ ){
-            newBytes[subKeyOffset + i] = (byte)(subKey >> (subKeyLength*8 - i*8 - 8));
+            extraPayload[ i] = (byte)(subKey >> (subKeyLength*8 - i*8 - 8));
         }   // end for: i
         
         // Add new length field
         for( int i = 0; i < subLengthBytes.length; i++ ){
-            newBytes[subLengthFieldOffset + i] = subLengthBytes[i];
+            extraPayload[subKeyLength + i] = subLengthBytes[i];
         }   // end for: i
         
         // Add new data
         for( int i = 0; i < subData.length; i++ ){
-            newBytes[subValueOffset + i] = subData[i];
+            extraPayload[subKeyLength + subLengthBytes.length + i] = subData[i];
         }   // end for: i
         
-        // Replace underlying byte array
-        this.klvBytes = newBytes;   // Replace underlying byte array
-        purgeCache();               // Sub KLV elements use different underlying array now
+        addValue( extraPayload );
+        purgeCache(); // Sub KLV elements use different underlying array now, so purge
         
         return this;
         
@@ -895,7 +1031,8 @@ public class KLV {
         }   // end for: i
         
         // Replace underlying byte array
-        this.klvBytes = newBytes;   // Replace underlying byte array
+        
+     newBytes;   // Replace underlying byte array
         purgeCache();               // Sub KLV elements use different underlying array now
         
         return this;
@@ -904,13 +1041,9 @@ public class KLV {
     */
     
     
-    public KLV addPayload( byte[] extraBytes ){
-        addPayload( extraBytes, 0, extraBytes.length );
-        return this;
-    }
     
     /**
-     * Adds the provided bytes to the payload and adjusts the length field.
+     * Adds the provided bytes to the value/payload and adjusts the length field.
      * If the length field encoding does not support payloads as large
      * as would result from adding <tt>extraBytes</tt>, 
      * then an IllegalArgumentException is thrown.
@@ -918,10 +1051,25 @@ public class KLV {
      * @param extraBytes New bytes to add
      * @return <tt>this</tt>, to aid in stringing commands together.
      */
-    public KLV addPayload( byte[] extraBytes, int extraOffset, int extraLength ){
+    public KLV addValue( byte[] extraBytes ){
+        addValue( extraBytes, 0, extraBytes.length );
+        return this;
+    }
+    
+    /**
+     * Adds the provided bytes to the value/payload and adjusts the length field.
+     * If the length field encoding does not support payloads as large
+     * as would result from adding <tt>extraBytes</tt>, 
+     * then an IllegalArgumentException is thrown.
+     *
+     * @param extraBytes New bytes to add
+     * @param extraOffset Offset where to begin adding data
+     * @param extraLength Number of bytes to add
+     * @return <tt>this</tt>, to aid in stringing commands together.
+     */
+    public KLV addValue( byte[] extraBytes, int extraOffset, int extraLength ){
         if( extraOffset + extraLength > extraBytes.length )
             throw new IllegalArgumentException( "Not enough bytes in array for requested offset and length." );
-        
         
         // Old outer data
         int oldOuterLength = getActualValueLength();    // Old payload length
@@ -953,6 +1101,7 @@ public class KLV {
         
         // Replace underlying byte array
         this.klvBytes = newBytes;   // Replace underlying byte array
+        this.klvBytesOffset = 0;
         purgeCache();               // Sub KLV elements use different underlying array now
         
         return this;
