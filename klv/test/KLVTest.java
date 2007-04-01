@@ -295,6 +295,164 @@ public class KLVTest extends TestCase {
     
     
     
+    
+    public void testSetKey() {
+        System.out.println("setKey");
+        
+        KLV klv;
+        
+        // Trivial KLV, don't change key length
+        klv = new KLV();
+        klv.setKey(4,1);
+        assertEquals(4, klv.getShortKey() );
+        
+        // Longer key
+        klv = new KLV();
+        klv.setKey(5,2);
+        assertEquals(5,klv.getShortKey());
+        
+        // Longer key still 
+        for( int i = 0; i < 65535; i+=1000 ){
+            klv = new KLV();
+            klv.setKey(i,2);
+            assertEquals(i,klv.getShortKey());
+        }
+        
+        // Set key with bytes
+        klv = new KLV();
+        for( byte i = 1; i < 20; i++ ){
+            byte[] key = new byte[i];
+            for( byte j = 0; j < i; j++ ){
+                key[j] = j;
+            }
+            klv.setKey(key);
+            byte[] key2 = klv.getLongKey();
+            assertNotNull( key2 );
+            assertEquals( key.length, key2.length );
+            for( int j = 0; j < key.length; j++ ){
+                assertEquals( j, key2[j]);
+                assertEquals( key[j], key2[j] );
+            }
+        }
+        
+    }   // end testSetKey
+    
+    
+    
+    
+    
+    
+    
+    
+    public void testSetLengthFieldEncoding() {
+        System.out.println("setLengthFieldEncoding");
+        
+        KLV klv;
+        
+        // Trivial KLV
+        klv = new KLV();
+        klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_ONE_BYTE);
+        assertEquals(KLV.LENGTH_FIELD_ONE_BYTE,klv.getLengthFieldEncoding());
+        assertEquals(0,klv.getDeclaredValueLength());
+        assertEquals(0,klv.getActualValueLength());
+        klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_TWO_BYTES);
+        assertEquals(KLV.LENGTH_FIELD_TWO_BYTES,klv.getLengthFieldEncoding());
+        assertEquals(0,klv.getDeclaredValueLength());
+        assertEquals(0,klv.getActualValueLength());
+        klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_BER);
+        assertEquals(KLV.LENGTH_FIELD_BER,klv.getLengthFieldEncoding());
+        assertEquals(0,klv.getDeclaredValueLength());
+        assertEquals(0,klv.getActualValueLength());
+        
+        
+        // Payload of 255 bytes: all encodings OK
+        {   byte[] bytes = new byte[1+1+255];
+            bytes[0] = 42; // Arbitrary key
+            bytes[1] = (byte)0xFF; // 255 bytes
+            klv = new KLV(bytes,KLV.KEY_LENGTH_ONE_BYTE,KLV.LENGTH_FIELD_ONE_BYTE);
+            assertEquals(255,klv.getDeclaredValueLength());
+            assertEquals(255,klv.getActualValueLength());
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_TWO_BYTES);
+            assertEquals(KLV.LENGTH_FIELD_TWO_BYTES,klv.getLengthFieldEncoding());
+            assertEquals(255,klv.getDeclaredValueLength());
+            assertEquals(255,klv.getActualValueLength());
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_FOUR_BYTES);
+            assertEquals(KLV.LENGTH_FIELD_FOUR_BYTES,klv.getLengthFieldEncoding());
+            assertEquals(255,klv.getDeclaredValueLength());
+            assertEquals(255,klv.getActualValueLength());
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_BER);
+            assertEquals(KLV.LENGTH_FIELD_BER,klv.getLengthFieldEncoding());
+            assertEquals(255,klv.getDeclaredValueLength());
+            assertEquals(255,klv.getActualValueLength());
+        }
+        
+        
+        // Payload of 256 bytes: One byte encoding should fail
+        {   byte[] bytes = new byte[1+2+256];
+            bytes[0] = 42; // Arbitrary key
+            bytes[1] = (byte)0x01;
+            bytes[2] = (byte)0x00;
+            klv = new KLV(bytes,KLV.KEY_LENGTH_ONE_BYTE,KLV.LENGTH_FIELD_TWO_BYTES);
+            assertEquals(256,klv.getDeclaredValueLength());
+            assertEquals(256,klv.getActualValueLength());
+            try{
+                klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_ONE_BYTE);
+                fail( "One byte encoding should fail." );
+            } catch( Exception exc ){}
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_TWO_BYTES);
+            assertEquals(KLV.LENGTH_FIELD_TWO_BYTES,klv.getLengthFieldEncoding());
+            assertEquals(256,klv.getDeclaredValueLength());
+            assertEquals(256,klv.getActualValueLength());
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_FOUR_BYTES);
+            assertEquals(KLV.LENGTH_FIELD_FOUR_BYTES,klv.getLengthFieldEncoding());
+            assertEquals(256,klv.getDeclaredValueLength());
+            assertEquals(256,klv.getActualValueLength());
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_BER);
+            assertEquals(KLV.LENGTH_FIELD_BER,klv.getLengthFieldEncoding());
+            assertEquals(256,klv.getDeclaredValueLength());
+            assertEquals(256,klv.getActualValueLength());
+        }
+        
+        
+        // Payload of 65536 bytes: Two byte encoding should fail
+        {   byte[] bytes = new byte[1+4+65536];
+            bytes[0] = 42; // Arbitrary key
+            bytes[2] = (byte)0x01; // 65536 in four bytes
+            klv = new KLV(bytes,KLV.KEY_LENGTH_ONE_BYTE,KLV.LENGTH_FIELD_FOUR_BYTES);
+            assertEquals(65536,klv.getDeclaredValueLength());
+            assertEquals(65536,klv.getActualValueLength());
+            try{
+                klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_ONE_BYTE);
+                fail( "One byte encoding should fail." );
+            } catch( Exception exc ){}
+            try{
+                klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_TWO_BYTES);
+                fail( "TWO byte encoding should fail." );
+            } catch( Exception exc ){}
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_FOUR_BYTES);
+            assertEquals(KLV.LENGTH_FIELD_FOUR_BYTES,klv.getLengthFieldEncoding());
+            assertEquals(65536,klv.getDeclaredValueLength());
+            assertEquals(65536,klv.getActualValueLength());
+            klv.setLengthFieldEncoding(KLV.LENGTH_FIELD_BER);
+            assertEquals(KLV.LENGTH_FIELD_BER,klv.getLengthFieldEncoding());
+            assertEquals(65536,klv.getDeclaredValueLength());
+            assertEquals(65536,klv.getActualValueLength());
+        }
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Test of getValue method, of class KLV.
      */
@@ -747,7 +905,7 @@ public class KLVTest extends TestCase {
      * Test of addKLV method, of class KLV.
      */
     public void testAddKLV() {
-        System.out.println("toBytes");
+        System.out.println("addKLV");
         
         KLV klv;
     
