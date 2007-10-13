@@ -1,11 +1,6 @@
 import junit.framework.*;
 import java.util.*;
-/*
- * KLVTest.java
- * JUnit based test
- *
- * Created on March 17, 2007, 2:51 PM
- */
+
 
 /**
  *
@@ -242,8 +237,6 @@ public class KLVTest extends TestCase {
             klv = new KLV( bytes, KLV.KeyLength.FourBytes, KLV.LengthEncoding.OneByte );
             assertEquals(i, klv.getShortKey());
         }   // end for: i
-        
-        
         
         
     }   // end testGetShortKey
@@ -1232,9 +1225,78 @@ public class KLVTest extends TestCase {
             }
         }
         
-        
-    
     }   // end testAddKLV
+    
+    
+    
+    
+/* ********  S E T   K E Y  ******** */
+    
+    
+    
+    public void testSetKey() {
+        System.out.println("setKey");
+        
+        KLV klv;
+        
+        // Same key length
+        for( int i = 1; i < (1<<31); i = (i << 1) + i ){
+            klv = new KLV(); // Four byte key by default
+            //System.out.println("Setting key to " + i );
+            klv.setKey(i);
+            assertEquals(i,klv.getShortKey());
+        }
+        
+        // Change from four- to one-byte key
+        for( int i = 0; i < (1<<7)-1; i++ ){
+            klv = new KLV();
+            klv.setKey(i, KLV.KeyLength.OneByte );
+            assertEquals( i, klv.getShortKey() );
+        }
+        
+        // Change from four- to two-byte key
+        for( int i = 1; i < (1<<15)-1; i = (i<<1)+i ){
+            klv = new KLV();
+            klv.setKey(i, KLV.KeyLength.TwoBytes );
+            assertEquals( i, klv.getShortKey() );
+        }
+        
+        
+        // Change from one- to two-byte key
+        for( int i = 1; i < (1<<15)-1; i = (i<<1)+i ){
+            klv = new KLV( new byte[]{ (byte)42, 1, 23 }, 
+                    KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte );
+            klv.setKey(i, KLV.KeyLength.TwoBytes );
+            assertEquals( i, klv.getShortKey() );
+        }
+        
+        // Change from one- to four-byte key
+        for( int i = 1; i < (1<<31); i = (i << 1) + i ){
+            klv = new KLV( new byte[]{ (byte)42, 1, 23 }, 
+                    KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte );
+            klv.setKey(i, KLV.KeyLength.FourBytes );
+            assertEquals( i, klv.getShortKey() );
+        }
+        
+        // Change from four- to sixteen-byte key
+        {
+            klv = new KLV();
+            byte[] key = new byte[16];
+            for( int i = 0; i < 16; i++ ){
+                key[i] = (byte)((i+23)%255);
+            }
+            klv.setKey(key);
+            byte[] returnedKey = klv.getFullKey();
+            assertEquals(16,returnedKey.length);
+            for( int i = 0; i < 16; i++ ){
+                assertEquals((i+23)%255,returnedKey[i]);
+            }
+        }
+        
+        
+    }   // end testSetKey
+    
+    
     
     
 /* ********  S E T   V A L U E  ******** */
@@ -1242,7 +1304,46 @@ public class KLVTest extends TestCase {
     
     
     public void testSetValue() {
-        System.out.println("setValue - Not Yet Implemented");
+        System.out.println("setValue");
+        
+        KLV klv;
+        
+        
+        
+        // Add one byte
+        {
+            klv = new KLV();
+            klv.setValue( new byte[]{ (byte)42 } );
+            assertEquals( 42, klv.getValueAs32bitInt() );
+            assertEquals( 1, klv.getActualValueLength() );
+            assertEquals( 1, klv.getDeclaredValueLength() );
+        }
+        
+        
+        // Add one byte, then clear
+        {
+            klv = new KLV();
+            klv.setValue( new byte[]{ (byte)42 } );
+            klv.setValue( new byte[0] );
+            assertEquals( 0, klv.getValueAs32bitInt() );
+            assertEquals( 0, klv.getActualValueLength() );
+            assertEquals( 0, klv.getDeclaredValueLength() );
+        }
+        
+        // Add many bytes
+        for( int i = 0; i < 1000; i+=10 ){
+            byte[] bytes = new byte[i];
+            for( int j = 0; j < i; j++ ){
+                bytes[j] = (byte)((j + 23) % 255); // Arbitrary
+            }   // end for: fill array
+            klv = new KLV();
+            klv.setValue(bytes);
+            byte[] value = klv.getValue();
+            for( int j = 0; j < i; j++ ){
+                assertEquals(bytes[j],value[j]);
+            }
+        }
+        
         
     }
     

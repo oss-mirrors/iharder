@@ -1,7 +1,7 @@
 
 import java.util.*;
 
-//LEFT OFF: Add setValue test and then add lots of setValue methods.
+//LEFT OFF: Create tests for constructors
 
 
 /**
@@ -327,6 +327,15 @@ public class KLV {
     }   // end constructor
     
     
+    
+    
+    /**
+     * Create a KLV set with the given key, key length, length field encoding,
+     * and provided value in a byte array.
+     */
+    public KLV( int shortKey, KeyLength keyLength, LengthEncoding lengthFieldEncoding, byte[] value ){
+        this( shortKey, keyLength, lengthFieldEncoding, value, 0, value.length );
+    }
     
     
     /**
@@ -953,6 +962,160 @@ public class KLV {
     //    return this;
     //}
     
+    
+    
+    /**
+     * Sets the key as a sixteen-byte key.
+     * The underlying byte array is not recopied unless
+     * the key length would change as a result of this call.
+     * If <tt>sixteenByteKey</tt> is not sixteen bytes long,
+     * an <tt>IllegalArgumentException</tt> is thrown.
+     * 
+     * @param sixteenByteKey    the sixteen byte key
+     * @return                  <tt>this</tt> to aid in stringing commands together
+     */
+    public KLV setKey( byte[] sixteenByteKey ){
+        if( sixteenByteKey == null )
+            throw new NullPointerException("New key must not be null.");
+        if( sixteenByteKey.length != 16 )
+            throw new IllegalArgumentException("New key must be 16 bytes long, not " + sixteenByteKey.length );
+        
+        int oldKeyLength = this.getKeyLength().value();
+        
+        if( oldKeyLength == 16 ){ // No need for new byte array
+            System.arraycopy(sixteenByteKey,0, this.klvBytes,this.klvBytesOffset,16);
+            
+        } else {    // Need new byte array
+            
+            // Get the old bytes that make up the entire KLV.
+            // Make a new array.
+            // Copy in new key.
+            // Copy in old length field and value.
+            // This could be more efficient, but I'm doing it this way for
+            // now because it's easy to code. If it's a bottleneck, I can
+            // fix it later.
+            byte[] oldBytes = this.toBytes(); 
+            byte[] newBytes = new byte[ oldBytes.length + 16 - oldKeyLength ];
+            
+            System.arraycopy(sixteenByteKey,0, newBytes,0,16);  // Copy key
+            System.arraycopy(                                   // Copy length and value
+                    oldBytes,oldKeyLength,
+                    newBytes,16, oldBytes.length - oldKeyLength );
+            
+            this.klvBytes = newBytes;
+            this.klvBytesOffset = 0;
+            this.keyLength = KeyLength.SixteenBytes;
+        }
+        
+        return this;
+    }
+    
+    
+    
+    /**
+     * Sets the key according to the existing key length.
+     * The underlying byte array is not copied - it is
+     * modified in place.
+     * 
+     * @param shortKey      the key of one, two, or four bytes
+     * @return              <tt>this</tt> to aid in stringing commands together
+     */
+    public KLV setKey( int shortKey ){
+        return setKey( shortKey, this.keyLength );
+    }
+    
+    
+    
+    /**
+     * Sets the key according to the given key length.
+     * The underlying byte array will be copied into a
+     * new array only if <tt>keyLength</tt> is different
+     * than the existing key length.
+     * 
+     * @param shortKey      the key of one, two, or four bytes
+     * @param keyLength     the length of the key
+     * @return              <tt>this</tt> to aid in stringing commands together
+     */
+    public KLV setKey( int shortKey, KeyLength keyLength ){
+        
+        if( keyLength == this.getKeyLength() ){ // No need to copy byte array
+            
+            // Put "shortKey" into the appropriate byte array locations
+            switch( keyLength ){
+            case OneByte:
+                this.klvBytes[this.klvBytesOffset] = (byte)shortKey;
+                break;
+                
+            case TwoBytes:
+                this.klvBytes[this.klvBytesOffset  ] = (byte)(shortKey>>8);
+                this.klvBytes[this.klvBytesOffset+1] = (byte)shortKey;
+                break;
+                
+            case FourBytes:
+                this.klvBytes[this.klvBytesOffset  ] = (byte)(shortKey>>24);
+                this.klvBytes[this.klvBytesOffset+1] = (byte)(shortKey>>16);
+                this.klvBytes[this.klvBytesOffset+2] = (byte)(shortKey>>8);
+                this.klvBytes[this.klvBytesOffset+3] = (byte)shortKey;
+                break;
+                
+            default:
+                throw new IllegalArgumentException( "Only one-, two-, and four-byte keys are accepted in this method." );
+            }
+            
+        } else {    // Need new byte array
+            
+            // Get the old bytes that make up the entire KLV.
+            // Make a new array.
+            // Copy in new key.
+            // Copy in old length field and value.
+            // This could be more efficient, but I'm doing it this way for
+            // now because it's easy to code. If it's a bottleneck, I can
+            // fix it later.
+            byte[] oldBytes = this.toBytes(); 
+            byte[] newBytes = new byte[ oldBytes.length + keyLength.value() - this.getKeyLength().value() ];
+                        
+            switch( keyLength ){
+            case OneByte:
+                newBytes[0] = (byte)shortKey;
+                break;
+                
+            case TwoBytes:
+                newBytes[0] = (byte)(shortKey>>8);
+                newBytes[1] = (byte)shortKey;
+                break;
+                
+            case FourBytes:
+                newBytes[0] = (byte)(shortKey>>24);
+                newBytes[1] = (byte)(shortKey>>16);
+                newBytes[2] = (byte)(shortKey>>8);
+                newBytes[3] = (byte)shortKey;
+                break;
+                
+            default:
+                throw new IllegalArgumentException( "Only one-, two-, and four-byte keys are accepted in this method." );
+            }   // end switch
+            
+            // Copy from length field to end of value
+            System.arraycopy(
+                    oldBytes,this.getKeyLength().value(),
+                    newBytes,keyLength.value(), oldBytes.length - this.getKeyLength().value() );
+            this.klvBytes = newBytes;
+            this.klvBytesOffset = 0;
+            this.keyLength = keyLength;
+        }
+        
+        return this;
+    }   // end setKey
+    
+    
+    
+    /**
+     * Sets the value of the KLV set and adjusts the length field to match.
+     * The underlying byte array will be replaced with a new one.
+     */
+    public KLV setValue( byte[] newValue ){
+        return setValue( newValue, 0, newValue.length );
+    }
     
     
     /**
