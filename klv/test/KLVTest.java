@@ -1150,8 +1150,8 @@ public class KLVTest extends TestCase {
                 44, 2, 25, 26   // Sub KLV 2
             };
             klv = new KLV(bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte);
-            KLV k1 = klv.getSubKLV( 43, KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte);
-            KLV k2 = klv.getSubKLV( 44, KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte);
+            KLV k1 = klv.getSubKLVMap(KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte).get( 43 );
+            KLV k2 = klv.getSubKLVMap(KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte).get( 44 );
             assertNotNull(k1);
             assertNotNull(k2);
             assertEquals(42,klv.getShortKey());
@@ -1177,8 +1177,8 @@ public class KLVTest extends TestCase {
             klv = new KLV();
             klv.addSubKLV(42, (byte)i);
             klv.addSubKLV(23, (byte)((i+10)%255));
-            KLV k42 = klv.getSubKLV(42);
-            KLV k23 = klv.getSubKLV(23);
+            KLV k42 = klv.getSubKLVMap().get(42);
+            KLV k23 = klv.getSubKLVMap().get(23);
             assertEquals(i,k42.getValueAs8bitUnsignedInt());
             assertEquals((i+10)%255,k23.getValueAs8bitUnsignedInt());
         }
@@ -1189,8 +1189,8 @@ public class KLVTest extends TestCase {
             klv = new KLV();
             klv.addSubKLV(42, (short)i);
             klv.addSubKLV(23, (short)((i+10)%65535));
-            KLV k42 = klv.getSubKLV(42);
-            KLV k23 = klv.getSubKLV(23);
+            KLV k42 = klv.getSubKLVMap().get(42);
+            KLV k23 = klv.getSubKLVMap().get(23);
             assertEquals(i,k42.getValueAs16bitUnsignedInt());
             assertEquals((i+10)%65535,k23.getValueAs16bitUnsignedInt());
         }
@@ -1200,8 +1200,8 @@ public class KLVTest extends TestCase {
             klv = new KLV();
             klv.addSubKLV(42, i);
             klv.addSubKLV(23, ((i+10)%987654321));
-            KLV k42 = klv.getSubKLV(42);
-            KLV k23 = klv.getSubKLV(23);
+            KLV k42 = klv.getSubKLVMap().get(42);
+            KLV k23 = klv.getSubKLVMap().get(23);
             assertEquals(i,k42.getValueAs32bitInt());
             assertEquals((i+10)%987654321,k23.getValueAs32bitInt());
         }
@@ -1213,8 +1213,8 @@ public class KLVTest extends TestCase {
                 klv = new KLV();
                 klv.addSubKLV(42,word);
                 klv.addSubKLV(23,word+word);
-                KLV k42 = klv.getSubKLV(42);
-                KLV k23 = klv.getSubKLV(23);
+                KLV k42 = klv.getSubKLVMap().get(42);
+                KLV k23 = klv.getSubKLVMap().get(23);
                 if( word == null ){
                     assertEquals("",k42.getValueAsString());
                     assertEquals("nullnull",k23.getValueAsString());

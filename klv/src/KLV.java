@@ -2,6 +2,7 @@
 import java.util.*;
 
 //LEFT OFF: Create tests for constructors
+// TODO: Decide what to do about setKeyLength vs changeKeyLength, etc.
 
 
 /**
@@ -26,11 +27,10 @@ import java.util.*;
  * <p>Everything in KLV is Big Endian.</p>
  *
  * <p>All <tt>getValue...</tt> methods will return up to the number
- * of bytes specified in the length fields ({@link #getLength}) unless
- * there are fewer bytes actually given than are intended. This is to make
- * the code more robust for reading corrupted data. Too few bytes: those
- * bytes are considered the value. Too many bytes: only up to {@link #getLength}
- * bytes are condidered the value.</p>
+ * of bytes specified in the length fields ({@link #getDeclaredValueLength}) unless
+ * there are fewer bytes actually given than are intended in which
+ * case {@link #getActualValueLength} bytes will be used. This is to make
+ * the code more robust for reading corrupted data. </p>
  *
  * <p>This code is released into the Public Domain. Enjoy.</p>
  *
@@ -213,10 +213,10 @@ public class KLV {
      * the parent key length and length encoding types.
      *
      */
-    private Map<KeyLength,
-                Map<LengthEncoding,
-                    Map<Integer,KLV> >> subKLVCache 
-            = new HashMap<KeyLength,Map<LengthEncoding,Map<Integer,KLV>>>();
+    //private Map<KeyLength,
+    //            Map<LengthEncoding,
+    //                Map<Integer,KLV> >> subKLVCache 
+    //        = new HashMap<KeyLength,Map<LengthEncoding,Map<Integer,KLV>>>();
     
     
     /**
@@ -281,8 +281,7 @@ public class KLV {
      * <p>There is no checking to make sure that the bytes passed are consistent,
      * particularly in regards to the total number of bytes versus the length
      * specified in the length field. This is to make the code more robust
-     * in reading corrupted data. Check {@link #isConsistent} to verify that the data is
-     * consistent.</p>
+     * in reading corrupted data. </p>
      * 
      * @param theBytes          The bytes that make up the entire KLV set
      * @param keyLength         The number of bytes in the key.
@@ -306,8 +305,7 @@ public class KLV {
      * <p>There is no checking to make sure that the bytes passed are consistent,
      * particularly in regards to the total number of bytes versus the length
      * specified in the length field. This is to make the code more robust
-     * in reading corrupted data. Check {@link #isConsistent} to verify that the data is
-     * consistent.</p>
+     * in reading corrupted data. </p>
      * 
      * @param theBytes          The bytes that make up the entire KLV set
      * @param offset            The offset from beginning of theBytes
@@ -315,7 +313,7 @@ public class KLV {
      * @param lengthEncoding    The length field encoding type.
      * @throws NullPointerException if theBytes, keyLength, or lengthEncoding are null
      */
-    public KLV( byte[] theBytes, int offset, KeyLength keyLength, LengthEncoding lengthFieldEncoding ){
+    public KLV( byte[] theBytes, int offset, KeyLength keyLength, LengthEncoding lengthEncoding ){
         if( theBytes == null )      throw new IllegalArgumentException( "KLV byte array must not be null." ); 
         if( theBytes.length < 2 )   throw new IllegalArgumentException( "KLV byte array must be at least two bytes long:" + theBytes.length ); 
         if( offset < 0 )            throw new IllegalArgumentException( "Offset must be non-negative: " + offset ); 
@@ -323,7 +321,7 @@ public class KLV {
         this.klvBytes       = theBytes;
         this.klvBytesOffset = offset;
         this.keyLength      = keyLength;
-        this.lengthEncoding = lengthFieldEncoding;
+        this.lengthEncoding = lengthEncoding;
     }   // end constructor
     
     
@@ -436,6 +434,59 @@ public class KLV {
 /* ********  P U B L I C   G E T   M E T H O D S  ******** */    
     
     
+    
+    /**
+     * Returns a list of all KLV sets in this payload (value field)
+     * assuming the existing key length and length field encoding.
+     */
+    public List<KLV> getSubKLVList(){
+        return this.getSubKLVList(this.keyLength, this.lengthEncoding);
+    }
+    
+    
+    
+    /**
+     * Returns a list of all KLV sets in this payload (value field)
+     * assuming the given key length and length field encoding.
+     */
+    public List<KLV> getSubKLVList( KeyLength keyLength, LengthEncoding lengthField ){
+        return KLV.bytesToList(
+                this.klvBytes,this.getValueOffset(),this.getActualValueLength(), 
+                keyLength, lengthField );
+    }
+    
+    
+    
+    
+    /**
+     * Return a mapping of keys (up to four bytes long) to KLV sets
+     * from this KLV's payload (value field) based on the existing
+     * key length and length field encoding.
+     * If two KLV subsets are in the payload, and they each have the 
+     * same key value, then the latter one will overwrite the earlier one.
+     * 
+     */
+    public Map<Integer,KLV> getSubKLVMap(){
+        return this.getSubKLVMap(this.keyLength, this.lengthEncoding);
+    }
+    
+    
+    /**
+     * Return a mapping of keys (up to four bytes long) to KLV sets
+     * from this KLV's payload (value field) based on an assumed key 
+     * length and length field encoding scheme. 
+     * If two KLV subsets are in the payload, and they each have the 
+     * same key value, then the latter one will overwrite the earlier one.
+     * 
+     */
+    public Map<Integer,KLV> getSubKLVMap( KeyLength keyLength, LengthEncoding lengthField ){
+        return KLV.bytesToMap(
+                this.klvBytes,this.getValueOffset(),this.getActualValueLength(), 
+                keyLength, lengthField );
+    }
+    
+    
+    
     /**
      * Return a KLV that is in the payload after 
      * parsing the payload as if it contains more KLV sets with the 
@@ -448,9 +499,9 @@ public class KLV {
      * @param shortKey      One- to four-byte key for the sub-KLV element
      * @return Matching KLV or null if not found
      */
-    public KLV getSubKLV( int shortKey ){        
-        return getSubKLV( shortKey, this.keyLength, this.lengthEncoding );
-    }   // end getSubKLV
+    //public KLV getSubKLV( int shortKey ){        
+    //    return getSubKLV( shortKey, this.keyLength, this.lengthEncoding );
+    //}   // end getSubKLV
     
     
     
@@ -472,7 +523,7 @@ public class KLV {
     //private Map<KeyLength,
     //            Map<LengthEncoding,
     //                Map<Integer,KLV> >> subKLVCache 
-    public KLV getSubKLV( int shortKey, KeyLength keyLength, LengthEncoding lengthEncoding ){
+    /*public KLV getSubKLV( int shortKey, KeyLength keyLength, LengthEncoding lengthEncoding ){
         
         // Map exists for this keyLength?
         Map<LengthEncoding,Map<Integer,KLV>> k2l = this.subKLVCache.get( keyLength );
@@ -486,14 +537,14 @@ public class KLV {
         if( l2klv == null ){
             int offset = getValueOffset();              // Where payload begins
             int valueLength = getActualValueLength();   // How many bytes in payload
-            l2klv = parseBytes( this.klvBytes, offset, valueLength, keyLength, lengthEncoding );
+            l2klv = KLV.bytesToMap( this.klvBytes, offset, valueLength, keyLength, lengthEncoding );
             k2l.put( lengthEncoding, l2klv );
         }   // end if: null
         
         // KLV exists?
         return l2klv.get( shortKey );
     }   // end getSubKLV
-    
+    */
     
 
     
@@ -590,7 +641,7 @@ public class KLV {
      * not enough bytes were passed in at instantiation. 
      *
      * @return Length of payload as declared in the length field
-     * @see getActualValueLength
+     * @see #getActualValueLength
      */
     public int getDeclaredValueLength(){
         int length = 0;
@@ -717,11 +768,11 @@ public class KLV {
     
     /**
      * <p>Returns up to the number of bytes specified in the length 
-     * fields ({@link #getLength}) unless there are fewer bytes actually 
+     * fields unless there are fewer bytes actually 
      * given than are intended. This is to make the code more robust for 
      * reading corrupted data. 
      * Too few bytes: whatever bytes are available are returned. 
-     * Too many bytes: only up to {@link #getLength} bytes are returned.</p>
+     * Too many bytes: only up to {@link #getDeclaredValueLength} bytes are returned.</p>
      *
      * <p>The bytes are copied from the original array.</p>
      *
@@ -910,8 +961,6 @@ public class KLV {
      * Be sure to check {@link #getBytesOffset}.
      *
      * @return  all the bytes
-     * @see     #getBytesOffset
-     * @see     #getBytesLength
      */
     public byte[] getBytes(){
         return this.klvBytes;
@@ -933,6 +982,45 @@ public class KLV {
     
     
 /* ********  S E T   M E T H O D S  ******** */
+    
+    
+    /**
+     * Sets the key length for how to interpret the
+     * bytes underlying this KLV set. There is no
+     * error checking done, and you certainly might
+     * mess yourself up here. If you actually want to
+     * direct that a KLV set use a new key length,
+     * like when creating new KLV sets as opposed to
+     * reading them, use the {@link #changeKeyLength}
+     * command instead.
+     * 
+     * @param keyLength     The new key length to use interpreting the KLV set
+     * @return              <tt>this</tt> to aid in stringing together commands
+     */
+    public KLV setKeyLength( KeyLength keyLength ){
+        this.keyLength = keyLength;
+        return this;
+    }
+    
+    
+    /**
+     * Sets the length encoding used to interpret the
+     * bytes underlying this KLV set. There is no
+     * error checking done, and you certainly might
+     * mess yourself up here. If you actually want to
+     * direct that a KLV set use a new length encoding,
+     * like when creating new KLV sets as opposed to
+     * reading them, use the {@link #changeLengthEncoding}
+     * command instead.
+     * 
+     * @param lengthEncoding    The new length encoding to use interpreting the KLV set
+     * @return                  <tt>this</tt> to aid in stringing together commands
+     */
+    public KLV setLengthEncoding( LengthEncoding lengthEncoding ){
+        this.lengthEncoding = lengthEncoding;
+        return this;
+    }
+    
     
     
     /**
@@ -1153,11 +1241,28 @@ public class KLV {
         this.klvBytes = newBytes;   // Replace underlying byte array
         this.klvBytesOffset = 0;
         
-        purgeCache();               // Sub KLV elements use different underlying array now
+        //purgeCache();               // Sub KLV elements use different underlying array now
         
         return this;
     }
     
+    
+    
+    
+/* ********  C H A N G E   M E T H O D S  ******** */
+    
+    
+    public KLV changeKeyLength( KeyLength keyLength ){
+        
+        return this;
+    }
+    
+    
+    
+    public KLV changeLengthEncoding( KeyLength keyLength ){
+        
+        return this;
+    }
     
     
     
@@ -1285,18 +1390,25 @@ public class KLV {
     }   // end addSubKLV
     
     
+    
+    
+    
     /**
      * Adds a KLV set to the overall payload using the given
      * key, given sub key length, given length encoding, and the provided data.
      * Underlying byte array is copied and replaced.
      *
-     * @param key The key for the data
-     * @param data The data in the payload
-     * @return <tt>this</tt>, to aid in stringing commands together.
+     * @param subKey                The key for the data
+     * @param subKeyLength          Length of key in sub KLV
+     * @param subLengthEncoding     Length field encoding in sub KLV
+     * @param subValue              The data in the payload
+     * @return                      <tt>this</tt>, to aid in stringing commands together.
      */
-    public KLV addSubKLV( int subKey, KeyLength subKeyLength, LengthEncoding subLengthEncoding, byte[] subValue ){
+    public KLV addSubKLV( int subKey, KeyLength subKeyLength, 
+            LengthEncoding subLengthEncoding, byte[] subValue ){
     
-        return addSubKLV( new KLV( subKey, subKeyLength, subLengthEncoding, subValue, 0, subValue.length ) );
+        return addSubKLV( new KLV( subKey, subKeyLength, subLengthEncoding, 
+                subValue, 0, subValue.length ) );
         
         /*
         
@@ -1428,7 +1540,7 @@ public class KLV {
         
         // Replace underlying byte array
         this.klvBytes = newBytes;   // Replace underlying byte array
-        purgeCache();               // Sub KLV elements use different underlying array now
+        //purgeCache();               // Sub KLV elements use different underlying array now
         
         return this;
     }
@@ -1447,9 +1559,9 @@ public class KLV {
      * but if the payload is changed for any reason, the
      * cache ought to be purged.
      */
-    protected void purgeCache(){
-        subKLVCache = new HashMap<KeyLength,Map<LengthEncoding,Map<Integer,KLV>>>();
-    }
+    //protected void purgeCache(){
+    //    subKLVCache = new HashMap<KeyLength,Map<LengthEncoding,Map<Integer,KLV>>>();
+    //}
     
     
     
@@ -1501,26 +1613,27 @@ public class KLV {
     
     
     /**
-     * Return a mapping of keys (up to four bytes) to KLV
-     * sets based on an assumed key length and length field
-     * encoding scheme.
-     * 
+     * Returns a list of KLV sets in the supplied byte array
+     * assuming the provided key length and length field encoding.
+     *
      * @param bytes             The byte array to parse
      * @param offset            Where to start parsing
      * @param length            How many bytes to parse
      * @param keyLength         Length of keys assumed in the KLV sets
      * @param lengthEncoding    Flag indicating encoding type
-     * @return                  Map of keys to KLVs
+     * @return                  List of KLVs
      */
-    public static Map<Integer,KLV> parseBytes( byte[] bytes, int offset, int length, KeyLength keyLength, LengthEncoding lengthEncoding ){
-        Map<Integer,KLV> map = new HashMap<Integer,KLV>();
+    private static java.util.List<KLV> bytesToList( 
+            byte[] bytes, int offset, int length, 
+            KeyLength keyLength, LengthEncoding lengthEncoding ){
+        LinkedList<KLV> list = new LinkedList<KLV>();
         
         int currentPos = offset;    // Keep track of where we are
         while( currentPos < offset + length ){
             try{
                 KLV klv = new KLV( bytes, currentPos, keyLength, lengthEncoding );
                 currentPos = klv.getValueOffset() + klv.getActualValueLength(); // Skip to end of sub KLV
-                map.put( klv.getShortKey(), klv );
+                list.add( klv );
             } catch( Exception exc ){
                 // Stop trying for more?
                 System.err.println("Stopped parsing with exception: " + exc.getMessage() );
@@ -1529,8 +1642,38 @@ public class KLV {
             
         }   // end while
         
+        return list;
+    }   // end parseBytes
+    
+    
+    
+    /**
+     * Return a mapping of keys (up to four bytes) to KLV
+     * sets based on an assumed key length and length field
+     * encoding scheme. If two KLV subsets are in the payload,
+     * and they each have the same key value, then the latter
+     * one will overwrite the earlier one.
+     * 
+     * @param bytes             The byte array to parse
+     * @param offset            Where to start parsing
+     * @param length            How many bytes to parse
+     * @param keyLength         Length of keys assumed in the KLV sets
+     * @param lengthEncoding    Flag indicating encoding type
+     * @return                  Map of keys to KLVs
+     */
+    private static Map<Integer,KLV> bytesToMap( 
+            byte[] bytes, int offset, int length, 
+            KeyLength keyLength, LengthEncoding lengthEncoding ){
+        
+        Map<Integer,KLV> map = new HashMap<Integer,KLV>();
+
+        for( KLV klv : KLV.bytesToList(bytes, offset, length, keyLength, lengthEncoding) ){
+            map.put( klv.getShortKey(),klv );
+        }
+        
         return map;
     }   // end parseBytes
+    
     
     
     
@@ -1543,7 +1686,7 @@ public class KLV {
      * @param payloadLength     number of bytes in value
      * @return                  byte array with appropriate length field bytes
      */
-    public static byte[] makeLengthField( LengthEncoding lengthEncoding, int payloadLength ){
+    protected static byte[] makeLengthField( LengthEncoding lengthEncoding, int payloadLength ){
         
         // Bytes for length encoding
         byte[] bytes = null;
