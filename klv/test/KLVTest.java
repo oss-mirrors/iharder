@@ -29,13 +29,11 @@ public class KLVTest extends TestCase {
         
         // Meaningless, zero KLV
         klv= new KLV();
-        assertEquals(0, klv.getActualValueLength() );
-        assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
+        assertEquals(0, klv.getLength() );
         
         // One byte payload
         klv = new KLV( new byte[]{ 0, 1, 1 }, KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte );
-        assertEquals(1, klv.getActualValueLength() );
-        assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
+        assertEquals(1, klv.getLength() );
         
         // Length field encoding: One Byte
         for( int i = 0; i <= 255; i++ ){
@@ -46,11 +44,8 @@ public class KLVTest extends TestCase {
                 bytes[j] = (byte)j; // Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
-        
         
         // Length field encoding: Two Bytes
         for( int i = 0; i <= 65535; i+=100 ){ // Max two-byte unsigned integer
@@ -62,9 +57,7 @@ public class KLVTest extends TestCase {
                 bytes[j] = 23;// Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.TwoBytes );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         
@@ -73,7 +66,7 @@ public class KLVTest extends TestCase {
         // which is the max value of a four-byte SIGNED integer.
         // that is, (1<<31)-1, but you'll run out of heap space
         // long before that.
-        for( int i = 0; i <= (1<<25)-1; i+=10000000 ){  // Move through tests faster
+        for( int i = 0; i <= (1<<24)-1; i+=1000000 ){  // Move through tests faster
             byte[] bytes = new byte[ 1 + 4 + i ];
             bytes[0] = 42; // Arbitrary key
             bytes[1] = (byte)(i >> 24);
@@ -84,9 +77,7 @@ public class KLVTest extends TestCase {
                 bytes[j] = 23;// Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.FourBytes );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         
@@ -100,9 +91,7 @@ public class KLVTest extends TestCase {
                 bytes[j] = 23; // Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         // Length field encoding: Basic Encoding Rules (BER)
@@ -112,14 +101,12 @@ public class KLVTest extends TestCase {
             byte[] bytes = new byte[ 1 + 1 + 1 + i ];
             bytes[0] = 42; // Arbitrary key
             bytes[1] = (byte)0x81; // 10000001: One byte follows and is the length field
-            bytes[2] = (byte)(i & 0xFF); // Length of payload
+            bytes[2] = (byte)i; // Length of payload
             for( int j = 3; j < bytes.length; j+=10 ){
                 bytes[j] = 23; // Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         // Length field encoding: Basic Encoding Rules (BER)
@@ -135,9 +122,7 @@ public class KLVTest extends TestCase {
                 bytes[j] = 23;// Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         
@@ -155,9 +140,7 @@ public class KLVTest extends TestCase {
                 bytes[j] = 23;// Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         // Length field encoding: Basic Encoding Rules (BER)
@@ -167,7 +150,7 @@ public class KLVTest extends TestCase {
         // which is the max value of a four-byte SIGNED integer.
         // that is, (2^31)-1, but you'll run out of heap space
         // long before that.
-        for( int i = 0; i <= (1<<25)-1; i+=10000000 ){
+        for( int i = 0; i <= (1<<24)-1; i+=10000000 ){
             byte[] bytes = new byte[ 1 + 1 + 4 + i ];
             bytes[0] = 42; // Arbitrary key
             bytes[1] = (byte)0x84; // 10000100: Four bytes follow that are the length field
@@ -179,9 +162,7 @@ public class KLVTest extends TestCase {
                 bytes[j] = 23;// Arbitrary payload
             }   // end for: j
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
-            assertTrue( klv.getDeclaredValueLength() >= 0 );
-            assertEquals(i, klv.getDeclaredValueLength() );
+            assertEquals(i, klv.getLength() );
         }   // end for: i
         
         
@@ -189,10 +170,8 @@ public class KLVTest extends TestCase {
         // One fake byte, one byte key, one byte length, two byte payload
         {   byte[] bytes = new byte[]{ 86, 42, 2, 23, 24 };
             klv = new KLV( bytes, 1, KLV.KeyLength.OneByte, KLV.LengthEncoding.OneByte );
-            assertEquals(klv.getDeclaredValueLength(), klv.getActualValueLength() );
             assertEquals(42,klv.getShortKey()); // Key
-            assertEquals(1,klv.getBytesOffset());   // Offset
-            assertEquals(2,klv.getDeclaredValueLength());    // Payload
+            assertEquals(2,klv.getLength());    // Payload
             byte[] value = klv.getValue();
             assertEquals(2,value.length);       // Payload
             assertEquals(23,value[0]);          // Payload
@@ -316,7 +295,6 @@ public class KLVTest extends TestCase {
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.TwoBytes );
             byte[]value = klv.getValue();
             assertEquals(i,value.length);
-            assertEquals(3,klv.getValueOffset());
             for( int j = 0; j < i; j++ ){
                 assertEquals(j%255,(value[j]&0xFF)%255);
             }   // end for: j
@@ -324,7 +302,7 @@ public class KLVTest extends TestCase {
         
         
         // Length field encoding: Four Bytes
-        for( int i = 0; i <= (1<<25)-1; i+=10000000 ){  // Move through tests faster
+        for( int i = 0; i <= (1<<24)-1; i+=10000000 ){  // Move through tests faster
             byte[] bytes = new byte[ 1 + 4 + i ];
             bytes[0] = 42; // Arbitrary key
             bytes[1] = (byte)(i >> 24);
@@ -337,7 +315,6 @@ public class KLVTest extends TestCase {
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.FourBytes );
             byte[]value = klv.getValue();
             assertEquals(i,value.length);
-            assertEquals(5,klv.getValueOffset());
             for( int j = 0; j < i; j+=10 ){
                 assertEquals(j%255,(value[j]&0xFF)%255);
             }   // end for: j
@@ -356,7 +333,6 @@ public class KLVTest extends TestCase {
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
             byte[]value = klv.getValue();
             assertEquals(i,value.length);
-            assertEquals(2,klv.getValueOffset());
             for( int j = 0; j < i; j+=10 ){
                 assertEquals(j%255,(value[j]&0xFF)%255);
             }   // end for: j
@@ -377,7 +353,6 @@ public class KLVTest extends TestCase {
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
             byte[]value = klv.getValue();
             assertEquals(i,value.length);
-            assertEquals(3,klv.getValueOffset());
             for( int j = 0; j < i; j+=10 ){
                 assertEquals(j%255,(value[j]&0xFF)%255);
             }   // end for: j
@@ -392,7 +367,7 @@ public class KLVTest extends TestCase {
         // which is the max value of a four-byte SIGNED integer.
         // that is, (2^31)-1, but you'll run out of heap space
         // long before that.
-        for( int i = 0; i <= (1<<25)-1; i+=10000000 ){
+        for( int i = 0; i <= (1<<24)-1; i+=10000000 ){
             byte[] bytes = new byte[ 1 + 1 + 4 + i ];
             bytes[0] = 42; // Arbitrary key
             bytes[1] = (byte)0x84; // 10000100: Four bytes follow that are the length field
@@ -406,7 +381,6 @@ public class KLVTest extends TestCase {
             klv = new KLV( bytes, KLV.KeyLength.OneByte, KLV.LengthEncoding.BER );
             byte[]value = klv.getValue();
             assertEquals(i,value.length);
-            assertEquals(6,klv.getValueOffset());
             for( int j = 0; j < i; j+=10 ){
                 assertEquals(j%255,(value[j]&0xFF)%255);
             }   // end for: j
@@ -427,7 +401,6 @@ public class KLVTest extends TestCase {
                 byte[]value = klv.getValue();
                 assertEquals(kl,klv.getKeyLength().value());
                 assertEquals(i,value.length);
-                assertEquals(kl+1,klv.getValueOffset());
                 for( int j = 0; j < i; j+=10 ){
                     assertEquals(j%255,(value[j]&0xFF)%255);
                 }   // end for: j
@@ -1315,8 +1288,7 @@ public class KLVTest extends TestCase {
             klv = new KLV();
             klv.setValue( new byte[]{ (byte)42 } );
             assertEquals( 42, klv.getValueAs32bitInt() );
-            assertEquals( 1, klv.getActualValueLength() );
-            assertEquals( 1, klv.getDeclaredValueLength() );
+            assertEquals( 1, klv.getLength() );
         }
         
         
@@ -1326,8 +1298,7 @@ public class KLVTest extends TestCase {
             klv.setValue( new byte[]{ (byte)42 } );
             klv.setValue( new byte[0] );
             assertEquals( 0, klv.getValueAs32bitInt() );
-            assertEquals( 0, klv.getActualValueLength() );
-            assertEquals( 0, klv.getDeclaredValueLength() );
+            assertEquals( 0, klv.getLength() );
         }
         
         // Add many bytes
