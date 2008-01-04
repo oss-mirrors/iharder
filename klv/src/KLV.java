@@ -276,15 +276,18 @@ public class KLV {
         
         // Check for null and bad offset
         if( theBytes == null )
-            throw new NullPointerException( "KLV byte array must not be null." );
+            throw new NullPointerException( "KLV: KLV byte array must not be null." );
         if( keyLength == null )      
-            throw new NullPointerException( "Key length must not be null." );
+            throw new NullPointerException( "KLV: Key length must not be null." );
         if( lengthEncoding == null )      
-            throw new NullPointerException( "Length encoding must not be null." );
+            throw new NullPointerException( "KLV: Length encoding must not be null." );
         if( offset < 0 || offset >= theBytes.length )            
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Offset %d is out of range (byte array length: %d).",
+                    "KLV: Offset %d is out of range (byte array length: %d).",
                     offset, theBytes.length ) );
+        
+        this.keyLength      = keyLength;
+        this.lengthEncoding = lengthEncoding;
 
         // These public methods will interpret the byte array
         // and set the appropriate key length and length encoding flags.
@@ -299,7 +302,7 @@ public class KLV {
         int remaining = theBytes.length - valueOffset;
         if( remaining < this.value.length )
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Not enough bytes left in array (%d) for the declared length (%d).",
+                    "KLV: Not enough bytes left in array (%d) for the declared length (%d).",
                     remaining, this.value.length ) );
         
             
@@ -314,11 +317,19 @@ public class KLV {
     
     /**
      * Create a KLV set with the given key, key length, length field encoding,
+     * and no value (payload).
+     */
+    public KLV( int shortKey, KeyLength keyLength, LengthEncoding lengthFieldEncoding ){
+        this( shortKey, keyLength, lengthFieldEncoding, null );
+    }
+    
+    /**
+     * Create a KLV set with the given key, key length, length field encoding,
      * and provided value in a byte array. If <tt>value</tt> is <tt>null</tt>,
      * then a zero-length value is assumed.
      */
     public KLV( int shortKey, KeyLength keyLength, LengthEncoding lengthFieldEncoding, byte[] value ){
-        this( shortKey, keyLength, lengthFieldEncoding, value, 0, value.length );
+        this( shortKey, keyLength, lengthFieldEncoding, value, 0, value == null ? 0 : value.length );
     }
     
     
@@ -331,19 +342,23 @@ public class KLV {
         
         // Check for bad parameters
         if( keyLength == null )
-            throw new NullPointerException( "Key length must not be null." );
+            throw new NullPointerException( "KLV: Key length must not be null." );
         if( lengthEncoding == null )      
-            throw new NullPointerException( "Length encoding must not be null." );
-        if( value != null ){
+            throw new NullPointerException( "KLV: Length encoding must not be null." );
+        if( value == null ){
+            value = new byte[0];
+            offset = 0;
+            length = 0;
+        } else {
             if( offset < 0 )
-                throw new ArrayIndexOutOfBoundsException( "Offset must not be negative: " + offset );
+                throw new ArrayIndexOutOfBoundsException( "KLV: Offset must not be negative: " + offset );
             if( value.length > 0 && offset >= value.length )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Offset %d is out of range (byte array length: %d).",
+                        "KLV: Offset %d is out of range (byte array length: %d).",
                         offset, value.length ) );
             if( length - offset < value.length )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Not enough bytes in array (%d) for declared length (%d).",
+                        "KLV: Not enough bytes in array (%d) for declared length (%d).",
                         value.length, length ) );
         }   // end if: value not null
                 
@@ -361,7 +376,7 @@ public class KLV {
             case OneByte:
                 if( length > (1<<8)-1 )
                     throw new IllegalArgumentException(String.format(
-                            "%s encoding cannot support a %d-byte value.",
+                            "KLV: %s encoding cannot support a %d-byte value.",
                             lengthEncoding, length ) );
                 this.value = new byte[length];
                 System.arraycopy(value,offset, this.value,0,length);
@@ -370,7 +385,7 @@ public class KLV {
             case TwoBytes:
                 if( length > (1<<16)-1 )
                     throw new IllegalArgumentException(String.format(
-                            "%s encoding cannot support a %d-byte value.",
+                            "KLV: %s encoding cannot support a %d-byte value.",
                             lengthEncoding, length ) );
                 this.value = new byte[length];
                 System.arraycopy(value,offset, this.value,0,length);
@@ -401,19 +416,19 @@ public class KLV {
         
         // Check for bad parameters
         if( key == null )
-            throw new NullPointerException( "Key must not be null." );
+            throw new NullPointerException( "KLV: Key must not be null." );
         if( lengthEncoding == null )      
-            throw new NullPointerException( "Length encoding must not be null." );
+            throw new NullPointerException( "KLV: Length encoding must not be null." );
         if( !(key.length==1 || key.length==2 || key.length==4 || key.length==16) )
-            throw new IllegalArgumentException( "Key length must be 1, 2, 4, or 16 bytes, not " + key.length );
+            throw new IllegalArgumentException( "KLV: Key length must be 1, 2, 4, or 16 bytes, not " + key.length );
         if( value != null ){
             if( offset < 0 || offset >= value.length )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Offset %d is out of range (byte array length: %d).",
+                        "KLV: Offset %d is out of range (byte array length: %d).",
                         offset, value.length ) );
             if( offset + length >= value.length )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Not enough bytes in array for declared length of %d.",
+                        "KLV: Not enough bytes in array for declared length of %d.",
                         length ) );
         }   // end if: value not null
         
@@ -430,7 +445,7 @@ public class KLV {
             case OneByte:
                 if( length > (1<<8)-1 )
                     throw new IllegalArgumentException(String.format(
-                            "%s encoding cannot support a %d-byte value.",
+                            "KLV: %s encoding cannot support a %d-byte value.",
                             lengthEncoding, length ) );
                 this.value = new byte[length];
                 System.arraycopy(value,offset, this.value,0,length);
@@ -438,7 +453,7 @@ public class KLV {
             case TwoBytes:
                 if( length > (1<<16)-1 )
                     throw new IllegalArgumentException(String.format(
-                            "%s encoding cannot support a %d-byte value.",
+                            "KLV: %s encoding cannot support a %d-byte value.",
                             lengthEncoding, length ) );
                 this.value = new byte[length];
                 System.arraycopy(value,offset, this.value,0,length);
@@ -457,6 +472,78 @@ public class KLV {
         }   // end else: value not null
     }   // end constructor
     
+    
+    
+    /**
+     * Reads a KLV set from the input stream, blocking until a proper KLV
+     * set can be read.
+     * @param in
+     * @return
+     */
+    public static KLV readKLV( java.io.InputStream in, KeyLength keyLength, LengthEncoding lengthEncoding )
+    throws java.io.IOException{
+        KLV klv = null;
+        
+        // Read key
+        byte[] key = new byte[ keyLength.value() ]; // Size of key
+        for( int i = 0; i < key.length; i++ ){      // For each byte in key
+            //System.out.println( "Trying to read byte for key...");
+            int b = in.read();                      // Carefully read one byte at a time
+            if( b < 0 ){                            // Early end of stream?
+                return null;                        // Not an exception, but unsuccessful still
+            }   // end if: end of stream
+            key[i] = (byte)b;
+        }   // end for: bytes in key
+        
+        // Read length field
+        int length = -1;
+        switch( lengthEncoding ){
+            case OneByte:
+            case TwoBytes:
+            case FourBytes:
+                byte[] lengthField = new byte[ lengthEncoding.value() ];
+                for( int i = 0; i < lengthField.length; i++ ){  // For each byte in lengthField
+                    //System.out.println( "Trying to read byte for length field...");
+                    int b = in.read();                              // Carefully read one byte at a time
+                    if( b < 0 ){                                    // Early end of stream?
+                        return null;                                // Not an exception, but unsuccessful still
+                    }   // end if: end of stream
+                    lengthField[i] = (byte)b;
+                }   // end for: bytes in key
+                length = getInt( lengthField, 0, lengthField.length );
+                break;
+                
+            case BER:
+                
+                break;
+        }   // end switch: length encoding
+        if( length < 0 ){                           // Invalid length
+            throw new java.io.IOException("KLV: Got invalid length: " + length );
+        }
+        
+        byte[] value = new byte[length];
+        int b = -1;
+        for( int i = 0; i < length; i++ ){
+            b = in.read();
+            if( b < 0 )
+                return null; // Early end of stream
+                value[i] = (byte)b;
+        }
+//        int pos = 0;
+//        int read = -1;
+//        while( (read = in.read(value,pos,value.length-pos)) >= 0 ){
+//            // Read some more
+//            pos += read;
+//        }
+//        if( pos < value.length ){       // Didn't read enough: end of stream
+//            return null;
+//        }
+        klv = new KLV();
+        klv.setKey(key);
+        klv.setValue(value);
+        
+        return klv;
+    }
     
     
     
@@ -842,6 +929,111 @@ public class KLV {
     
     
     
+    /** 
+     * Returns the value of the KLV as an array of four byte integers.
+     * @return
+     */
+    public int[] getValueAsIntArray(){
+        byte[] val = getValue();
+        int[] ints = new int[ val.length / 4 ];
+        
+        for( int i = 0; i < ints.length; i++ ){
+            ints[i] = val[i] << 24
+                    | val[i+1] << 16
+                    | val[i+2] << 8
+                    | val[i+3];
+        }
+        
+        return ints;
+    }
+    
+    
+    
+    /**
+     * Reads an 8 bit signed integer from the array at the offset.
+     *
+     * @return an 8-bit unsigned integer
+     */
+    public static int get8bitSignedInt( byte[] data, int offset ){
+        byte value = data[offset];
+        return value;
+    }   // end get8bitSignedInt
+    
+    
+    /**
+     * Reads an 8 bit unsigned integer from the array at the offset.
+     *
+     * @return an 8-bit unsigned integer
+     */
+    public static int get8bitUnsignedInt( byte[] data, int offset ){
+        int value = data[offset] & 0xFF;
+        return value;
+    }   // end getValueAs8bitSignedInt
+    
+    
+    public static int get16bitSignedInt( byte[] data, int offset ){
+        short value = 0;
+        int shortLen = 2;
+        for( int i = 0; i < shortLen; i++ )
+            value |= (data[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return value;
+    }   // end getValueAs16bitSignedInt
+    
+    
+    public static int get16bitUnsignedInt( byte[] data, int offset ){
+        int value = 0;
+        int shortLen = 2;
+        for( int i = 0; i < shortLen; i++ )
+            value |= (data[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return value;
+    }   // end getValueAs16bitUnsignedInt
+    
+    
+    public static int get32bitInt( byte[] data, int offset ){
+        int value = 0;
+        int shortLen = 4;
+        for( int i = 0; i < shortLen; i++ )
+            value |= (data[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return value;
+    }   // end getValueAs32bitSignedInt
+    
+    
+    /**
+     * Attemps to read an int from the array based on the offset
+     * and length provided. 8bit and 16bit ints are assumed
+     * to be unsigned.
+     * 
+     * @param data
+     * @param offset
+     * @param length
+     * @return
+     * @throw IllegalArgumentException if length is not 1, 2, or 4.
+     */
+    public static int getInt( byte[] data, int offset, int length ){
+        int value = 0;
+        switch( length ){
+            case 1:
+                value = get8bitUnsignedInt(data,offset);
+                break;
+            case 2:
+                value = get16bitUnsignedInt(data,offset);
+                break;
+            case 4:
+                value = get32bitInt(data,offset);
+                break;
+            default:
+                throw new IllegalArgumentException("KLV: Illegal length: " + length );
+        }
+        return value;
+    }
+    
+    
+    
+    // TODO: add statics for 64 bit, float, double, string, etc
+    
+    
+    
+    
     
 /* ********  S E T   K E Y   M E T H O D S  ******** */
     
@@ -888,7 +1080,7 @@ public class KLV {
     
     public KLV setKey( byte[] key ){
         if( key == null )
-            throw new NullPointerException( "Key must not be null." );
+            throw new NullPointerException( "KLV: Key must not be null." );
         
         switch( key.length ){
         case 1:
@@ -897,7 +1089,7 @@ public class KLV {
         case 16:
             return this.setKey( key, 0, KeyLength.valueOf(key.length));
         default:
-            throw new IllegalArgumentException("Invalid key size: " + key.length );
+            throw new IllegalArgumentException("KLV: Invalid key size: " + key.length );
         }
     }
     
@@ -919,16 +1111,16 @@ public class KLV {
         
         // Check for null and bad offset
         if( inTheseBytes == null )
-            throw new NullPointerException( "Byte array must not be null." );
+            throw new NullPointerException( "KLV: Byte array must not be null." );
         if( keyLength == null )      
-            throw new NullPointerException( "Key length must not be null." );
+            throw new NullPointerException( "KLV: Key length must not be null." );
         if( offset < 0 || offset >= inTheseBytes.length )            
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Offset %d is out of range (byte array length: %d).",
+                    "KLV: Offset %d is out of range (byte array length: %d).",
                     offset, inTheseBytes.length ) );
         if( inTheseBytes.length - offset < keyLength.value() )
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Not enough bytes for %d-byte key.", keyLength.value() ) );
+                    "KLV: Not enough bytes for %d-byte key.", keyLength.value() ) );
         
         // Set key according to length of key
         this.keyLength = keyLength;
@@ -959,7 +1151,7 @@ public class KLV {
             break;
             
         default:
-            throw new IllegalArgumentException("Unknown key length: " + keyLength );
+            throw new IllegalArgumentException("KLV: Unknown key length: " + keyLength );
         }
         return this;
     }   // end setKey
@@ -1086,12 +1278,12 @@ public class KLV {
         
         // Check for null and bad offset
         if( inTheseBytes == null )
-            throw new NullPointerException( "Byte array must not be null." );
+            throw new NullPointerException( "KLV: Byte array must not be null." );
         if( lengthEncoding == null )      
-            throw new NullPointerException( "Length encoding must not be null." );
+            throw new NullPointerException( "KLV: Length encoding must not be null." );
         if( offset < 0 || offset >= inTheseBytes.length )            
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Offset %d is out of range (byte array length: %d).",
+                    "KLV: Offset %d is out of range (byte array length: %d).",
                     offset, inTheseBytes.length ) );
         
         int length = 0;
@@ -1100,7 +1292,7 @@ public class KLV {
         case OneByte:
             if( inTheseBytes.length - offset < 1 )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Not enough bytes for %s length encoding.", lengthEncoding ) );
+                        "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
             length = inTheseBytes[offset] & 0xFF;
             setLength( length, lengthEncoding );
             valueOffset = offset + 1;
@@ -1109,7 +1301,7 @@ public class KLV {
         case TwoBytes:
             if( inTheseBytes.length - offset < 2 )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Not enough bytes for %s length encoding.", lengthEncoding ) );
+                        "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
             length  = (inTheseBytes[offset]   & 0xFF) << 8;
             length |=  inTheseBytes[offset+1] & 0xFF;
             setLength( length, lengthEncoding );
@@ -1119,7 +1311,7 @@ public class KLV {
         case FourBytes:
             if( inTheseBytes.length - offset < 4 )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Not enough bytes for %s length encoding.", lengthEncoding ) );
+                        "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
             length  = (inTheseBytes[offset]   & 0xFF) << 24;
             length |= (inTheseBytes[offset+1] & 0xFF) << 16;
             length |= (inTheseBytes[offset+2] & 0xFF) << 8;
@@ -1140,7 +1332,7 @@ public class KLV {
         // exactly illegal KLV notation either.
             if( inTheseBytes.length - offset < 1 )
                 throw new ArrayIndexOutOfBoundsException( String.format(
-                        "Not enough bytes for %s length encoding.", lengthEncoding ) );
+                        "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
             int ber = inTheseBytes[offset] & 0xFF;
             
             // Easy case: low seven bits is length
@@ -1154,7 +1346,7 @@ public class KLV {
                 int following = ber & 0x7F; // Low seven bits
                 if( inTheseBytes.length - offset < following+1 )
                     throw new ArrayIndexOutOfBoundsException( String.format(
-                            "Not enough bytes for %s length encoding.", lengthEncoding ) );
+                            "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
                 for( int i = 0; i < following; i++ ){
                     length |= (inTheseBytes[offset+1+i] & 0xFF) << (following-1-i)*8;
                 }
@@ -1198,21 +1390,21 @@ public class KLV {
      */
     public KLV setLength( int length, LengthEncoding lengthEncoding ){
         if( length < 0 )
-            throw new IllegalArgumentException( "Length must not be negative: " + length );
+            throw new IllegalArgumentException( "KLV: Length must not be negative: " + length );
         
         // Check errors based on length encoding
         switch( lengthEncoding ){
         case OneByte:
             if( length > (1<<8)-1 )
                 throw new IllegalArgumentException(String.format(
-                        "%s encoding cannot support a %d-byte value.",
+                        "KLV: %s encoding cannot support a %d-byte value.",
                         lengthEncoding, length ) );
             break;
 
         case TwoBytes:
             if( length > (1<<16)-1 )
                 throw new IllegalArgumentException(String.format(
-                        "%s encoding cannot support a %d-byte value.",
+                        "KLV: %s encoding cannot support a %d-byte value.",
                         lengthEncoding, length ) );
             break;
 
@@ -1262,17 +1454,17 @@ public class KLV {
         
         // Check for null and bad offset
         if( newValue == null )
-            throw new NullPointerException( "Byte array must not be null." );
+            throw new NullPointerException( "KLV: Byte array must not be null." );
         if( offset < 0 )
-            throw new ArrayIndexOutOfBoundsException( "Offset must not be negative: " + offset );
+            throw new ArrayIndexOutOfBoundsException( "KLV: Offset must not be negative: " + offset );
         if( value.length > 0 && offset >= value.length ) // Empty arrays are OK
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Offset %d is out of range (byte array length: %d).",
+                    "KLV: Offset %d is out of range (byte array length: %d).",
                     offset, value.length ) );
         
         if( newValue.length - offset < length ){
             throw new IllegalArgumentException(String.format(
-                    "Number of bytes (%d) and offset (%d) not sufficient for declared length (%d).",
+                    "KLV: Number of bytes (%d) and offset (%d) not sufficient for declared length (%d).",
                     newValue.length, offset, length ));
         }
         
@@ -1282,14 +1474,14 @@ public class KLV {
         case OneByte:
             if( length > (1<<8)-1 )
                 throw new IllegalArgumentException(String.format(
-                        "%s encoding cannot support a %d-byte value.",
+                        "KLV: %s encoding cannot support a %d-byte value.",
                         this.lengthEncoding, length ) );
             break;
 
         case TwoBytes:
             if( length > (1<<16)-1 )
                 throw new IllegalArgumentException(String.format(
-                        "%s encoding cannot support a %d-byte value.",
+                        "KLV: %s encoding cannot support a %d-byte value.",
                         this.lengthEncoding, length ) );
             break;
 
@@ -1474,6 +1666,21 @@ public class KLV {
     
     
     
+    public KLV addSubKLV( int subKey, int[] data ){
+        byte[] bData = new byte[data.length*4];
+        
+        for( int i = 0; i < data.length; i++ ){
+            bData[i*4]  = (byte)(data[i] >> 24);
+            bData[i*4+1]= (byte)(data[i] >> 16);
+            bData[i*4+2]= (byte)(data[i] >>  8);
+            bData[i*4+3]= (byte)(data[i]);
+        }
+        addSubKLV(subKey, bData);
+        
+        return this;
+    }
+    
+    
     
     /**
      * Adds the provided bytes to the payload and adjusts the length field.
@@ -1500,14 +1707,14 @@ public class KLV {
     public KLV addPayload( byte[] bytes, int offset, int length ){
         
         if( bytes == null )
-            throw new NullPointerException( "Byte array must not be null." );
+            throw new NullPointerException( "KLV: Byte array must not be null." );
         if( offset < 0 || offset >= bytes.length )            
             throw new ArrayIndexOutOfBoundsException( String.format(
-                    "Offset %d is out of range (byte array length: %d).",
+                    "KLV: Offset %d is out of range (byte array length: %d).",
                     offset, bytes.length ) );
         if( bytes.length - offset < length ){
             throw new IllegalArgumentException(String.format(
-                    "Number of bytes (%d) and offset (%d) not sufficient for declared length (%d).",
+                    "KLV: Number of bytes (%d) and offset (%d) not sufficient for declared length (%d).",
                     bytes.length, offset, length ));
         }
         
@@ -1518,14 +1725,14 @@ public class KLV {
         case OneByte:
             if( newLength > (1<<8)-1 )
                 throw new IllegalArgumentException(String.format(
-                        "%s encoding cannot support a %d-byte value.",
+                        "KLV: %s encoding cannot support a %d-byte value.",
                         this.lengthEncoding, newLength ) );
             break;
 
         case TwoBytes:
             if( newLength > (1<<16)-1 )
                 throw new IllegalArgumentException(String.format(
-                        "%s encoding cannot support a %d-byte value.",
+                        "KLV: %s encoding cannot support a %d-byte value.",
                         this.lengthEncoding, newLength ) );
             break;
 
@@ -1618,7 +1825,7 @@ public class KLV {
                 list.add( klv );
             } catch( Exception exc ){
                 // Stop trying for more?
-                System.err.println("Stopped parsing with exception: " + exc.getMessage() );
+                System.err.println("KLV: Stopped parsing with exception: " + exc.getMessage() );
                 break;
             }   // end catch
             
@@ -1678,7 +1885,7 @@ public class KLV {
             case OneByte: 
                 if( payloadLength > 255 ) 
                     throw new IllegalArgumentException( 
-                        String.format("Too much data (%d bytes) for one-byte length field encoding.", payloadLength) );
+                        String.format("KLV: Too much data (%d bytes) for one-byte length field encoding.", payloadLength) );
                 bytes = new byte[]{ (byte)payloadLength };
                 break;
             
@@ -1686,7 +1893,7 @@ public class KLV {
             case TwoBytes: 
                 if( payloadLength > 65535 ) 
                     throw new IllegalArgumentException( 
-                        String.format("Too much data (%d bytes) for two-byte length field encoding.", payloadLength) );
+                        String.format("KLV: Too much data (%d bytes) for two-byte length field encoding.", payloadLength) );
                 bytes = new byte[]{ (byte)(payloadLength >> 8), (byte)payloadLength };
                 break;
                 
@@ -1728,7 +1935,7 @@ public class KLV {
                 }   // end else: long form
                     break;
             default:
-                throw new IllegalStateException( "Unknown length field encoding flag: " + lengthEncoding );
+                throw new IllegalStateException( "KLV: Unknown length field encoding flag: " + lengthEncoding );
         }   // end switch
         return bytes;
     }   // end makeLengthField
