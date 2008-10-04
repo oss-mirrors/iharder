@@ -22,7 +22,7 @@
  * Change Log:
  * </p>
  * <ul>
- *  <li>v2.3 - This is not a drop-in replacement! This is two years of comments
+ *  <li>v2.2.3 - This is not a drop-in replacement! This is two years of comments
  *   and bug fixes queued up and finally executed. Thanks to everyone who sent
  *   me stuff, and I'm sorry I wasn't able to distribute your fixes to everyone else.
  *   Much bad coding was cleaned up including throwing exceptions where necessary 
@@ -167,8 +167,7 @@ public class Base64
     
     /** The 64 valid Base64 values. */
     /* Host platform me be something funny like EBCDIC, so we hardcode these values. */
-    private final static byte[] _STANDARD_ALPHABET =
-    {
+    private final static byte[] _STANDARD_ALPHABET = {
         (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
         (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L', (byte)'M', (byte)'N',
         (byte)'O', (byte)'P', (byte)'Q', (byte)'R', (byte)'S', (byte)'T', (byte)'U', 
@@ -186,8 +185,7 @@ public class Base64
      * Translates a Base64 value to either its 6-bit reconstruction value
      * or a negative number indicating some other meaning.
      **/
-    private final static byte[] _STANDARD_DECODABET =
-    {   
+    private final static byte[] _STANDARD_DECODABET = {
         -9,-9,-9,-9,-9,-9,-9,-9,-9,                 // Decimal  0 -  8
         -5,-5,                                      // Whitespace: Tab and Linefeed
         -9,-9,                                      // Decimal 11 - 12
@@ -229,8 +227,7 @@ public class Base64
      * <a href="http://www.faqs.org/rfcs/rfc3548.html">http://www.faqs.org/rfcs/rfc3548.html</a>.
      * Notice that the last two bytes become "hyphen" and "underscore" instead of "plus" and "slash."
      */
-    private final static byte[] _URL_SAFE_ALPHABET =
-    {
+    private final static byte[] _URL_SAFE_ALPHABET = {
       (byte)'A', (byte)'B', (byte)'C', (byte)'D', (byte)'E', (byte)'F', (byte)'G',
       (byte)'H', (byte)'I', (byte)'J', (byte)'K', (byte)'L', (byte)'M', (byte)'N',
       (byte)'O', (byte)'P', (byte)'Q', (byte)'R', (byte)'S', (byte)'T', (byte)'U', 
@@ -246,8 +243,7 @@ public class Base64
     /**
      * Used in decoding URL- and Filename-safe dialects of Base64.
      */
-    private final static byte[] _URL_SAFE_DECODABET =
-    {   
+    private final static byte[] _URL_SAFE_DECODABET = {
       -9,-9,-9,-9,-9,-9,-9,-9,-9,                 // Decimal  0 -  8
       -5,-5,                                      // Whitespace: Tab and Linefeed
       -9,-9,                                      // Decimal 11 - 12
@@ -294,8 +290,7 @@ public class Base64
      * and it is described here:
      * <a href="http://www.faqs.org/qa/rfcc-1940.html">http://www.faqs.org/qa/rfcc-1940.html</a>.
      */
-    private final static byte[] _ORDERED_ALPHABET =
-    {
+    private final static byte[] _ORDERED_ALPHABET = {
       (byte)'-',
       (byte)'0', (byte)'1', (byte)'2', (byte)'3', (byte)'4',
       (byte)'5', (byte)'6', (byte)'7', (byte)'8', (byte)'9',
@@ -313,8 +308,7 @@ public class Base64
     /**
      * Used in decoding the "ordered" dialect of Base64.
      */
-    private final static byte[] _ORDERED_DECODABET =
-    {   
+    private final static byte[] _ORDERED_DECODABET = {
       -9,-9,-9,-9,-9,-9,-9,-9,-9,                 // Decimal  0 -  8
       -5,-5,                                      // Whitespace: Tab and Linefeed
       -9,-9,                                      // Decimal 11 - 12
@@ -363,12 +357,14 @@ public class Base64
      * in which case one of them will be picked, though there is
      * no guarantee as to which one will be picked.
      */
-    private final static byte[] getAlphabet( int options )
-    {
-        if( (options & URL_SAFE) == URL_SAFE ) return _URL_SAFE_ALPHABET;
-        else if( (options & ORDERED) == ORDERED ) return _ORDERED_ALPHABET;
-        else return _STANDARD_ALPHABET;
-
+    private final static byte[] getAlphabet( int options ) {
+        if ((options & URL_SAFE) == URL_SAFE) {
+            return _URL_SAFE_ALPHABET;
+        } else if ((options & ORDERED) == ORDERED) {
+            return _ORDERED_ALPHABET;
+        } else {
+            return _STANDARD_ALPHABET;
+        }
     }	// end getAlphabet
 
 
@@ -379,8 +375,7 @@ public class Base64
      * in which case one of them will be picked, though there is
      * no guarantee as to which one will be picked.
      */
-    private final static byte[] getDecodabet( int options )
-    {
+    private final static byte[] getDecodabet( int options ) {
             if( (options & URL_SAFE) == URL_SAFE ) return _URL_SAFE_DECODABET;
             else if( (options & ORDERED) == ORDERED ) return _ORDERED_DECODABET;
             else return _STANDARD_DECODABET;
@@ -398,8 +393,8 @@ public class Base64
      * <strong>feel free to delete this method (in fact you probably should)
      * if you're embedding this code into a larger program.</strong>
      */
-    public final static void main( String[] args ) throws java.io.IOException
-    {
+    public final static void main( String[] args ) 
+    throws java.io.IOException {
         if( args.length < 3 ){
             usage("Not enough arguments.");
         }   // end if: args.length < 3
@@ -424,8 +419,7 @@ public class Base64
      *
      * @param msg A message to include with usage info.
      */
-    private final static void usage( String msg )
-    {
+    private final static void usage( String msg ) {
         System.err.println( msg );
         System.err.println( "Usage: java Base64 -e|-d inputfile outputfile" );
     }   // end usage
@@ -449,8 +443,7 @@ public class Base64
      * @return four byte array in Base64 notation.
      * @since 1.5.1
      */
-    private static byte[] encode3to4( byte[] b4, byte[] threeBytes, int numSigBytes, int options )
-    {
+    private static byte[] encode3to4( byte[] b4, byte[] threeBytes, int numSigBytes, int options ) {
         encode3to4( threeBytes, 0, numSigBytes, b4, 0, options );
         return b4;
     }   // end encode3to4
@@ -480,10 +473,10 @@ public class Base64
      * @since 1.3
      */
     private static byte[] encode3to4( 
-     byte[] source, int srcOffset, int numSigBytes,
-     byte[] destination, int destOffset, int options )
-    {
-		byte[] ALPHABET = getAlphabet( options ); 
+    byte[] source, int srcOffset, int numSigBytes,
+    byte[] destination, int destOffset, int options ) {
+        
+	byte[] ALPHABET = getAlphabet( options ); 
 	
         //           1         2         3  
         // 01234567890123456789012345678901 Bit position
@@ -548,8 +541,7 @@ public class Base64
      * @since 1.4
      */
     public static String encodeObject( java.io.Serializable serializableObject )
-    throws java.io.IOException
-    {
+    throws java.io.IOException {
         return encodeObject( serializableObject, NO_OPTIONS );
     }   // end encodeObject
     
@@ -745,6 +737,7 @@ public class Base64
      */
     public static String encodeBytes( byte[] source, int off, int len, int options ) 
     throws java.io.IOException {
+        
         // Isolate options
         int dontBreakLines = ( options & DONT_BREAK_LINES );
         int gzip           = ( options & GZIP   );
@@ -862,8 +855,10 @@ public class Base64
      *         or there is not enough room in the array.
      * @since 1.3
      */
-    private static int decode4to3( byte[] source, int srcOffset, byte[] destination, int destOffset, int options )
-    {
+    private static int decode4to3( 
+    byte[] source, int srcOffset, 
+    byte[] destination, int destOffset, int options ) {
+        
         // Lots of error checking and exception throwing
         if( source == null ){
             throw new NullPointerException( "Source array was null." );
@@ -945,8 +940,8 @@ public class Base64
      * @since 1.3
      */
     public static byte[] decode( byte[] source, int off, int len, int options )
-    throws java.io.IOException
-    {
+    throws java.io.IOException {
+        
         // Lots of error checking and exception throwing
         if( source == null ){
             throw new NullPointerException( "Source array was null." );
@@ -1035,6 +1030,7 @@ public class Base64
      */
     public static byte[] decode( String s, int options ) 
     throws java.io.IOException {
+        
         if( s == null ){
             throw new NullPointerException( "Input string was null." );
         }   // end if
@@ -1108,6 +1104,7 @@ public class Base64
      */
     public static Object decodeToObject( String encodedObject )
     throws java.io.IOException, java.lang.ClassNotFoundException {
+        
         // Decode and gunzip if necessary
         byte[] objBytes = decode( encodedObject );
         
@@ -1153,6 +1150,7 @@ public class Base64
      */
     public static void encodeToFile( byte[] dataToEncode, String filename )
     throws java.io.IOException {
+        
         if( dataToEncode == null ){
             throw new NullPointerException( "Data to encode was null." );
         }   // end iff
@@ -1188,6 +1186,7 @@ public class Base64
      */
     public static void decodeToFile( String dataToDecode, String filename )
     throws java.io.IOException {
+        
         Base64.OutputStream bos = null;
         try{
             bos = new Base64.OutputStream( 
@@ -1222,6 +1221,7 @@ public class Base64
      */
     public static byte[] decodeFromFile( String filename )
     throws java.io.IOException {
+        
         byte[] decodedData = null;
         Base64.InputStream bis = null;
         try
@@ -1281,6 +1281,7 @@ public class Base64
      */
     public static String encodeFromFile( String filename )
     throws java.io.IOException {
+        
         String encodedData = null;
         Base64.InputStream bis = null;
         try
@@ -1324,6 +1325,7 @@ public class Base64
      */
     public static void encodeFileToFile( String infile, String outfile )
     throws java.io.IOException {
+        
         String encoded = Base64.encodeFromFile( infile );
         java.io.OutputStream out = null;
         try{
@@ -1351,6 +1353,7 @@ public class Base64
      */
     public static void decodeFileToFile( String infile, String outfile )
     throws java.io.IOException {
+        
         byte[] decoded = Base64.decodeFromFile( infile );
         java.io.OutputStream out = null;
         try{
@@ -1380,8 +1383,8 @@ public class Base64
      * @see Base64
      * @since 1.3
      */
-    public static class InputStream extends java.io.FilterInputStream
-    {
+    public static class InputStream extends java.io.FilterInputStream {
+        
         private boolean encode;         // Encoding or decoding
         private int     position;       // Current position in the buffer
         private byte[]  buffer;         // Small buffer holding converted data
@@ -1427,6 +1430,7 @@ public class Base64
          * @since 2.0
          */
         public InputStream( java.io.InputStream in, int options ) {
+            
             super( in );
             this.options      = options; // Record for later
             this.breakLines   = (options & DONT_BREAK_LINES) != DONT_BREAK_LINES;
@@ -1448,6 +1452,7 @@ public class Base64
          */
         @Override
         public int read() throws java.io.IOException  {
+            
             // Do we need to get data?
             if( position < 0 ) {
                 if( encode ) {
@@ -1555,8 +1560,8 @@ public class Base64
          * @since 1.3
          */
         @Override
-        public int read( byte[] dest, int off, int len ) throws java.io.IOException
-        {
+        public int read( byte[] dest, int off, int len ) 
+        throws java.io.IOException {
             int i;
             int b;
             for( i = 0; i < len; i++ ) {
@@ -1591,8 +1596,8 @@ public class Base64
      * @see Base64
      * @since 1.3
      */
-    public static class OutputStream extends java.io.FilterOutputStream
-    {
+    public static class OutputStream extends java.io.FilterOutputStream {
+        
         private boolean encode;
         private int     position;
         private byte[]  buffer;
@@ -1665,8 +1670,8 @@ public class Base64
          * @since 1.3
          */
         @Override
-        public void write(int theByte) throws java.io.IOException
-        {
+        public void write(int theByte) 
+        throws java.io.IOException {
             // Encoding suspended?
             if( suspendEncoding ) {
                 super.out.write( theByte );
@@ -1720,7 +1725,8 @@ public class Base64
          * @since 1.3
          */
         @Override
-        public void write( byte[] theBytes, int off, int len ) throws java.io.IOException {
+        public void write( byte[] theBytes, int off, int len ) 
+        throws java.io.IOException {
             // Encoding suspended?
             if( suspendEncoding ) {
                 super.out.write( theBytes, off, len );
@@ -1758,7 +1764,7 @@ public class Base64
          * @since 2.2.2
          */
         @Override
-        public void flush() throws java.io.IOException{
+        public void flush() throws java.io.IOException {
             flushBase64();
             super.flush();
         }
@@ -1769,8 +1775,7 @@ public class Base64
          * @since 1.3
          */
         @Override
-        public void close() throws java.io.IOException
-        {
+        public void close() throws java.io.IOException {
             // 1. Ensure that pending characters are written
             flush();
 
