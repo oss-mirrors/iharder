@@ -93,7 +93,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
         newSocketIndicator = new IndicatorLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Udp Server Example");
+        setTitle("Tcp Server Example");
 
         jLabel1.setText("Port:");
 
@@ -320,53 +320,58 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     }
 
     public void tcpServerSocketReceived(TcpServer.Event evt) {
-        this.newSocketIndicator.indicate();
-        final Socket socket = evt.getSocket();
+        this.newSocketIndicator.indicate();                     // New incoming connection: flash indicator at user
+        final Socket socket = evt.getSocket();                  // Get the TCP socket
         
-        JPanel panel = new JPanel( new BorderLayout() );
+        JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
         JScrollPane pane = new JScrollPane();
         final JTextArea area = new JTextArea();
         pane.setViewportView(area);
         panel.add( pane, BorderLayout.CENTER );
         this.tabbedPane.add(""+(sockCtr++), panel);
         
+        // Process the long-lived connection on another thread
+        // so that we can immediately return control to the server
+        // and wait for another connection while this one persists.
+        // Ordinary servers would not user a SwingWorker since they
+        // would not be tying themselves to the Swing GUI.
         SwingWorker<Socket,String> sw = new SwingWorker<Socket,String>() {
             @Override
             protected Socket doInBackground() throws Exception {
-                InputStream in = socket.getInputStream();
-                OutputStream out = socket.getOutputStream();
+                InputStream in = socket.getInputStream();       // Data in from remote user
+                OutputStream out = socket.getOutputStream();    // Response to remote user
                 
-                byte[] buff = new byte[1024];
-                int num = -1;
-                while( (num = in.read(buff)) >= 0 ){
-                    publish( new String( buff, 0, num ) );
-                }   // end while
+                byte[] buff = new byte[1024];                   // Arbitrary buffer size
+                int num = -1;                                   // Number of bytes read
+                while( (num = in.read(buff)) >= 0 ){            // Read bytes into buffer
+                    publish( new String( buff, 0, num ) );      // Published bytes will be made available
+                }   // end while                                // on the event thread for GUI display.
                 
-                return socket;
+                return socket;                                  // The socket is closed.
             }
             
             @Override
-            protected void process( List<String> chunks ){
-                StringBuilder sb = new StringBuilder();
+            protected void process( List<String> chunks ){      // Queued up published byte arrays
+                StringBuilder sb = new StringBuilder();         // Put together into one string
                 for( String s: chunks ){
                     sb.append(s);
                 }   // end for: each string
-                area.setText( area.getText() + sb );
+                area.setText( area.getText() + sb );            // Add string to JTextArea
             }   // end process
             
             @Override
             protected void done(){
                 try{
-                    Socket socket = get();
-                    try{ socket.close(); }
+                    Socket socket = get();                      // As provided by doInBackground()
+                    try{ socket.close(); }                      // Try to close socket if needed
                     catch( Exception e1 ){}
-                    area.setText( area.getText() + "\nDone." );
+                    area.setText( area.getText() + "\nSocket Closed." );
                 } catch( Exception exc ){
                     exc.printStackTrace();
                 }
             }   // end done
         };
-        sw.execute();
+        sw.execute();                                           // Don't forget to start the thread!
         
     }
     

@@ -118,7 +118,7 @@ public class TcpServer {
     /**
      * Constructs a new TcpServer that will listen on the default port 8000
      * (but not until {@link #start} is called).
-     * The I/O thread will be in daemon mode.
+     * The I/O thread will not be in daemon mode.
      */
     public TcpServer(){
     }
@@ -126,7 +126,7 @@ public class TcpServer {
     /**
      * Constructs a new TcpServer that will listen on the given port 
      * (but not until {@link #start} is called).
-     * The I/O thread will be in daemon mode.
+     * The I/O thread will not be in daemon mode.
      */
     public TcpServer( int port ){
         this.port = port;
@@ -173,7 +173,6 @@ public class TcpServer {
                 
             } else {                                        // Our own threads
                 this.ioThread = new Thread( run, this.getClass().getName() );   // Named
-                this.ioThread.setDaemon(true);                                  // In daemon mode
             }
 
             setState( State.STARTING );                     // Update state
