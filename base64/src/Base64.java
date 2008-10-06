@@ -22,7 +22,7 @@
  * Change Log:
  * </p>
  * <ul>
- *  <li>v2.2.3 - This is not a drop-in replacement! This is two years of comments
+ *  <li>v2.3 - This is not a drop-in replacement! This is two years of comments
  *   and bug fixes queued up and finally executed. Thanks to everyone who sent
  *   me stuff, and I'm sorry I wasn't able to distribute your fixes to everyone else.
  *   Much bad coding was cleaned up including throwing exceptions where necessary 
@@ -96,7 +96,7 @@
  *
  * @author Robert Harder
  * @author rob@iharder.net
- * @version 2.2.2 PENDING
+ * @version 2.3 PENDING
  */
 public class Base64
 {
@@ -376,10 +376,13 @@ public class Base64
      * no guarantee as to which one will be picked.
      */
     private final static byte[] getDecodabet( int options ) {
-            if( (options & URL_SAFE) == URL_SAFE ) return _URL_SAFE_DECODABET;
-            else if( (options & ORDERED) == ORDERED ) return _ORDERED_DECODABET;
-            else return _STANDARD_DECODABET;
-
+        if( (options & URL_SAFE) == URL_SAFE) {
+            return _URL_SAFE_DECODABET;
+        } else if ((options & ORDERED) == ORDERED) {
+            return _ORDERED_DECODABET;
+        } else {
+            return _STANDARD_DECODABET;
+        }
     }	// end getAlphabet
 
 
@@ -527,9 +530,9 @@ public class Base64
      * Serializes an object and returns the Base64-encoded
      * version of that serialized object.  
      *  
-     * <p>As of v 2.2.2, if the object
+     * <p>As of v 2.3, if the object
      * cannot be serialized or there is another error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned a null value, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -551,9 +554,9 @@ public class Base64
      * Serializes an object and returns the Base64-encoded
      * version of that serialized object.
      *  
-     * <p>As of v 2.2.2, if the object
+     * <p>As of v 2.3, if the object
      * cannot be serialized or there is another error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned a null value, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -633,8 +636,8 @@ public class Base64
      * Encodes a byte array into Base64 notation.
      * Does not GZip-compress data.
      *  
-     * <p>As of v 2.2.2, if there is an error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is an error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned a null value, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -663,8 +666,8 @@ public class Base64
      * Example: <code>encodeBytes( myData, Base64.GZIP | Base64.DONT_BREAK_LINES )</code>
      *
      *  
-     * <p>As of v 2.2.2, if there is an error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is an error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned a null value, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -686,8 +689,8 @@ public class Base64
      * Encodes a byte array into Base64 notation.
      * Does not GZip-compress data.
      *  
-     * <p>As of v 2.2.2, if there is an error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is an error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned a null value, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -719,8 +722,8 @@ public class Base64
      * Example: <code>encodeBytes( myData, Base64.GZIP | Base64.DONT_BREAK_LINES )</code>
      *
      *  
-     * <p>As of v 2.2.2, if there is an error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is an error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned a null value, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -944,7 +947,7 @@ public class Base64
         
         // Lots of error checking and exception throwing
         if( source == null ){
-            throw new NullPointerException( "Source array was null." );
+            throw new NullPointerException( "Cannot decode null source array." );
         }   // end if
         if( off < 0 || off + len >= source.length ){
             throw new IllegalArgumentException( String.format(
@@ -1137,8 +1140,8 @@ public class Base64
     /**
      * Convenience method for encoding data to a file.
      *
-     * <p>As of v 2.2.2, if there is a error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is a error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned false, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -1174,8 +1177,8 @@ public class Base64
     /**
      * Convenience method for decoding data to a file.
      *
-     * <p>As of v 2.2.2, if there is a error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is a error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned false, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -1209,8 +1212,8 @@ public class Base64
      * Convenience method for reading a base64-encoded
      * file and decoding it.
      *
-     * <p>As of v 2.2.2, if there is a error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is a error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned false, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -1269,8 +1272,8 @@ public class Base64
      * Convenience method for reading a binary file
      * and base64-encoding it.
      *
-     * <p>As of v 2.2.2, if there is a error,
-     * the method will throw an IOException. <b>This is new to v2.2.2!</b>
+     * <p>As of v 2.3, if there is a error,
+     * the method will throw an IOException. <b>This is new to v2.3!</b>
      * In earlier versions, it just returned false, but
      * in retrospect that's a pretty poor way to handle it.</p>
      * 
@@ -1761,7 +1764,7 @@ public class Base64
         /**
          * Flushes the stream (and the enclosing streams).
          * @throws java.io.IOException
-         * @since 2.2.2
+         * @since 2.3
          */
         @Override
         public void flush() throws java.io.IOException {
