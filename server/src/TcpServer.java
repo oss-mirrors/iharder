@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.Executor;
 
 
 
@@ -109,6 +110,7 @@ public class TcpServer {
     private Thread ioThread;                                                            // Performs IO
     private ServerSocket tcpServer;                                                  // The server
     private Socket socket;
+    private Executor executor;
     //private DatagramPacket packet = new DatagramPacket( new byte[64*1024], 64*1024 );   // Shared datagram
     
     
@@ -411,10 +413,32 @@ public class TcpServer {
     
     /** Fires event on calling thread. */
     protected synchronized void fireTcpServerStateChanged() {
-        Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
-        for( Listener l : ll ){
-            l.tcpServerStateChanged(this.event);
-        }   // end for: each listener
+        final Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
+        if( this.executor == null ){
+            for( Listener l : ll ){
+                try{
+                    l.tcpServerStateChanged(this.event);
+                } catch( Exception exc ){
+                    LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
+                }   // end catch
+            }   // end for: each listener
+        } else {
+            try{
+                this.executor.execute( new Runnable(){
+                    public void run(){
+                        for( Listener l : ll ){
+                            try{
+                                l.tcpServerStateChanged(event);
+                            } catch( Exception exc ){
+                                LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
+                            }   // end catch
+                        }   // end for: each listener
+                    }   // end run
+                }); // end execute
+            } catch( Exception exc ){
+                LOGGER.warning("Supplied Executor " + this.executor + " threw an exception: " + exc.getMessage() );
+            }   // end catch
+        }   // end else: other thread
      }  // end fireTcpServerStateChanged
     
     
