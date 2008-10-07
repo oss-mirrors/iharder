@@ -9,6 +9,7 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.Executor;
 
 
 
@@ -87,6 +88,7 @@ public class UdpServer {
     private final static int PORT_DEFAULT = 8000;
     private int port = PORT_DEFAULT;
     
+    
     /**
      * The multicast group property <tt>group</tt> used with
      * the property change listeners and the preferences,
@@ -96,6 +98,7 @@ public class UdpServer {
     public final static String GROUP_PROP = "group";
     private final static String GROUP_DEFAULT = null;
     private String group = GROUP_DEFAULT;
+    
     
     
     /**
@@ -426,9 +429,14 @@ public class UdpServer {
     
     /** Fires event on calling thread. */
     protected synchronized void fireUdpServerPacketReceived() {
+        
         Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
         for( Listener l : ll ){
-            l.udpServerPacketReceived(this.event);
+            try{
+                l.udpServerPacketReceived(event);
+            } catch( Exception exc ){
+                LOGGER.warning("UdpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
+            }   // end catch
         }   // end for: each listener
      }  // end fireUdpServerPacketReceived
     
@@ -436,9 +444,14 @@ public class UdpServer {
     
     /** Fires event on calling thread. */
     protected synchronized void fireUdpServerStateChanged() {
-        Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
+        
+        final Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
         for( Listener l : ll ){
-            l.udpServerStateChanged(this.event);
+            try{
+                l.udpServerStateChanged(event);
+            } catch( Exception exc ){
+                LOGGER.warning("UdpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
+            }   // end catch
         }   // end for: each listener
      }  // end fireUdpServerStateChanged
     

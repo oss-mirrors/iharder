@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.text.ParseException;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFormattedTextField;
@@ -52,6 +53,8 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     private void myInitComponents(){
         
         TcpServer.setLoggingLevel(Level.OFF);
+        
+        this.tcpServer.setExecutor( Executors.newCachedThreadPool() );
         
         this.tcpServer.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
