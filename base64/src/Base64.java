@@ -2,6 +2,12 @@
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
  * <p>Homepage: <a href="http://iharder.net/base64">http://iharder.net/base64</a>.</p>
+ * 
+ * <p>Example:</p>
+ * 
+ * <code>String encoded = Base64.encode( myByteArray );</code>
+ * 
+ * <code>byte[] myByteArray = Base64.decode( encoded );</code>
  *
  * <p>The <tt>options</tt> parameter, which appears in a few places, is used to pass 
  * several pieces of information to the encoder. In the "higher level" methods such as 
@@ -22,7 +28,7 @@
  * Change Log:
  * </p>
  * <ul>
- *  <li>v2.3 - This is not a drop-in replacement! This is two years of comments
+ *  <li>v2.3 - <strong>This is not a drop-in replacement!</strong> This is two years of comments
  *   and bug fixes queued up and finally executed. Thanks to everyone who sent
  *   me stuff, and I'm sorry I wasn't able to distribute your fixes to everyone else.
  *   Much bad coding was cleaned up including throwing exceptions where necessary 
