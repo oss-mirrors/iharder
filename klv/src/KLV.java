@@ -34,7 +34,7 @@ import java.util.*;
  * <p>This code is released into the Public Domain. Enjoy.</p>
  *
  * @author Robert Harder
- * @author rharder@users.sourceforge.net
+ * @author rharder # users.sourceforge.net
  * @version 0.3
  */
 public class KLV {
@@ -329,7 +329,10 @@ public class KLV {
      * then a zero-length value is assumed.
      */
     public KLV( int shortKey, KeyLength keyLength, LengthEncoding lengthFieldEncoding, byte[] value ){
-        this( shortKey, keyLength, lengthFieldEncoding, value, 0, value == null ? 0 : value.length );
+        this( shortKey, keyLength, lengthFieldEncoding, 
+                value == null ? new byte[0] : value, 
+                0, 
+                value == null ? 0 : value.length );
     }
     
     
