@@ -371,6 +371,8 @@ public class TcpServer {
      * Sets the new port on which the server will attempt to listen.
      * If the server is already listening, then it will attempt to
      * restart on the new port, generating start and stop events.
+     * If the old port and new port are the same, events will be
+     * fired, but the server will not actually reset.
      * @param port the new port for listening
      * @throws IllegalArgumentException if port is outside 0..65535
      */
@@ -382,7 +384,7 @@ public class TcpServer {
             
         int oldVal = this.port;
         this.port = port;
-        if( getState() == State.STARTED ){
+        if( getState() == State.STARTED && oldVal != port ){
             reset();
         }   // end if: is running
 
