@@ -6,6 +6,9 @@
 
 package net.iharder.script;
 
+import java.util.List;
+import javax.script.*;
+
 /**
  *
  * @author  rob
@@ -15,6 +18,28 @@ public class Main extends javax.swing.JFrame {
     /** Creates new form Main */
     public Main() {
         initComponents();
+        myInitComponents();
+    }
+    
+    private void myInitComponents(){
+        
+        ScriptEngineManager manager = new ScriptEngineManager();
+        List<ScriptEngineFactory> factories = manager.getEngineFactories();
+        for( ScriptEngineFactory f : factories ){
+            addFactory( f );
+        }
+    }
+    
+    
+    /**
+     * Adds a ScriptEngineFactory to the layout.
+     * Call on event thread.
+     * @param factory
+     */
+    private void addFactory( ScriptEngineFactory factory ){
+        EnginePane pane = new EnginePane();
+        pane.setFactory( factory );
+        this.enginesTabbedPane.add( pane );
     }
 
     /** This method is called from within the constructor to
@@ -26,6 +51,8 @@ public class Main extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        enginesTabbedPane = new javax.swing.JTabbedPane();
+
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Java Scripting Explorer");
 
@@ -33,11 +60,17 @@ public class Main extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 540, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(enginesTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 514, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 408, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(57, 57, 57)
+                .addComponent(enginesTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 341, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         pack();
@@ -55,6 +88,7 @@ public class Main extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTabbedPane enginesTabbedPane;
     // End of variables declaration//GEN-END:variables
 
 }
