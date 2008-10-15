@@ -83,7 +83,6 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        server = new UdpServer();
         tcpServer = new TcpServer();
         jLabel1 = new javax.swing.JLabel();
         portField = new javax.swing.JFormattedTextField(0);
@@ -209,7 +208,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
             field.commitEdit();//GEN-LAST:event_portFieldActionPerformed
             this.tcpServer.setPort((Integer)field.getValue());
         } catch (ParseException ex) {
-            Logger.getLogger(UdpExample.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TcpExample.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -234,7 +233,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
             field.commitEdit();
             this.tcpServer.setPort((Integer)field.getValue());
         } catch (ParseException ex) {
-            Logger.getLogger(UdpExample.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(TcpExample.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_portFieldFocusLost
 
@@ -283,7 +282,6 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     private javax.swing.JPanel jPanel1;
     private IndicatorLabel newSocketIndicator;
     private javax.swing.JFormattedTextField portField;
-    private UdpServer server;
     private javax.swing.JButton startStopButton;
     private javax.swing.JLabel stateLabel;
     private javax.swing.JTabbedPane tabbedPane;
