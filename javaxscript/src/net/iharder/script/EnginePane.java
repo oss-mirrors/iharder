@@ -43,36 +43,46 @@ public class EnginePane extends javax.swing.JPanel {
         this.engVerLabel.setToolTipText("factory.getLanguageName()\nfactory.getLanguageVersion()");
 
         {   // Names
-            StringBuilder sb = new StringBuilder("<html>");
+            StringBuilder sb = new StringBuilder();
             for( String n : names ){
                 sb.append( n + ", " );
             }   // end for: each name
-            sb.delete( sb.length()-2, sb.length()-1 ).append("</html>");
-            this.namesLabel.setText( sb.toString() );
+            if( sb.length() >= 2 ){
+                sb.delete( sb.length()-2, sb.length()-1 );
+            }   // end if: not empty
+            this.namesLabel.setText( "<html>" + sb + "</html>" );
             this.namesLabel.setToolTipText( "factory.getNames()" );
         }   // end block: Names
 
         {   // Mime types
-            StringBuilder sb = new StringBuilder("<html>");
+            StringBuilder sb = new StringBuilder();
             for( String s : mimes ){
                 sb.append( s + ", " );
             }   // end for: each name
-            sb.delete( sb.length()-2, sb.length()-1 ).append("</html>");
-            this.mimesLabel.setText( sb.toString() );
+            if( sb.length() >= 2 ){
+                sb.delete( sb.length()-2, sb.length()-1 );
+            }   // end if: not empty
+            this.mimesLabel.setText( "<html>" + sb + "</html>" );
             this.mimesLabel.setToolTipText( "factory.getMimeTypes()" );
         }   // end block: Mime types
 
         {   // Extensions
-            StringBuilder sb = new StringBuilder("<html>");
+            StringBuilder sb = new StringBuilder();
             for( String s : exts ){
                 sb.append( s + ", " );
             }   // end for: each name
-            sb.delete( sb.length()-2, sb.length()-1 ).append("</html>");
-            this.extsLabel.setText( sb.toString() );
+            if( sb.length() >= 2 ){
+                sb.delete( sb.length()-2, sb.length()-1 );
+            }   // end if: not empty
+            this.extsLabel.setText( "<html>" + sb + "</html>" );
             this.extsLabel.setToolTipText( "factory.getExtensions()" );
         }   // end block: Mime types
 
+        this.jCheckBox1.setToolTipText( "engine.put( \"checkbox\", jCheckBox1 )" );
+        this.jProgressBar1.setToolTipText( "engine.put( \"progressbar\", jProgressBar1 )" );
+        this.jTextField1.setToolTipText( "engine.put( \"textfield\", jTextField1 )" );
         this.scriptInArea.setText( factory.getOutputStatement("hello, world") );
+        this.scriptInArea.requestFocusInWindow();
         
     }
 
@@ -97,39 +107,10 @@ public class EnginePane extends javax.swing.JPanel {
 
         // Create script engine if needed
         if( this.engine == null ){
-
             this.engine = this.factory.getScriptEngine();
-            this.engine.getContext().setWriter( new PrintWriter( new Writer() {
-                StringBuilder sb = new StringBuilder();
-                @Override
-                public void write(char[] cbuf, int off, int len) throws IOException {
-                    sb.append(cbuf, off, len);
-                }   // end write
-
-                @Override
-                public void flush() throws IOException {
-                    final String s = sb.toString();
-                    sb = new StringBuilder();
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            scriptOutArea.setText( scriptOutArea.getText() + s );
-                        }
-                    });
-                }   // end flush
-
-                @Override
-                public void close() throws IOException {
-                    final String s = sb.toString();
-                    sb = new StringBuilder();
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            scriptOutArea.setText( scriptOutArea.getText() + s );
-                        }
-                    });
-                }   // end close
-            }));
+            this.engine.put( "checkbox", this.jCheckBox1 );
+            this.engine.put( "progressbar", this.jProgressBar1 );
+            this.engine.put( "textfield", this.jTextField1 );
         }   // end if: engine == null;
 
         return this.engine;
@@ -164,9 +145,16 @@ public class EnginePane extends javax.swing.JPanel {
         scriptInArea = new javax.swing.JTextArea();
         runButton = new javax.swing.JButton();
         reuseEngine = new javax.swing.JCheckBox();
+        progressBar = new javax.swing.JProgressBar();
+        jCheckBox1 = new javax.swing.JCheckBox();
+        jProgressBar1 = new javax.swing.JProgressBar();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jTextField1 = new javax.swing.JTextField();
         scriptOutPanel = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         scriptOutArea = new javax.swing.JTextArea();
+        jLabel1 = new javax.swing.JLabel();
 
         jPanel1.setLayout(new java.awt.GridBagLayout());
 
@@ -256,14 +244,18 @@ public class EnginePane extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(0, 4, 4, 0);
         jPanel1.add(extsLabel, gridBagConstraints);
 
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Sample Scripting"));
+        jPanel2.setLayout(new java.awt.BorderLayout());
 
+        jSplitPane1.setBorder(null);
         jSplitPane1.setDividerLocation(200);
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane1.setResizeWeight(0.9);
 
+        scriptInPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Script Source"));
+
         scriptInArea.setFont(new java.awt.Font("Monospaced", 0, 14)); // NOI18N
         scriptInArea.setRows(2);
+        scriptInArea.setTabSize(4);
         jScrollPane1.setViewportView(scriptInArea);
 
         runButton.setText("Run");
@@ -276,74 +268,100 @@ public class EnginePane extends javax.swing.JPanel {
         reuseEngine.setText("Maintain engine state");
         reuseEngine.setToolTipText("Maintains variables, function declarations, etc across multiple runs");
 
+        jCheckBox1.setText("I am in a variable called \"checkbox\"");
+
+        jLabel2.setText("I am in a variable called \"progressbar\"");
+
+        jLabel3.setText("I am in a variable called \"textfield\"");
+
+        jTextField1.setColumns(12);
+
         javax.swing.GroupLayout scriptInPanelLayout = new javax.swing.GroupLayout(scriptInPanel);
         scriptInPanel.setLayout(scriptInPanelLayout);
         scriptInPanelLayout.setHorizontalGroup(
             scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(scriptInPanelLayout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scriptInPanelLayout.createSequentialGroup()
-                        .addGap(10, 10, 10)
+                    .addGroup(scriptInPanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jCheckBox1))
+                    .addGroup(scriptInPanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel3)
+                        .addGap(22, 22, 22)
+                        .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(scriptInPanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(scriptInPanelLayout.createSequentialGroup()
+                        .addGap(20, 20, 20)
                         .addComponent(reuseEngine)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 309, Short.MAX_VALUE)
-                        .addComponent(runButton))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 523, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 308, Short.MAX_VALUE)
+                        .addComponent(runButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 563, Short.MAX_VALUE))
                 .addContainerGap())
         );
         scriptInPanelLayout.setVerticalGroup(
             scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scriptInPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 141, Short.MAX_VALUE)
+                .addComponent(jCheckBox1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(runButton)
-                    .addComponent(reuseEngine))
+                    .addComponent(jLabel3)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel2)
+                    .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 243, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(reuseEngine)
+                        .addComponent(runButton))
+                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
 
         jSplitPane1.setLeftComponent(scriptInPanel);
 
+        scriptOutPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Script Output"));
+
         scriptOutArea.setEditable(false);
         scriptOutArea.setRows(2);
         jScrollPane2.setViewportView(scriptOutArea);
+
+        jLabel1.setFont(jLabel1.getFont().deriveFont(jLabel1.getFont().getStyle() & ~java.awt.Font.BOLD));
+        jLabel1.setText("<html>Unfortunately, some scripting engines hard code their output to System.out (jython, for example) in which case you will have to look at the console, if you can, to see output.</html>");
 
         javax.swing.GroupLayout scriptOutPanelLayout = new javax.swing.GroupLayout(scriptOutPanel);
         scriptOutPanel.setLayout(scriptOutPanelLayout);
         scriptOutPanelLayout.setHorizontalGroup(
             scriptOutPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(scriptOutPanelLayout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scriptOutPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 523, Short.MAX_VALUE)
+                .addGroup(scriptOutPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 553, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 553, Short.MAX_VALUE))
                 .addContainerGap())
         );
         scriptOutPanelLayout.setVerticalGroup(
             scriptOutPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(scriptOutPanelLayout.createSequentialGroup()
-                .addContainerGap()
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
         jSplitPane1.setRightComponent(scriptOutPanel);
 
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jSplitPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 398, Short.MAX_VALUE)
-                .addContainerGap())
-        );
+        jPanel2.add(jSplitPane1, java.awt.BorderLayout.CENTER);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -352,7 +370,7 @@ public class EnginePane extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 585, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 585, Short.MAX_VALUE))
                 .addContainerGap())
         );
@@ -362,23 +380,53 @@ public class EnginePane extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 446, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
 
     private void runButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runButtonActionPerformed
         this.runButton.setEnabled(false);
+        this.progressBar.setIndeterminate(true);
         final String script = this.scriptInArea.getText();
         final boolean reuse = this.reuseEngine.isSelected();
         this.scriptOutArea.setText("");
 
-        SwingWorker<Object,Object> sw = new SwingWorker<Object,Object>(){
+        SwingWorker<Object,String> sw = new SwingWorker<Object,String>(){
             @Override
             protected Object doInBackground() throws Exception {
                 ScriptEngine e = getEngine( reuse );
+                e.getContext().setWriter( new PrintWriter( new Writer() {
+                    StringBuilder sb = new StringBuilder();
+                    @Override
+                    public void write(char[] cbuf, int off, int len) throws IOException {
+                        sb.append(cbuf, off, len);
+                    }   // end write
+
+                    @Override
+                    public void flush() throws IOException {
+                        final String s = sb.toString();
+                        publish(s);
+                    }   // end flush
+
+                    @Override
+                    public void close() throws IOException {
+                        final String s = sb.toString();
+                        publish(s);
+                    }   // end close
+                }));
+                
                 return e.eval(script);
             }   // end doInBackground
+            
+            @Override
+            protected void process( List<String> chunks ){
+                StringBuilder sb = new StringBuilder();
+                for( String s : chunks ){
+                    sb.append(s);
+                }   // end for: each string
+                scriptOutArea.setText( scriptOutArea.getText() + sb );
+            }
 
             @Override
             protected void done(){
@@ -392,6 +440,7 @@ public class EnginePane extends javax.swing.JPanel {
                     Logger.getLogger(EnginePane.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 runButton.setEnabled(true);
+                progressBar.setIndeterminate(false);
             }   // end done
         };
         sw.execute();
@@ -403,17 +452,24 @@ public class EnginePane extends javax.swing.JPanel {
     private javax.swing.JLabel engVerLabel;
     private javax.swing.JLabel evL;
     private javax.swing.JLabel extsLabel;
+    private javax.swing.JCheckBox jCheckBox1;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JProgressBar jProgressBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSplitPane jSplitPane1;
+    private javax.swing.JTextField jTextField1;
     private javax.swing.JLabel langVerLabel;
     private javax.swing.JLabel lvL;
     private javax.swing.JLabel mL;
     private javax.swing.JLabel mimesLabel;
     private javax.swing.JLabel nL;
     private javax.swing.JLabel namesLabel;
+    private javax.swing.JProgressBar progressBar;
     private javax.swing.JCheckBox reuseEngine;
     private javax.swing.JButton runButton;
     private javax.swing.JTextArea scriptInArea;
