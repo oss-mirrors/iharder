@@ -2,6 +2,7 @@
 import java.util.concurrent.ThreadFactory;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.IOException;
 import java.net.MulticastSocket;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -14,7 +15,7 @@ import java.util.LinkedList;
 
 /**
  * <p>A robust class for establishing a UDP server and manipulating
- * its listening port and optionally a multicast group to join.
+ * its listening port and optionally a multicast groups to join.
  * The {@link Event}s and property change events make
  * it an appropriate tool in a threaded, GUI application.
  * It is almost identical in design to the TcpServer class that
@@ -25,10 +26,12 @@ import java.util.LinkedList;
  * <pre> UdpServer server = new UdpServer();
  * server.start();</pre>
  * 
- * <p>Of course it won't be much help unless you register as a listener
+ * <p>Of course it won't be much help unless you know which port it's
+ * listening on and you register as a listener
  * so you'll know when a <tt>java.net.DatagramPacket</tt> has come in:</p>
  * 
- * <pre> server.addUdpServerListener( new UdpServer.Adapter(){
+ * <pre> server.setPort(1234);
+ *  server.addUdpServerListener( new UdpServer.Adapter(){
  *     public void udpServerPacketReceived( UdpServer.Event evt ){
  *         DatagramPacket packet = evt.getPacket();
  *         ...
@@ -37,7 +40,7 @@ import java.util.LinkedList;
  * 
  * <p>The server runs on one thread, and all events are fired on that thread.
  * If you have to offload heavy processing to another thread, be sure to
- * make a copy of the datagram contents since it will be reused the next
+ * make a copy of the datagram data array since it will be reused the next
  * time around. You may use the {@link Event#getPacketAsBytes}
  * command as a convenient way to make a copy of the byte array.</p>
  * 
@@ -89,14 +92,14 @@ public class UdpServer {
     
     
     /**
-     * The multicast group property <tt>group</tt> used with
+     * The multicast groups property <tt>groups</tt> used with
      * the property change listeners and the preferences,
      * if a preferences object is given. If the multicast
-     * group is null, then no multicast group will be joined.
+     * groups is null, then no multicast groups will be joined.
      */
-    public final static String GROUP_PROP = "group";
-    private final static String GROUP_DEFAULT = null;
-    private String group = GROUP_DEFAULT;
+    public final static String GROUPS_PROP = "groups";
+    private final static String GROUPS_DEFAULT = null;
+    private String groups = GROUPS_DEFAULT;
     
     
     
@@ -118,10 +121,10 @@ public class UdpServer {
     private Event event = new Event(this);                                              // Shared event
     private PropertyChangeSupport propSupport = new PropertyChangeSupport(this);        // Properties
     
-    private UdpServer This = this;                                                      // To aid in synchronizing
+    private final UdpServer This = this;                                                // To aid in synchronizing
     private ThreadFactory threadFactory;                                                // Optional thread factory
     private Thread ioThread;                                                            // Performs IO
-    private MulticastSocket udpServer;                                                  // The server
+    private MulticastSocket mSocket;                                                    // The server
     private DatagramPacket packet = new DatagramPacket( new byte[64*1024], 64*1024 );   // Shared datagram
     
     
@@ -140,6 +143,7 @@ public class UdpServer {
      * Constructs a new UdpServer that will listen on the given port 
      * (but not until {@link #start} is called).
      * The I/O thread will not be in daemon mode.
+     * @param port The initial port on which to listen
      */
     public UdpServer( int port ){
         this.port = port;
@@ -149,6 +153,8 @@ public class UdpServer {
      * Constructs a new UdpServer that will listen on the given port 
      * (but not until {@link #start} is called). The provided
      * ThreadFactory will be used when starting and running the server.
+     * @param port The initial port on which to listen
+     * @param factory The thread factory used to generate a thread to run the server
      */
     public UdpServer( int port, ThreadFactory factory ){
         this.port = port;
@@ -177,7 +183,7 @@ public class UdpServer {
                 public void run() {
                     runServer();                            // This runs for a long time
                     ioThread = null;          
-                    setState( State.STOPPED );              // Clear thread
+                    recordState( State.STOPPED );              // Clear thread
                 }   // end run
             };  // end runnable
             
@@ -188,7 +194,7 @@ public class UdpServer {
                 this.ioThread = new Thread( run, this.getClass().getName() );   // Named
             }
 
-            setState( State.STARTING );                     // Update state
+            recordState( State.STARTING );                     // Update state
             this.ioThread.start();                          // Start thread
         }   // end if: currently stopped
     }   // end start
@@ -204,9 +210,9 @@ public class UdpServer {
      */
     public synchronized void stop(){
         if( this.currentState == State.STARTED ){   // Only if already STARTED
-            setState( State.STOPPING );             // Mark as STOPPING
-            if( this.udpServer != null ){           // 
-                this.udpServer.close();
+            recordState( State.STOPPING );             // Mark as STOPPING
+            if( this.mSocket != null ){           //
+                this.mSocket.close();
             }   // end if: not null
         }   // end if: already STARTED
     }   // end stop
@@ -225,11 +231,12 @@ public class UdpServer {
     
     
     /**
-     * Sets the state and fires an event. This method
+     * Records (sets) the state and fires an event. This method
      * does not change what the server is doing, only
      * what is reflected by the currentState variable.
+     * @param state The new state of the server
      */
-    protected synchronized void setState( State state ){
+    protected synchronized void recordState( State state ){
         this.currentState = state;
         fireUdpServerStateChanged();
     }
@@ -280,30 +287,36 @@ public class UdpServer {
      */
     protected void runServer(){
         try{
-            this.udpServer = new MulticastSocket( getPort() );              // Create server
+            this.mSocket = new MulticastSocket( getPort() );                // Create server
             LOGGER.info("UDP Server established on port " + getPort() );
             
-            String group = getGroup();                                      // Get multicast group
-            if( group != null ){                                            // Not null?
-                this.udpServer.joinGroup( InetAddress.getByName(group) );   // Join group
-                LOGGER.info( "UDP Server joined multicast group " + group );
-            }   // end if: got group
+            String gg = getGroups();                                        // Get multicast groups
+            String[] proposed = gg.split("[\\s,]+");                        // Split along whitespace
+            for( String p : proposed ){                                     // See which ones are valid
+                try{
+                    this.mSocket.joinGroup( InetAddress.getByName(p) );
+                    LOGGER.info( "UDP Server joined multicast group " + p );
+                } catch( IOException exc ){
+                    LOGGER.warning("Could not join " + p + " as a multicast group: " + exc.getMessage() );
+                }   // end catch
+            }   // end for: each proposed
+
             
-            setState( State.STARTED );                                      // Mark as started
+            recordState( State.STARTED );                                   // Mark as started
             LOGGER.info( "UDP Server listening..." );
             
-            while( !this.udpServer.isClosed() ){
+            while( !this.mSocket.isClosed() ){
                 synchronized( This ){
                     if( this.currentState == State.STOPPING ){
                         LOGGER.info( "Stopping UDP Server by request." );
-                        this.udpServer.close();
+                        this.mSocket.close();
                     }   // end if: stopping
                 }   // end sync
                 
-                if( !this.udpServer.isClosed() ){
+                if( !this.mSocket.isClosed() ){
                     
                     ////////  B L O C K I N G
-                    this.udpServer.receive(packet);
+                    this.mSocket.receive(packet);
                     ////////  B L O C K I N G
                     
                     if( LOGGER.isLoggable(Level.FINE) ){
@@ -317,18 +330,18 @@ public class UdpServer {
         } catch( Exception exc ){
             synchronized( This ){
                 if( this.currentState == State.STOPPING ){  // User asked to stop
-                    this.udpServer.close();
+                    this.mSocket.close();
                     LOGGER.info( "Udp Server closed normally." );
                 } else {
                     LOGGER.log( Level.WARNING, "Server closed unexpectedly: " + exc.getMessage(), exc );
                 }   // end else
             }   // end sync
         } finally {
-            setState( State.STOPPING );
-            if( this.udpServer != null ){
-                this.udpServer.close();
+            recordState( State.STOPPING );
+            if( this.mSocket != null ){
+                this.mSocket.close();
             }   // end if: not null
-            this.udpServer = null;
+            this.mSocket = null;
         }
     }
     
@@ -336,6 +349,7 @@ public class UdpServer {
     
     /**
      * Returns the last DatagramPacket received.
+     * @return the shared DatagramPacket
      */
     public synchronized DatagramPacket getPacket(){
         return this.packet;
@@ -380,34 +394,35 @@ public class UdpServer {
 /* ********  M U L T I C A S T   G R O U P  ******** */
     
     /**
-     * Returns the multicast group to which the server has joined.
+     * Returns the multicast groups to which the server has joined.
      * May be null.
-     * @return The multicast group
+     * @return The multicast groups
      */
-    public synchronized String getGroup(){
-        return this.group;
+    public synchronized String getGroups(){
+        return this.groups;
     }
     
     /**
-     * Sets the new multicast group to which the server will join.
+     * <p>Sets the new multicast groups to which the server will join.
      * If the server is already listening, then it will attempt to
-     * restart, generating start and stop events.
+     * restart, generating start and stop events. </p>
+     *
+     * <p>The list of groups may be whitespace- and/or comma-separated.
+     * When the server starts up (or restarts), the list will be
+     * parsed, and only legitimate groups will actually be joined.</p>
      * May be null.
      * 
-     * @param group the new group to join
+     * @param group the new groups to join
      */
-    public synchronized void setGroup( String group ){
-        if( "".equals(group) ){
-            group = null;
-        }
-        
-        String oldVal = this.group;
-        this.group = group;
+    public synchronized void setGroups( String group ){
+
+        String oldVal = this.groups;
+        this.groups = group;
         if( getState() == State.STARTED ){
             reset();
         }   // end if: is running
 
-        firePropertyChange( GROUP_PROP, oldVal, group  );
+        firePropertyChange( GROUPS_PROP, oldVal, this.groups  );
     }   
     
     
@@ -415,18 +430,24 @@ public class UdpServer {
     
     
 
-    /** Adds a {@link Listener}. */    
+    /** Adds a {@link Listener}.
+     * @param l the UdpServer.Listener
+     */
     public synchronized void addUdpServerListener(Listener l) {
         listeners.add(l);
     }
 
-    /** Removes a {@link Listener}. */
+    /** Removes a {@link Listener}.
+     * @param l the UdpServer.Listener
+     */
     public synchronized void removeUdpServerListener(Listener l) {
         listeners.remove(l);
     }
     
     
-    /** Fires event on calling thread. */
+    /** 
+     * Fires event on calling thread.
+     */
     protected synchronized void fireUdpServerPacketReceived() {
         
         Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
@@ -441,7 +462,9 @@ public class UdpServer {
     
     
     
-    /** Fires event on calling thread. */
+    /** 
+     * Fires event on calling thread.
+     */
     protected synchronized void fireUdpServerStateChanged() {
         
         final Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
@@ -466,7 +489,7 @@ public class UdpServer {
      */
     public synchronized void fireProperties(){
         firePropertyChange( PORT_PROP, null, getPort()  );      // Port
-        firePropertyChange( GROUP_PROP, null, getGroup()  );    // Multicast group
+        firePropertyChange( GROUPS_PROP, null, getGroups()  );    // Multicast groups
     }
     
     
@@ -489,25 +512,35 @@ public class UdpServer {
     
     
     
-    /** Add a property listener. */
+    /** Add a property listener.
+     * @param listener the property change listener
+     */
     public synchronized void addPropertyChangeListener( PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(listener);
     }
 
     
-    /** Add a property listener for the named property. */
+    /** Add a property listener for the named property.
+     * @param property the sole property name for which to register
+     * @param listener the property change listener
+     */
     public synchronized void addPropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(property,listener);
     }
     
     
-    /** Remove a property listener. */
+    /** Remove a property listener.
+     * @param listener the property change listener
+     */
     public synchronized void removePropertyChangeListener( PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(listener);
     }
 
     
-    /** Remove a property listener for the named property. */
+    /** Remove a property listener for the named property.
+     * @param property the sole property name for which to stop receiving events
+     * @param listener the property change listener
+     */
     public synchronized void removePropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(property,listener);
     }

@@ -3,14 +3,11 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.net.DatagramPacket;
 import java.text.ParseException;
-import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFormattedTextField;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 
 
 
@@ -57,8 +54,9 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
                         }   // end run
                     }); // end swing utilities
                     
-                } else if( UdpServer.GROUP_PROP.equals( evt.getPropertyName() ) ){
+                } else if( UdpServer.GROUPS_PROP.equals( evt.getPropertyName() ) ){
                     final Object newVal = evt.getNewValue();
+                    System.out.println("New groups: " + newVal );
                     SwingUtilities.invokeLater( new Runnable() {
                         public void run() {
                             groupField.setText( newVal == null ? "" : newVal.toString() );
@@ -243,7 +241,7 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
     private void groupFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_groupFieldActionPerformed
         JTextField field = (JTextField)evt.getSource();
         String val = field.getText();
-        this.udpServer.setGroup(val);
+        this.udpServer.setGroups(val);
     }//GEN-LAST:event_groupFieldActionPerformed
 
     private void startStopButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startStopButtonActionPerformed
@@ -274,7 +272,7 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
     private void groupFieldFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_groupFieldFocusLost
         JTextField field = (JTextField)evt.getSource();
         String val = field.getText();
-        this.udpServer.setGroup(val);
+        this.udpServer.setGroups(val);
     }//GEN-LAST:event_groupFieldFocusLost
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
