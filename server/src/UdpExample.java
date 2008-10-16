@@ -3,12 +3,14 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.net.DatagramPacket;
 import java.text.ParseException;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFormattedTextField;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 
 
@@ -361,10 +363,17 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
         }); // end swing utilities
     }
 
+    
     public void udpServerPacketReceived(UdpServer.Event evt) {
         this.receiveIndicator.indicate();
-        DatagramPacket packet = evt.getUdpServer().getPacket();
+        DatagramPacket packet = evt.getUdpServer().getPacket(); // Not actually using this here.
         final String s = evt.getPacketAsString();
+        
+        // A more efficient way would be to subclass SwingWorker
+        // and make a public "myPublish" method, and use that to
+        // call SwingWorker's publish method, queuing up items
+        // to process in a batch.
+        // Still, this works fine for demonstration.
         SwingUtilities.invokeLater( new Runnable() {
             public void run() {
                 incomingArea.setText( incomingArea.getText() + s + "\n" );
