@@ -229,12 +229,12 @@
                               <Group type="102" alignment="0" attributes="0">
                                   <EmptySpace min="-2" pref="20" max="-2" attributes="0"/>
                                   <Component id="reuseEngine" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace pref="308" max="32767" attributes="0"/>
+                                  <EmptySpace pref="282" max="32767" attributes="0"/>
                                   <Component id="runButton" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace type="unrelated" max="-2" attributes="0"/>
                                   <Component id="progressBar" min="-2" pref="43" max="-2" attributes="0"/>
                               </Group>
-                              <Component id="jScrollPane1" alignment="0" pref="563" max="32767" attributes="0"/>
+                              <Component id="jScrollPane1" alignment="0" pref="561" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
@@ -255,7 +255,7 @@
                               <Component id="jProgressBar1" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace type="separate" max="-2" attributes="0"/>
-                          <Component id="jScrollPane1" pref="243" max="32767" attributes="0"/>
+                          <Component id="jScrollPane1" pref="36" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
                               <Group type="103" alignment="1" groupAlignment="3" attributes="0">
@@ -348,8 +348,8 @@
                       <Group type="102" alignment="1" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="1" attributes="0">
-                              <Component id="jScrollPane2" alignment="0" pref="553" max="32767" attributes="0"/>
-                              <Component id="jLabel1" alignment="0" pref="553" max="32767" attributes="0"/>
+                              <Component id="jScrollPane2" alignment="0" pref="549" max="32767" attributes="0"/>
+                              <Component id="jLabel1" alignment="0" pref="549" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
@@ -360,7 +360,7 @@
                       <Group type="102" alignment="0" attributes="0">
                           <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="jScrollPane2" pref="166" max="32767" attributes="0"/>
+                          <Component id="jScrollPane2" pref="177" max="32767" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -389,7 +389,7 @@
                         <Font bold="false" component="jLabel1" property="font" relativeSize="true" size="0"/>
                       </FontInfo>
                     </Property>
-                    <Property name="text" type="java.lang.String" value="&lt;html&gt;Unfortunately, some scripting engines hard code their output to System.out (jython, for example) in which case you will have to look at the console, if you can, to see output.&lt;/html&gt;"/>
+                    <Property name="text" type="java.lang.String" value="&lt;html&gt;Unfortunately, the output of some script engines (jython, for example) cannot be intercepted, in which case you will have to look at the console, if you can, to see output.&lt;/html&gt;"/>
                   </Properties>
                 </Component>
               </SubComponents>

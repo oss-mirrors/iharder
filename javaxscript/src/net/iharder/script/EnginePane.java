@@ -253,7 +253,7 @@ public class EnginePane extends javax.swing.JPanel {
 
         scriptInPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Script Source"));
 
-        scriptInArea.setFont(new java.awt.Font("Monospaced", 0, 14)); // NOI18N
+        scriptInArea.setFont(new java.awt.Font("Monospaced", 0, 14));
         scriptInArea.setRows(2);
         scriptInArea.setTabSize(4);
         jScrollPane1.setViewportView(scriptInArea);
@@ -298,11 +298,11 @@ public class EnginePane extends javax.swing.JPanel {
                     .addGroup(scriptInPanelLayout.createSequentialGroup()
                         .addGap(20, 20, 20)
                         .addComponent(reuseEngine)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 308, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 282, Short.MAX_VALUE)
                         .addComponent(runButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 563, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 561, Short.MAX_VALUE))
                 .addContainerGap())
         );
         scriptInPanelLayout.setVerticalGroup(
@@ -318,7 +318,7 @@ public class EnginePane extends javax.swing.JPanel {
                     .addComponent(jLabel2)
                     .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 243, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -337,7 +337,7 @@ public class EnginePane extends javax.swing.JPanel {
         jScrollPane2.setViewportView(scriptOutArea);
 
         jLabel1.setFont(jLabel1.getFont().deriveFont(jLabel1.getFont().getStyle() & ~java.awt.Font.BOLD));
-        jLabel1.setText("<html>Unfortunately, some scripting engines hard code their output to System.out (jython, for example) in which case you will have to look at the console, if you can, to see output.</html>");
+        jLabel1.setText("<html>Unfortunately, the output of some script engines (jython, for example) cannot be intercepted, in which case you will have to look at the console, if you can, to see output.</html>");
 
         javax.swing.GroupLayout scriptOutPanelLayout = new javax.swing.GroupLayout(scriptOutPanel);
         scriptOutPanel.setLayout(scriptOutPanelLayout);
@@ -346,8 +346,8 @@ public class EnginePane extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scriptOutPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(scriptOutPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 553, Short.MAX_VALUE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 553, Short.MAX_VALUE))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE))
                 .addContainerGap())
         );
         scriptOutPanelLayout.setVerticalGroup(
@@ -355,7 +355,7 @@ public class EnginePane extends javax.swing.JPanel {
             .addGroup(scriptOutPanelLayout.createSequentialGroup()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 166, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
