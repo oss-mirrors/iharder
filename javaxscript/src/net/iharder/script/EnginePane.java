@@ -7,7 +7,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
 /**
@@ -23,7 +22,10 @@ public class EnginePane extends javax.swing.JPanel {
     public EnginePane() {
         initComponents();
     }
-    
+
+    public ScriptEngineFactory getFactory(){
+        return this.factory;
+    }
     
     public void setFactory( ScriptEngineFactory factory ){
         this.factory = factory;
