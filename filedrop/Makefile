@@ -14,7 +14,8 @@ CFLAGS	= -d $(BUILD) -source 1.2 -target 1.2
 
 # Directories
 BUILD	= build
-PKG	= net/iharder/dnd
+PKG	= .
+SRC = src
 
 # Final Output
 PROG	= filedrop.jar
@@ -36,13 +37,13 @@ $(BUILD):
 
 # Build all classes. Needs target directory.
 classes: $(BUILD)
-	$(CC) $(CFLAGS) $(PKG)/*.java
+	$(CC) $(CFLAGS) $(SRC)/$(PKG)/*.java
 
 
 # Build manifest file. Needs target directory.
 $(BUILD)/manifest: $(BUILD)
 	echo Manifest-Version: 1.0 >  $@
-	echo Main-Class: net/iharder/dnd/FileDrop >>  $@
+	echo Main-Class: Example >>  $@
 
 
 
