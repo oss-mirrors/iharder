@@ -1,5 +1,14 @@
 package net.iharder.dnd;
 
+import java.awt.datatransfer.DataFlavor;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * This class makes it easy to drag and drop files from the operating
  * system to a Java program. Any <tt>java.awt.Component</tt> can be
@@ -33,10 +42,11 @@ package net.iharder.dnd;
  * <p>I'm releasing this code into the Public Domain. Enjoy.
  * </p>
  * <p><em>Original author: Robert Harder, rharder@usa.net</em></p>
+ * <p>2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.</p>
  *
  * @author  Robert Harder
- * @author  rharder@usa.net
- * @version 1.0
+ * @author  rharder@users.sf.net
+ * @version 1.0.1
  */
 public class FileDrop
 {
@@ -257,8 +267,8 @@ public class FileDrop
         if( supportsDnD() )
         {   // Make a drop listener
             dropListener = new java.awt.dnd.DropTargetListener()
-            {	public void dragEnter( java.awt.dnd.DropTargetDragEvent evt )
-                {	log( out, "FileDrop: dragEnter event." );
+            {   public void dragEnter( java.awt.dnd.DropTargetDragEvent evt )
+                {       log( out, "FileDrop: dragEnter event." );
 
                     // Is this an acceptable drag event?
                     if( isDragOk( out, evt ) )
@@ -321,9 +331,38 @@ public class FileDrop
                             evt.getDropTargetContext().dropComplete(true);
                             log( out, "FileDrop: drop complete." );
                         }   // end if: file list
-                        else 
-                        {   log( out, "FileDrop: not a file list - abort." );
-                            evt.rejectDrop();
+                        else // this section will check for a reader flavor.
+                        {
+                            // Thanks, Nathan!
+                            // BEGIN 2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.
+                            DataFlavor[] flavors = tr.getTransferDataFlavors();
+                            boolean handled = false;
+                            for (int zz = 0; zz < flavors.length; zz++) {
+                                if (flavors[zz].isRepresentationClassReader()) {
+                                    // Say we'll take it.
+                                    //evt.acceptDrop ( java.awt.dnd.DnDConstants.ACTION_COPY_OR_MOVE );
+                                    evt.acceptDrop(java.awt.dnd.DnDConstants.ACTION_COPY);
+                                    log(out, "FileDrop: reader accepted.");
+
+                                    Reader reader = flavors[zz].getReaderForText(tr);
+
+                                    BufferedReader br = new BufferedReader(reader);
+                                    
+                                    if(listener != null)
+                                        listener.filesDropped(createFileArray(br, out));
+                                    
+                                    // Mark that drop is completed.
+                                    evt.getDropTargetContext().dropComplete(true);
+                                    log(out, "FileDrop: drop complete.");
+                                    handled = true;
+                                    break;
+                                }
+                            }
+                            if(!handled){
+                                log( out, "FileDrop: not a file list or reader - abort." );
+                                evt.rejectDrop();
+                            }
+                            // END 2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.
                         }   // end else: not a file list
                     }   // end try
                     catch ( java.io.IOException io) 
@@ -399,8 +438,33 @@ public class FileDrop
     }   // end supportsDnD
     
     
-    
-    
+     // BEGIN 2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.
+     private static String ZERO_CHAR_STRING = "" + (char)0;
+     private static File[] createFileArray(BufferedReader bReader, PrintStream out)
+     {
+        try { 
+            java.util.List list = new java.util.ArrayList();
+            java.lang.String line = null;
+            while ((line = bReader.readLine()) != null) {
+                try {
+                    // kde seems to append a 0 char to the end of the reader
+                    if(ZERO_CHAR_STRING.equals(line)) continue; 
+                    
+                    java.io.File file = new java.io.File(new java.net.URI(line));
+                    list.add(file);
+                } catch (java.net.URISyntaxException ex) {
+                    log(out, "FileDrop: URISyntaxException");
+                }
+            }
+
+            return (java.io.File[]) list.toArray(new File[list.size()]);
+        } catch (IOException ex) {
+            log(out, "FileDrop: IOException");
+        }
+        return new File[0];
+     }
+     // END 2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.
+     
     
     private void makeDropTarget( final java.io.PrintStream out, final java.awt.Component c, boolean recursive )
     {
@@ -458,9 +522,15 @@ public class FileDrop
         // See if any of the flavors are a file list
         int i = 0;
         while( !ok && i < flavors.length )
-        {   // Is the flavor a file list?
-            if( flavors[i].equals( java.awt.datatransfer.DataFlavor.javaFileListFlavor ) )
-                ok = true;            
+        {   
+            // BEGIN 2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.
+            // Is the flavor a file list?
+            final DataFlavor curFlavor = flavors[i];
+            if( curFlavor.equals( java.awt.datatransfer.DataFlavor.javaFileListFlavor ) ||
+                curFlavor.isRepresentationClassReader()){
+                ok = true;
+            }
+            // END 2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.
             i++;
         }   // end while: through flavors
         
