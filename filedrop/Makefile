@@ -10,7 +10,7 @@ CP	= cp
 JAR	= jar
 RM	= rm
 RMFLAGS	= -rf
-CFLAGS	= -d $(BUILD)
+CFLAGS	= -d $(BUILD) -source 1.2 -target 1.2
 
 # Directories
 BUILD	= build
