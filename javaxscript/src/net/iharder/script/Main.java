@@ -19,6 +19,7 @@ import java.util.prefs.Preferences;
 import javax.script.*;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -54,6 +55,7 @@ public class Main extends javax.swing.JFrame {
         for( int i = 0; i < prevCount; i++ ){
             EnginePane ep = (EnginePane)this.enginesTabbedPane.getComponent(i);
             ScriptEngineFactory f = ep.getFactory();
+            System.out.println("Inspecting " + f.getEngineName() );
             if( ep != null && factory.getEngineName().equals(f.getEngineName()) && factory.getEngineVersion().equals( f.getEngineVersion() ) ){
                 System.out.println("Already have this loaded: " + factory.getEngineName() );
                 return;
@@ -62,6 +64,39 @@ public class Main extends javax.swing.JFrame {
         EnginePane pane = new EnginePane();
         pane.setFactory( factory );
         this.enginesTabbedPane.add( pane );
+    }
+    
+    private void loadFromJarsButton(){
+            
+    LoadFromJarsPanel panel = new LoadFromJarsPanel();
+    panel.setPreferences(prefs);
+    int result = JOptionPane.showConfirmDialog(this, panel);
+    if( result == JOptionPane.OK_OPTION ){
+        List<File> files = panel.getFiles();
+        URL[] urls = new URL[ files.size() ];
+        for( int i = 0; i < urls.length; i++ ){
+            try {
+                File f = files.get(i);
+                String urlPath;
+                urlPath = "jar:file://" + f.getCanonicalPath() + "!/";
+                urls[i] = new URL(urlPath);
+            } catch (MalformedURLException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }catch (IOException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                }
+        }
+        System.out.println("URLs to load:");
+        for( int i = 0; i < urls.length; i++ ){
+            System.out.println("  " + urls[i] );
+        }
+        URLClassLoader loader = URLClassLoader.newInstance( urls, this.getClass().getClassLoader() );
+        ScriptEngineManager manager = new ScriptEngineManager(loader); // Takes some time
+        List<ScriptEngineFactory> factories = manager.getEngineFactories();
+        for( ScriptEngineFactory f : factories ){
+            addFactory( f );
+        }
+    }   // end if: OK
     }
 
     /** This method is called from within the constructor to
@@ -77,10 +112,6 @@ public class Main extends javax.swing.JFrame {
         jButton3 = new javax.swing.JButton();
         enginesTabbedPane = new javax.swing.JTabbedPane();
         jLabel1 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        jList1 = new javax.swing.JList();
-        jButton4 = new javax.swing.JButton();
 
         jButton2.setText("jButton2");
 
@@ -91,103 +122,29 @@ public class Main extends javax.swing.JFrame {
 
         jLabel1.setText("<html>Welcome to the Javax Script Explorer. You have the following Script Engines in your classpath:</html>");
 
-        jButton1.setText("Find JARs");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
-            }
-        });
-
-        jList1.setModel(new javax.swing.DefaultListModel());
-        jScrollPane1.setViewportView(jList1);
-
-        jButton4.setText("Load JARs");
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(enginesTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 586, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 306, Short.MAX_VALUE)
-                        .addGap(35, 35, 35)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 109, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(43, 43, 43)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jButton1)
-                            .addComponent(jButton4))))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(enginesTabbedPane, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 586, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 586, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 72, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jButton1)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton4)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 22, Short.MAX_VALUE)
-                .addComponent(enginesTabbedPane, javax.swing.GroupLayout.PREFERRED_SIZE, 524, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel1)
+                .addGap(18, 18, 18)
+                .addComponent(enginesTabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 624, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        String prev = prefs.get("previous_jar_directory", "");
-        JFileChooser jfc = new JFileChooser(prev);
-        jfc.setMultiSelectionEnabled(true);
-        int result = jfc.showOpenDialog(this);
-        if( result == jfc.APPROVE_OPTION ){
-            File[] files = jfc.getSelectedFiles();
-            for( File f : files ){
-                prefs.put("previous_jar_directory", f.getParentFile() == null ? "" : f.getParentFile().toString() );
-                System.out.println(f);
-                ((DefaultListModel)this.jList1.getModel()).addElement(f);
-            }   // end for: each file
-        }
-
-    }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        DefaultListModel dlm = (DefaultListModel)this.jList1.getModel();
-        URL[] urls = new URL[ dlm.getSize() ];
-        for( int i = 0; i < urls.length; i++ ){
-            try {
-                File f = (File) dlm.get(i);
-                String urlPath;
-                urlPath = "jar:file://" + f.getCanonicalPath() + "!/";
-                urls[i] = new URL(urlPath);
-            } catch (MalformedURLException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            }catch (IOException ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                }
-        }
-        System.out.println("URLs to load:");
-        for( int i = 0; i < urls.length; i++ ){
-            System.out.println("  " + urls[i] );
-        }
-        URLClassLoader loader = URLClassLoader.newInstance( urls, this.getClass().getClassLoader() );
-        ScriptEngineManager manager = new ScriptEngineManager(loader);
-        List<ScriptEngineFactory> factories = manager.getEngineFactories();
-        for( ScriptEngineFactory f : factories ){
-            addFactory( f );
-        }
-
-    }//GEN-LAST:event_jButton4ActionPerformed
 
     /**
     * @param args the command line arguments
@@ -202,13 +159,9 @@ public class Main extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTabbedPane enginesTabbedPane;
-    private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JList jList1;
-    private javax.swing.JScrollPane jScrollPane1;
     // End of variables declaration//GEN-END:variables
 
 }

@@ -28,6 +28,7 @@ public class EnginePane extends javax.swing.JPanel {
     }
     
     public void setFactory( ScriptEngineFactory factory ){
+        ScriptEngine engine = factory.getScriptEngine();
         this.factory = factory;
         String engineName = factory.getEngineName();
         String engineVer = factory.getEngineVersion();
@@ -36,6 +37,7 @@ public class EnginePane extends javax.swing.JPanel {
         List<String> names = factory.getNames();
         List<String> mimes = factory.getMimeTypes();
         List<String> exts = factory.getExtensions();
+        boolean invocable = engine instanceof Invocable;
 
         this.setName( engineName ); // Name the panel (appears in tab also)
         this.engVerLabel.setText( String.format("%s version %s", engineName, engineVer ) );
@@ -79,6 +81,13 @@ public class EnginePane extends javax.swing.JPanel {
             this.extsLabel.setText( "<html>" + sb + "</html>" );
             this.extsLabel.setToolTipText( "factory.getExtensions()" );
         }   // end block: Mime types
+        
+        // Invocable
+        if( invocable ){
+            this.invLabel.setText( "<html>Yes (Java code can invoke specific functions after the script is loaded.</html>" );
+        } else {
+            this.invLabel.setText( "<html>No (Java code can only run the whole script, not call specific functions within.</html>" );
+        }
 
         this.jCheckBox1.setToolTipText( "engine.put( \"checkbox\", jCheckBox1 )" );
         this.jProgressBar1.setToolTipText( "engine.put( \"progressbar\", jProgressBar1 )" );
@@ -140,6 +149,8 @@ public class EnginePane extends javax.swing.JPanel {
         mimesLabel = new javax.swing.JLabel();
         eL = new javax.swing.JLabel();
         extsLabel = new javax.swing.JLabel();
+        invL = new javax.swing.JLabel();
+        invLabel = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jSplitPane1 = new javax.swing.JSplitPane();
         scriptInPanel = new javax.swing.JPanel();
@@ -246,6 +257,24 @@ public class EnginePane extends javax.swing.JPanel {
         gridBagConstraints.insets = new java.awt.Insets(0, 4, 4, 0);
         jPanel1.add(extsLabel, gridBagConstraints);
 
+        invL.setText("Invocable:");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        jPanel1.add(invL, gridBagConstraints);
+
+        invLabel.setFont(invLabel.getFont().deriveFont(invLabel.getFont().getStyle() & ~java.awt.Font.BOLD));
+        invLabel.setText("TBD");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(0, 4, 4, 0);
+        jPanel1.add(invLabel, gridBagConstraints);
+
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jSplitPane1.setBorder(null);
@@ -267,7 +296,7 @@ public class EnginePane extends javax.swing.JPanel {
             }
         });
 
-        reuseEngine.setText("Maintain engine state");
+        reuseEngine.setText("Maintain engine state (reduces engine instantiation)");
         reuseEngine.setToolTipText("Maintains variables, function declarations, etc across multiple runs");
 
         jCheckBox1.setText("I am in a variable called \"checkbox\"");
@@ -300,11 +329,11 @@ public class EnginePane extends javax.swing.JPanel {
                     .addGroup(scriptInPanelLayout.createSequentialGroup()
                         .addGap(20, 20, 20)
                         .addComponent(reuseEngine)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 282, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 162, Short.MAX_VALUE)
                         .addComponent(runButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 561, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 563, Short.MAX_VALUE))
                 .addContainerGap())
         );
         scriptInPanelLayout.setVerticalGroup(
@@ -320,7 +349,7 @@ public class EnginePane extends javax.swing.JPanel {
                     .addComponent(jLabel2)
                     .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 36, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 128, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(scriptInPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -348,8 +377,8 @@ public class EnginePane extends javax.swing.JPanel {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, scriptOutPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(scriptOutPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 549, Short.MAX_VALUE))
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 553, Short.MAX_VALUE)
+                    .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 553, Short.MAX_VALUE))
                 .addContainerGap())
         );
         scriptOutPanelLayout.setVerticalGroup(
@@ -357,7 +386,7 @@ public class EnginePane extends javax.swing.JPanel {
             .addGroup(scriptOutPanelLayout.createSequentialGroup()
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 177, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 189, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -382,7 +411,7 @@ public class EnginePane extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 446, Short.MAX_VALUE)
+                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, 544, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -454,6 +483,8 @@ public class EnginePane extends javax.swing.JPanel {
     private javax.swing.JLabel engVerLabel;
     private javax.swing.JLabel evL;
     private javax.swing.JLabel extsLabel;
+    private javax.swing.JLabel invL;
+    private javax.swing.JLabel invLabel;
     private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
