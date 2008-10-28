@@ -50,29 +50,36 @@ public class Base64Test {
      * Test of encodeObject method, of class Base64.
      */
     @Test
+    @SuppressWarnings("unchecked")
     public void testEncodeObject_Serializable() throws Exception {
-        System.out.println("TODO encodeObject");
-        Serializable serializableObject = null;
-        String expResult = "";
-        String result = Base64.encodeObject(serializableObject);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+        System.out.println("testEncodeObject_Serializable and testDecodeToObject");
+        java.util.Vector vec = new java.util.Vector();
+        vec.add(1);
+        vec.add("hello world");
+        String result = Base64.encodeObject(vec);
+        java.util.Vector vec2 = (java.util.Vector)Base64.decodeToObject(result);
+        
+        assertEquals( vec.get(0), vec2.get(0) );
+        assertEquals( vec.get(1), vec2.get(1) );
+
     }
 
     /**
      * Test of encodeObject method, of class Base64.
      */
     @Test
+    @SuppressWarnings("unchecked")
     public void testEncodeObject_Serializable_int() throws Exception {
-        System.out.println("TODO encodeObject");
-        Serializable serializableObject = null;
-        int options = 0;
-        String expResult = "";
-        String result = Base64.encodeObject(serializableObject, options);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+        System.out.println("testEncodeObject_Serializable_int and testDecodeToObject");
+        java.util.Vector vec = new java.util.Vector();
+        vec.add(1);
+        vec.add("hello world");
+        String result = Base64.encodeObject(vec, Base64.GZIP );
+        java.util.Vector vec2 = (java.util.Vector)Base64.decodeToObject(result);
+
+        assertEquals( vec.get(0), vec2.get(0) );
+        assertEquals( vec.get(1), vec2.get(1) );
+
     }
 
     /**
@@ -83,9 +90,15 @@ public class Base64Test {
         System.out.println("encodeBytes");
         
         // Trivial values, small arrays
-        byte[] source = new byte[]{ 0 };
-        String expResult = "AA==";
+        byte[] source = new byte[]{ };
+        String expResult = "";
         String result = Base64.encodeBytes(source);
+        assertEquals(expResult, result);
+
+
+        source = new byte[]{ 0 };
+        expResult = "AA==";
+        result = Base64.encodeBytes(source);
         assertEquals(expResult, result);
         
         source = new byte[]{ 0,0};
@@ -146,14 +159,28 @@ public class Base64Test {
      */
     @Test
     public void testEncodeBytes_byteArr_int() throws Exception {
-        System.out.println("TODO encodeBytes");
-        byte[] source = null;
-        int options = 0;
-        String expResult = "";
-        //String result = Base64.encodeBytes(source, options);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+        System.out.println("testEncodeBytes_byteArr_int");
+        // Trivial values, small arrays
+        byte[] source = new byte[]{ 0 };
+        String result = Base64.encodeBytes(source, Base64.GZIP);
+        byte[] src2 = Base64.decode( result );
+        assertEquals( source.length, src2.length );
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals( source[i], src2[i] );
+        }
+        
+
+        // Longer sequence
+        source = new byte[30];
+        for( int i = 0; i < source.length; i++ ){
+            source[i] = (byte)i;
+        }   // end for
+        result = Base64.encodeBytes(source);
+        src2 = Base64.decode( result );
+        assertEquals( source.length, src2.length );
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals( source[i], src2[i] );
+        }
     }
 
     /**
@@ -161,15 +188,60 @@ public class Base64Test {
      */
     @Test
     public void testEncodeBytes_3args() throws Exception {
-        System.out.println("TODO encodeBytes");
-        byte[] source = null;
-        int off = 0;
-        int len = 0;
-        String expResult = "";
-        String result = Base64.encodeBytes(source, off, len);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+
+        System.out.println("testEncodeBytes_3args");
+
+        // Trivial values, small arrays
+        byte[] source = new byte[]{ -1, 0, 1 };
+        String expResult = "AA==";
+        String result = Base64.encodeBytes(source,1,1);
+        assertEquals(expResult, result);
+
+        source = new byte[]{ -1, 0, 0 };
+        expResult = "AAA=";
+        result = Base64.encodeBytes(source,1,2);
+        assertEquals(expResult, result);
+
+        source = new byte[]{ -1, 0,0,0, 2, 3 };
+        expResult = "AAAA";
+        result = Base64.encodeBytes(source, 1, 3);
+        assertEquals(expResult, result);
+
+        try{
+            source = null;
+            Base64.encodeBytes( source, 0, 0 );
+            fail("Should have thrown NullPointerException.");
+        } catch(NullPointerException exc ){}
+
+        try{
+            source = new byte[3];
+            Base64.encodeBytes( source, -1, 0 );
+            fail("Should have thrown IllegalArgumentException.");
+        } catch(IllegalArgumentException exc ){}
+
+        try{
+            source = new byte[3];
+            Base64.encodeBytes( source, 0, -1 );
+            fail("Should have thrown IllegalArgumentException.");
+        } catch(IllegalArgumentException exc ){}
+
+        try{
+            source = new byte[3];
+            Base64.encodeBytes( source, 0, 4 );
+            fail("Should have thrown IllegalArgumentException.");
+        } catch(IllegalArgumentException exc ){}
+
+        try{
+            source = new byte[3];
+            Base64.encodeBytes( source, 4, 0 );
+            fail("Should have thrown IllegalArgumentException.");
+        } catch(IllegalArgumentException exc ){}
+
+        try{
+            source = new byte[3];
+            Base64.encodeBytes( source, 3, 1 );
+            fail("Should have thrown IllegalArgumentException.");
+        } catch(IllegalArgumentException exc ){}
     }
 
     /**
@@ -178,15 +250,7 @@ public class Base64Test {
     @Test
     public void testEncodeBytes_4args() throws Exception {
         System.out.println("TODO encodeBytes");
-        byte[] source = null;
-        int off = 0;
-        int len = 0;
-        int options = 0;
-        String expResult = "";
-        String result = Base64.encodeBytes(source, off, len, options);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+//        String result = Base64.encodeBytes(source, off, len, options);
     }
 
     /**
@@ -211,13 +275,87 @@ public class Base64Test {
      */
     @Test
     public void testDecode_String() throws Exception {
-        System.out.println("TODO decode");
+        System.out.println("testDecode_String");
         String s = "";
         byte[] expResult = null;
-        //byte[] result = Base64.decode(s);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+        
+        // Trivial values, small arrays
+        byte[] source = new byte[]{ };
+        String encoded = Base64.encodeBytes(source);
+        byte[] result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+
+
+        source = new byte[]{ 42 };
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        source = new byte[]{ 42,23 };
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        source = new byte[]{ 42,23,86 };
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        source = new byte[]{ 42,23,86, 1,2 };
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        // Longer sequence
+        source = new byte[30];
+        for( int i = 0; i < source.length; i++ ){
+            source[i] = (byte)i;
+        }   // end for
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+
+        // Some repeatable random numbers.
+        // I wrote these random values to a file
+        // and ran them through another Base64 encoder
+        // (which presumably worked properly too!)
+        java.util.Random rand = new java.util.Random(1234); // Seed
+        source = new byte[30];
+        rand.nextBytes(source);
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        rand = new java.util.Random(1234); // Seed
+        source = new byte[31];
+        rand.nextBytes(source);
+        encoded = Base64.encodeBytes(source);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+
     }
 
     /**
@@ -225,29 +363,71 @@ public class Base64Test {
      */
     @Test
     public void testDecode_String_int() throws Exception {
-        System.out.println("TODO decode");
+        System.out.println("testDecode_String_int");
         String s = "";
         int options = 0;
         byte[] expResult = null;
-        //byte[] result = Base64.decode(s, options);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
+
+
+        // Trivial values, small arrays
+        byte[] source = new byte[]{ };
+        String encoded = Base64.encodeBytes(source, Base64.GZIP);
+        byte[] result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+
+
+        source = new byte[]{ 42 };
+        encoded = Base64.encodeBytes(source, Base64.GZIP);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+        source = new byte[]{ 42 };
+        encoded = Base64.encodeBytes(source, Base64.URL_SAFE);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+
+
+        // Some repeatable random numbers.
+        // I wrote these random values to a file
+        // and ran them through another Base64 encoder
+        // (which presumably worked properly too!)
+        java.util.Random rand = new java.util.Random(1234); // Seed
+        source = new byte[300];
+        rand.nextBytes(source);
+        encoded = Base64.encodeBytes(source, Base64.GZIP);
+        result = Base64.decode(encoded);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        rand = new java.util.Random(1234); // Seed
+        source = new byte[3000];
+        rand.nextBytes(source);
+        encoded = Base64.encodeBytes(source, Base64.URL_SAFE);
+        result = Base64.decode(encoded, Base64.URL_SAFE);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
+
+        rand = new java.util.Random(1234); // Seed
+        source = new byte[3000];
+        rand.nextBytes(source);
+        encoded = Base64.encodeBytes(source, Base64.ORDERED);
+        result = Base64.decode(encoded, Base64.ORDERED);
+        assertEquals(source.length,result.length);
+        for( int i = 0; i < source.length; i++ ){
+            assertEquals(source[i],result[i]);
+        }
     }
 
-    /**
-     * Test of decodeToObject method, of class Base64.
-     */
-    @Test
-    public void testDecodeToObject() throws Exception {
-        System.out.println("TODO decodeToObject");
-        String encodedObject = "";
-        Object expResult = null;
-        //Object result = Base64.decodeToObject(encodedObject);
-        //assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        //fail("The test case is a prototype.");
-    }
 
     /**
      * Test of encodeToFile method, of class Base64.
