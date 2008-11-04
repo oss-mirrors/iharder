@@ -3,8 +3,20 @@
 
 \usepackage{setspace}
 \newenvironment{dissertation}
-  {\begin{spacing}{1.50}}
-  {\end{spacing}
+{
+	\begin{spacing}{1.50}
+  \makecover
+  \blankpage
+  \makesfTwoNinetyEight       % The SF298
+  \blankpage
+  \maketitle                  % The title page with signature
+  \include{abstract}          % The abstract
+  \tableofcontents            % Table of Contents
+  \listoffigures              % List of Figures
+  \listoftables               % List of Tables
+}
+{
+  	\end{spacing}
 }
 
 
@@ -44,7 +56,17 @@ THIS PAGE INTENTIONALLY LEFT BLANK
  \MakeRptDocPage
 }
 
+%%
+%% The References Page
+%%
+\newcommand{\makerefs}{
+}
 
+%%
+%% The Initial Distribution Page
+%% 
+\newcommand{\makedistro}{
+}
 
 
 
