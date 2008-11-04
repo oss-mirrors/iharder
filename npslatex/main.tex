@@ -1,0 +1,44 @@
+\documentclass{report}
+\usepackage{npsphd}
+
+\title{A Long-Winded Explanation of What I've Been Doing for Three Years}
+\author{Robert Wayne Harder}
+%\authorrank{Major}
+%\authorservice{United States Air Force}
+%\authordegree{B.S., Oregon State University, 1998}
+%\authordegree{M.S., Air Force Institute of Technology, 2000}
+\date{March 2008}
+%\phdin{Modeling and Simulation}
+%\dissertationsupervisor{Alan Smithee}
+%\distributionstatement{Approved for public release; distribution is unlimited}
+%%approvals somehow in an array
+
+
+\include{sf298}
+
+
+
+
+\begin{document}
+  \begin{dissertation}
+    \makecover
+      \blankpage
+    \makesfTwoNinetyEight       % The SF298
+      \blankpage
+    \maketitle                  % The title page with signature
+    \include{abstract}          % The abstract
+    \tableofcontents            % Table of Contents
+    \listoffigures              % List of Figures
+    \listoftables               % List of Tables
+    \include{executive_summary} % Executive Summary (optional for some curricula)
+    \include{acknowledgements}  % Acknowledgements (optional)
+    \include{ch1_introduction}
+    \include{ch2_something}
+    \include{ch3_something}
+    \include{ch4_conclusions}
+    
+%    \makerefs
+%    \makedistro
+    
+  \end{dissertation}
+\end{document}
