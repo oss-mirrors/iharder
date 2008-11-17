@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -117,9 +118,9 @@ public class UdpServer {
     private State currentState = State.STOPPED;
     
     
-    private Collection<Listener> listeners = new LinkedList<Listener>();                // Event listeners
-    private Event event = new Event(this);                                              // Shared event
-    private PropertyChangeSupport propSupport = new PropertyChangeSupport(this);        // Properties
+    private Collection<UdpServer.Listener> listeners = new LinkedList<UdpServer.Listener>();    // Event listeners
+    private UdpServer.Event event = new UdpServer.Event(this);                                  // Shared event
+    private PropertyChangeSupport propSupport = new PropertyChangeSupport(this);                // Properties
     
     private final UdpServer This = this;                                                // To aid in synchronizing
     private ThreadFactory threadFactory;                                                // Optional thread factory
@@ -175,7 +176,7 @@ public class UdpServer {
      * @see Listener
      */
     public synchronized void start(){
-        if( this.currentState == State.STOPPED ){           // Only if we're stopped now
+        if( this.currentState == UdpServer.State.STOPPED ){ // Only if we're stopped now
             assert ioThread == null : ioThread;             // Shouldn't have a thread
 
             Runnable run = new Runnable() {
@@ -183,7 +184,7 @@ public class UdpServer {
                 public void run() {
                     runServer();                            // This runs for a long time
                     ioThread = null;          
-                    recordState( State.STOPPED );              // Clear thread
+                    recordState( UdpServer.State.STOPPED ); // Clear thread
                 }   // end run
             };  // end runnable
             
@@ -194,7 +195,7 @@ public class UdpServer {
                 this.ioThread = new Thread( run, this.getClass().getName() );   // Named
             }
 
-            recordState( State.STARTING );                     // Update state
+            recordState( UdpServer.State.STARTING );        // Update state
             this.ioThread.start();                          // Start thread
         }   // end if: currently stopped
     }   // end start
@@ -209,9 +210,9 @@ public class UdpServer {
      * @see Listener
      */
     public synchronized void stop(){
-        if( this.currentState == State.STARTED ){   // Only if already STARTED
-            recordState( State.STOPPING );             // Mark as STOPPING
-            if( this.mSocket != null ){           //
+        if( this.currentState == UdpServer.State.STARTED ){         // Only if already STARTED
+            recordState( UdpServer.State.STOPPING );                // Mark as STOPPING
+            if( this.mSocket != null ){
                 this.mSocket.close();
             }   // end if: not null
         }   // end if: already STARTED
@@ -225,7 +226,7 @@ public class UdpServer {
      * STOPPED, STARTING, or STARTED.
      * @return state of the server
      */
-    public synchronized State getState(){
+    public synchronized UdpServer.State getState(){
         return this.currentState;
     }
     
@@ -236,7 +237,7 @@ public class UdpServer {
      * what is reflected by the currentState variable.
      * @param state The new state of the server
      */
-    protected synchronized void recordState( State state ){
+    protected synchronized void recordState( UdpServer.State state ){
         this.currentState = state;
         fireUdpServerStateChanged();
     }
@@ -265,7 +266,7 @@ public class UdpServer {
             case STARTED:
                 this.addUdpServerListener( new Adapter(){
                     @Override
-                    public void udpServerStateChanged( Event evt ){
+                    public void udpServerStateChanged( UdpServer.Event evt ){
                         if( evt.getState() == State.STOPPED ){
                             UdpServer server = (UdpServer)evt.getSource();
                             server.removeUdpServerListener(this);
@@ -289,6 +290,16 @@ public class UdpServer {
         try{
             this.mSocket = new MulticastSocket( getPort() );                // Create server
             LOGGER.info("UDP Server established on port " + getPort() );
+
+            try{
+                this.mSocket.setReceiveBufferSize( this.packet.getData().length );
+                LOGGER.info("UDP Server receive buffer size (bytes): " + this.mSocket.getReceiveBufferSize() );
+            } catch( IOException exc ){
+                int pl = this.packet.getData().length;
+                int bl = this.mSocket.getReceiveBufferSize();
+                LOGGER.warning(String.format( "Could not set receive buffer to %d. It is now at %d. Error: %s",
+                  pl, bl, exc.getMessage() ) );
+            }   // end catch
             
             String gg = getGroups();                                        // Get multicast groups
             String[] proposed = gg.split("[\\s,]+");                        // Split along whitespace
@@ -354,6 +365,46 @@ public class UdpServer {
     public synchronized DatagramPacket getPacket(){
         return this.packet;
     }
+
+
+/* ********  R E C E I V E   B U F F E R  ******** */
+
+
+    /**
+     * Returns the receive buffer for the underlying MulticastSocket
+     * if the server is currently running (otherwise there is no
+     * MulticastSocket to query). Please see the javadocs for
+     * java.net.MulticastSocket for more information.
+     * 
+     * @return receive buffer size
+     * @throws java.net.SocketException
+     */
+    public synchronized int getReceiveBufferSize() throws SocketException{
+        if( this.mSocket == null ){
+            throw new SocketException("getReceiveBufferSize() cannot be called when the server is not started.");
+        } else {
+            return this.mSocket.getReceiveBufferSize();
+        }
+    }   // end getReceiveBufferSize
+
+    /**
+     * Recommends a receive buffer size for the underlying MulticastSocket.
+     * Please see the javadocs for
+     * java.net.MulticastSocket for more information.
+     * 
+     * @param size
+     * @throws java.net.SocketException
+     */
+    public synchronized void setReceiveBufferSize(int size) throws SocketException{
+        if( this.mSocket == null ){
+            throw new SocketException("setReceiveBufferSize(..) cannot be called when the server is not started.");
+        } else {
+            this.mSocket.setReceiveBufferSize(size);
+        }
+    }   // end setReceiveBufferSize
+
+
+
     
     
     
@@ -433,14 +484,14 @@ public class UdpServer {
     /** Adds a {@link Listener}.
      * @param l the UdpServer.Listener
      */
-    public synchronized void addUdpServerListener(Listener l) {
+    public synchronized void addUdpServerListener(UdpServer.Listener l) {
         listeners.add(l);
     }
 
     /** Removes a {@link Listener}.
      * @param l the UdpServer.Listener
      */
-    public synchronized void removeUdpServerListener(Listener l) {
+    public synchronized void removeUdpServerListener(UdpServer.Listener l) {
         listeners.remove(l);
     }
     
@@ -450,8 +501,8 @@ public class UdpServer {
      */
     protected synchronized void fireUdpServerPacketReceived() {
         
-        Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
-        for( Listener l : ll ){
+        UdpServer.Listener[] ll = listeners.toArray(new UdpServer.Listener[ listeners.size() ] );
+        for( UdpServer.Listener l : ll ){
             try{
                 l.udpServerPacketReceived(event);
             } catch( Exception exc ){
@@ -467,8 +518,8 @@ public class UdpServer {
      */
     protected synchronized void fireUdpServerStateChanged() {
         
-        final Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
-        for( Listener l : ll ){
+        final UdpServer.Listener[] ll = listeners.toArray(new UdpServer.Listener[ listeners.size() ] );
+        for( UdpServer.Listener l : ll ){
             try{
                 l.udpServerStateChanged(event);
             } catch( Exception exc ){
@@ -617,7 +668,7 @@ public class UdpServer {
          * @param evt the event
          * @see UdpServer.State
          */
-        public abstract void udpServerStateChanged( Event evt );
+        public abstract void udpServerStateChanged( UdpServer.Event evt );
 
         /**
          * Called when a packet is received. This is called on the IO thread,
@@ -628,7 +679,7 @@ public class UdpServer {
          * @param evt the event
          * @see Event#getPacket
          */
-        public abstract void udpServerPacketReceived( Event evt );
+        public abstract void udpServerPacketReceived( UdpServer.Event evt );
 
 
     }   // end inner static class Listener
@@ -665,20 +716,20 @@ public class UdpServer {
      * @see Listener
      * @see Event
      */
-    public class Adapter implements Listener {
+    public class Adapter implements UdpServer.Listener {
 
         /**
          * Empty call for {@link UdpServer.Listener#udpServerStateChanged}.
          * @param evt the event
          */
-        public void udpServerStateChanged(Event evt) {}
+        public void udpServerStateChanged( UdpServer.Event evt ) {}
 
 
         /**
          * Empty call for {@link UdpServer.Listener#udpServerPacketReceived}.
          * @param evt the event
          */
-        public void udpServerPacketReceived(Event evt) {}
+        public void udpServerPacketReceived( UdpServer.Event evt ) {}
 
     }   // end static inner class Adapter
     
