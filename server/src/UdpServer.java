@@ -1,4 +1,5 @@
 
+import java.beans.PropertyChangeEvent;
 import java.util.concurrent.ThreadFactory;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -116,6 +117,7 @@ public class UdpServer {
      */
     public static enum State { STARTING, STARTED, STOPPING, STOPPED };
     private State currentState = State.STOPPED;
+    public final static String STATE_PROP = "state";
     
     
     private Collection<UdpServer.Listener> listeners = new LinkedList<UdpServer.Listener>();    // Event listeners
@@ -184,7 +186,7 @@ public class UdpServer {
                 public void run() {
                     runServer();                            // This runs for a long time
                     ioThread = null;          
-                    recordState( UdpServer.State.STOPPED ); // Clear thread
+                    setState( UdpServer.State.STOPPED ); // Clear thread
                 }   // end run
             };  // end runnable
             
@@ -195,7 +197,7 @@ public class UdpServer {
                 this.ioThread = new Thread( run, this.getClass().getName() );   // Named
             }
 
-            recordState( UdpServer.State.STARTING );        // Update state
+            setState( UdpServer.State.STARTING );        // Update state
             this.ioThread.start();                          // Start thread
         }   // end if: currently stopped
     }   // end start
@@ -211,7 +213,7 @@ public class UdpServer {
      */
     public synchronized void stop(){
         if( this.currentState == UdpServer.State.STARTED ){         // Only if already STARTED
-            recordState( UdpServer.State.STOPPING );                // Mark as STOPPING
+            setState( UdpServer.State.STOPPING );                // Mark as STOPPING
             if( this.mSocket != null ){
                 this.mSocket.close();
             }   // end if: not null
@@ -237,21 +239,12 @@ public class UdpServer {
      * what is reflected by the currentState variable.
      * @param state The new state of the server
      */
-    protected synchronized void recordState( UdpServer.State state ){
+    protected synchronized void setState( UdpServer.State state ){
+        State oldVal = this.currentState;
         this.currentState = state;
-        fireUdpServerStateChanged();
+        firePropertyChange(STATE_PROP,oldVal,state);
     }
     
-    
-    /**
-     * Fires an event declaring the current state of the server.
-     * This may encourage lazy programming on your part, but it's
-     * handy to set yourself up as a listener and then fire an
-     * event in order to initialize this or that.
-     */
-    public synchronized void fireState(){
-        fireUdpServerStateChanged();
-    }
     
     
     /**
@@ -264,16 +257,16 @@ public class UdpServer {
     public synchronized void reset(){
         switch( this.currentState ){
             case STARTED:
-                this.addUdpServerListener( new Adapter(){
-                    @Override
-                    public void udpServerStateChanged( UdpServer.Event evt ){
-                        if( evt.getState() == State.STOPPED ){
+                this.addPropertyChangeListener(STATE_PROP, new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        State newState = (State)evt.getNewValue();
+                        if( newState == State.STOPPED ){
                             UdpServer server = (UdpServer)evt.getSource();
-                            server.removeUdpServerListener(this);
+                            server.removePropertyChangeListener(STATE_PROP,this);
                             server.start();
                         }   // end if: stopped
-                    }   // end state changed
-                }); // end adapter
+                    }   // end prop change
+                });
                 stop();
                 break;
         }   // end switch
@@ -313,7 +306,7 @@ public class UdpServer {
             }   // end for: each proposed
 
             
-            recordState( State.STARTED );                                   // Mark as started
+            setState( State.STARTED );                                   // Mark as started
             LOGGER.info( "UDP Server listening..." );
             
             while( !this.mSocket.isClosed() ){
@@ -348,7 +341,7 @@ public class UdpServer {
                 }   // end else
             }   // end sync
         } finally {
-            recordState( State.STOPPING );
+            setState( State.STOPPING );
             if( this.mSocket != null ){
                 this.mSocket.close();
             }   // end if: not null
@@ -497,7 +490,7 @@ public class UdpServer {
     
     
     /** 
-     * Fires event on calling thread.
+     * Fires event on calling thread for a new packet coming in.
      */
     protected synchronized void fireUdpServerPacketReceived() {
         
@@ -513,21 +506,6 @@ public class UdpServer {
     
     
     
-    /** 
-     * Fires event on calling thread.
-     */
-    protected synchronized void fireUdpServerStateChanged() {
-        
-        final UdpServer.Listener[] ll = listeners.toArray(new UdpServer.Listener[ listeners.size() ] );
-        for( UdpServer.Listener l : ll ){
-            try{
-                l.udpServerStateChanged(event);
-            } catch( Exception exc ){
-                LOGGER.warning("UdpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
-            }   // end catch
-        }   // end for: each listener
-     }  // end fireUdpServerStateChanged
-    
     
     
     
@@ -541,6 +519,7 @@ public class UdpServer {
     public synchronized void fireProperties(){
         firePropertyChange( PORT_PROP, null, getPort()  );      // Port
         firePropertyChange( GROUPS_PROP, null, getGroups()  );    // Multicast groups
+        firePropertyChange( STATE_PROP, null, getState()  );      // State
     }
     
     
@@ -563,7 +542,8 @@ public class UdpServer {
     
     
     
-    /** Add a property listener.
+    /**
+     * Add a property listener.
      * @param listener the property change listener
      */
     public synchronized void addPropertyChangeListener( PropertyChangeListener listener ){
@@ -571,7 +551,8 @@ public class UdpServer {
     }
 
     
-    /** Add a property listener for the named property.
+    /**
+     * Add a property listener for the named property.
      * @param property the sole property name for which to register
      * @param listener the property change listener
      */
@@ -580,7 +561,8 @@ public class UdpServer {
     }
     
     
-    /** Remove a property listener.
+    /**
+     * Remove a property listener.
      * @param listener the property change listener
      */
     public synchronized void removePropertyChangeListener( PropertyChangeListener listener ){
@@ -588,7 +570,8 @@ public class UdpServer {
     }
 
     
-    /** Remove a property listener for the named property.
+    /**
+     * Remove a property listener for the named property.
      * @param property the sole property name for which to stop receiving events
      * @param listener the property change listener
      */
@@ -663,14 +646,6 @@ public class UdpServer {
     public static interface Listener extends java.util.EventListener {
 
         /**
-         * Called when the state of the server has changed, such as
-         * "starting" or "stopped."
-         * @param evt the event
-         * @see UdpServer.State
-         */
-        public abstract void udpServerStateChanged( UdpServer.Event evt );
-
-        /**
          * Called when a packet is received. This is called on the IO thread,
          * so don't take too long, and if you want to offload the processing
          * to another thread, be sure to copy the data out of the datagram
@@ -716,22 +691,17 @@ public class UdpServer {
      * @see Listener
      * @see Event
      */
-    public class Adapter implements UdpServer.Listener {
-
-        /**
-         * Empty call for {@link UdpServer.Listener#udpServerStateChanged}.
-         * @param evt the event
-         */
-        public void udpServerStateChanged( UdpServer.Event evt ) {}
+//    public class Adapter implements UdpServer.Listener {
 
 
         /**
          * Empty call for {@link UdpServer.Listener#udpServerPacketReceived}.
          * @param evt the event
          */
-        public void udpServerPacketReceived( UdpServer.Event evt ) {}
+//        @Override
+//        public void udpServerPacketReceived( UdpServer.Event evt ) {}
 
-    }   // end static inner class Adapter
+//    }   // end static inner class Adapter
     
     
 /* ********                                                    ******** */
@@ -763,6 +733,7 @@ public class UdpServer {
      */
     public static class Event extends java.util.EventObject {
 
+        private final static long serialVersionUID = 1;
 
         /**
          * Creates a Event based on the given {@link UdpServer}.

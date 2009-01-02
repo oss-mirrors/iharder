@@ -46,8 +46,43 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
         this.udpServer.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
                 
+                final String prop = evt.getPropertyName();
+                final Object oldVal = evt.getOldValue();
+                final Object newVal = evt.getNewValue();
+                System.out.println("Property: " + prop + ", Old: " + oldVal + ", New: " + newVal );
+
+                if( UdpServer.STATE_PROP.equals( prop ) ){
+                    final UdpServer.State state = (UdpServer.State)newVal;
+                    SwingUtilities.invokeLater( new Runnable() {
+                        public void run() {
+                            switch( state ){
+                                case STARTING:
+                                    stateLabel.setText( "Starting" );
+                                    startStopButton.setEnabled( false );
+                                    break;
+                                case STARTED:
+                                    stateLabel.setText( "Started" );
+                                    startStopButton.setText( "Stop" );
+                                    startStopButton.setEnabled( true );
+                                    break;
+                                case STOPPING:
+                                    stateLabel.setText( "Stopping" );
+                                    startStopButton.setEnabled( false );
+                                    break;
+                                case STOPPED:
+                                    stateLabel.setText( "Stopped" );
+                                    startStopButton.setText( "Start" );
+                                    startStopButton.setEnabled( true );
+                                    break;
+                                default:
+                                    assert false : state;
+                                    break;
+                            }   // end switch
+                        }   // end run
+                    });
+                }
+
                 if( UdpServer.PORT_PROP.equals( evt.getPropertyName() ) ){
-                    final Object newVal = evt.getNewValue();
                     SwingUtilities.invokeLater( new Runnable() {
                         public void run() {
                             portField.setValue( newVal );
@@ -55,8 +90,6 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
                     }); // end swing utilities
                     
                 } else if( UdpServer.GROUPS_PROP.equals( evt.getPropertyName() ) ){
-                    final Object newVal = evt.getNewValue();
-                    System.out.println("New groups: " + newVal );
                     SwingUtilities.invokeLater( new Runnable() {
                         public void run() {
                             groupField.setText( newVal == null ? "" : newVal.toString() );
@@ -67,10 +100,29 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
             }
         });
         this.udpServer.fireProperties();
-        
         this.udpServer.addUdpServerListener(this);
-        this.udpServer.fireState();
     }
+
+
+
+
+    public void udpServerPacketReceived(UdpServer.Event evt) {
+        this.receiveIndicator.indicate();
+        DatagramPacket packet = evt.getUdpServer().getPacket(); // Not actually using this here.
+        final String s = evt.getPacketAsString();
+
+        // A more efficient way would be to subclass SwingWorker
+        // and make a public "myPublish" method, and use that to
+        // call SwingWorker's publish method, queuing up items
+        // to process in a batch.
+        // Still, this works fine for demonstration.
+        SwingUtilities.invokeLater( new Runnable() {
+            public void run() {
+                incomingArea.setText( incomingArea.getText() + s + "\n" );
+            }   // end run
+        }); // end swing utilities
+    }
+    
     
     /** This method is called from within the constructor to
      * initialize the form.
@@ -329,54 +381,5 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
     private UdpServer udpServer;
     // End of variables declaration//GEN-END:variables
 
-    public void udpServerStateChanged(UdpServer.Event evt) {
-        final UdpServer.State state = evt.getState();
-        SwingUtilities.invokeLater( new Runnable() {
-            public void run() {
-                switch( state ){
-                    case STARTING:
-                        stateLabel.setText( "Starting" );
-                        startStopButton.
-                        setEnabled( false );
-                        break;
-                    case STARTED:
-                        stateLabel.setText( "Started" );
-                        startStopButton.setText( "Stop" );
-                        startStopButton.setEnabled( true );
-                        break;
-                    case STOPPING:
-                        stateLabel.setText( "Stopping" );
-                        startStopButton.setEnabled( false );
-                        break;
-                    case STOPPED:
-                        stateLabel.setText( "Stopped" );
-                        startStopButton.setText( "Start" );
-                        startStopButton.setEnabled( true );
-                        break;
-                    default:
-                        assert false : state;
-                        break;
-                }   // end switch
-            }   // end run
-        }); // end swing utilities
-    }
-
-    
-    public void udpServerPacketReceived(UdpServer.Event evt) {
-        this.receiveIndicator.indicate();
-        DatagramPacket packet = evt.getUdpServer().getPacket(); // Not actually using this here.
-        final String s = evt.getPacketAsString();
-        
-        // A more efficient way would be to subclass SwingWorker
-        // and make a public "myPublish" method, and use that to
-        // call SwingWorker's publish method, queuing up items
-        // to process in a batch.
-        // Still, this works fine for demonstration.
-        SwingUtilities.invokeLater( new Runnable() {
-            public void run() {
-                incomingArea.setText( incomingArea.getText() + s + "\n" );
-            }   // end run
-        }); // end swing utilities
-    }
     
 }

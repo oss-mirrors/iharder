@@ -2,12 +2,12 @@
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.charset.Charset;
 import java.text.ParseException;
+import java.util.*;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFormattedTextField;
@@ -39,33 +39,36 @@ import javax.swing.SwingWorker;
  * @see TcpServer.Adapter
  * @see TcpServer.Event
  */
-public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener {
-    
-    private int sockCtr = 1;
+public class NioExample extends javax.swing.JFrame implements NioServer.Listener {
+
+    private int tcpCtr = 1;
+    private int udpCtr = 1;
     private final static long serialVersionUID = 1;
+    private Map<SelectionKey,TcpWorker> tcpWorkers = new HashMap<SelectionKey,TcpWorker>();
     
     /** Creates new form TcpExample */
-    public TcpExample() {
+    public NioExample() {
         initComponents();
         myInitComponents();
     }
     
     private void myInitComponents(){
+        nioServer.addTcpBinding(new InetSocketAddress(1234));
+        nioServer.addUdpBinding(new InetSocketAddress(1234));
+
         
-        TcpServer.setLoggingLevel(Level.OFF);
+        NioServer.setLoggingLevel(Level.OFF);
         
-        this.tcpServer.setExecutor( Executors.newCachedThreadPool() );
-        
-        this.tcpServer.addPropertyChangeListener(new PropertyChangeListener() {
+        this.nioServer.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
 
-                final String prop = evt.getPropertyName();
-                final Object oldVal = evt.getOldValue();
-                final Object newVal = evt.getNewValue();
+                String prop = evt.getPropertyName();
+                Object oldVal = evt.getOldValue();
+                Object newVal = evt.getNewValue();
                 System.out.println("Property: " + prop + ", Old: " + oldVal + ", New: " + newVal );
 
-                if( TcpServer.STATE_PROP.equals( prop ) ){
-                    final TcpServer.State state = (TcpServer.State)newVal;
+                if( NioServer.STATE_PROP.equals( evt.getPropertyName() ) ){
+                    final NioServer.State state = (NioServer.State)evt.getNewValue();
                     SwingUtilities.invokeLater( new Runnable() {
                         public void run() {
                             switch( state ){
@@ -94,18 +97,11 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
                         }   // end run
                     });
                 }
-                
-                if( TcpServer.PORT_PROP.equals( evt.getPropertyName() ) ){
-                    SwingUtilities.invokeLater( new Runnable() {
-                        public void run() {
-                            portField.setValue( newVal );
-                        }   // end run
-                    }); // end swing utilities
-                }   // end if: port
             }   // end prop change
         });
-        this.tcpServer.addTcpServerListener(this);
-        this.tcpServer.fireProperties();
+        this.nioServer.fireProperties();
+        
+        this.nioServer.addNioServerListener(this);
     }
     
     /** This method is called from within the constructor to
@@ -117,6 +113,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     private void initComponents() {
 
         tcpServer = new TcpServer();
+        nioServer = new NioServer();
         jLabel1 = new javax.swing.JLabel();
         portField = new javax.swing.JFormattedTextField(0);
         jPanel1 = new javax.swing.JPanel();
@@ -128,7 +125,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
         newSocketIndicator = new IndicatorLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Tcp Server Example");
+        setTitle("Nio Server Example");
 
         jLabel1.setText("Port:");
 
@@ -152,7 +149,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)
+                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 390, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -239,20 +236,20 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
         try {
             JFormattedTextField field = (JFormattedTextField) evt.getSource();
             field.commitEdit();//GEN-LAST:event_portFieldActionPerformed
-            this.tcpServer.setPort((Integer)field.getValue());
+            //this.tcpServer.setPort((Integer)field.getValue());
         } catch (ParseException ex) {
             Logger.getLogger(TcpExample.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private void startStopButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startStopButtonActionPerformed
-        TcpServer.State state = this.tcpServer.getState();
+        NioServer.State state = this.nioServer.getState();
         switch( state ){
             case STOPPED:
-                this.tcpServer.start();
+                this.nioServer.start();
                 break;
             case STARTED:
-                this.tcpServer.stop();
+                this.nioServer.stop();
                 break;
             default:
                 System.err.println("Shouldn't see this. State: " + state );
@@ -264,7 +261,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
         try {
             JFormattedTextField field = (JFormattedTextField) evt.getSource();
             field.commitEdit();
-            this.tcpServer.setPort((Integer)field.getValue());
+            //this.tcpServer.setPort((Integer)field.getValue());
         } catch (ParseException ex) {
             Logger.getLogger(TcpExample.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -281,9 +278,9 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
                     for( int i = 0; i < 100; i++ ){
                         double d = Math.random();
                         if( d < .5 ){
-                            tcpServer.start();
+                            nioServer.start();
                         } else {
-                            tcpServer.stop();
+                            nioServer.stop();
                         }
                         try{
                             Thread.sleep( (int)(Math.random()*100) );
@@ -303,7 +300,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new TcpExample().setVisible(true);
+                new NioExample().setVisible(true);
             }
         });
     }
@@ -314,6 +311,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
     private IndicatorLabel newSocketIndicator;
+    private NioServer nioServer;
     private javax.swing.JFormattedTextField portField;
     private javax.swing.JButton startStopButton;
     private javax.swing.JLabel stateLabel;
@@ -321,60 +319,95 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     private TcpServer tcpServer;
     // End of variables declaration//GEN-END:variables
 
-    public void tcpServerSocketReceived(TcpServer.Event evt) {
+    
+
+    public void nioServerNewConnectionReceived(NioServer.Event evt) {
         this.newSocketIndicator.indicate();                     // New incoming connection: flash indicator at user
-        final Socket socket = evt.getSocket();                  // Get the TCP socket
-        
+
         JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
         JScrollPane pane = new JScrollPane();
         final JTextArea area = new JTextArea();
         pane.setViewportView(area);
         panel.add( pane, BorderLayout.CENTER );
-        this.tabbedPane.add(""+(sockCtr++), panel);
-        
-        // Process the long-lived connection on another thread
-        // so that we can immediately return control to the server
-        // and wait for another connection while this one persists.
-        // Ordinary servers would not user a SwingWorker since they
-        // would not be tying themselves to the Swing GUI.
-        SwingWorker<Socket,String> sw = new SwingWorker<Socket,String>() {
-            @Override
-            protected Socket doInBackground() throws Exception {
-                InputStream in = socket.getInputStream();       // Data in from remote user
-                OutputStream out = socket.getOutputStream();    // Response to remote user
-                
-                byte[] buff = new byte[1024];                   // Arbitrary buffer size
-                int num = -1;                                   // Number of bytes read
-                while( (num = in.read(buff)) >= 0 ){            // Read bytes into buffer
-                    publish( new String( buff, 0, num ) );      // Published bytes will be made available
-                }   // end while                                // on the event thread for GUI display.
-                
-                return socket;                                  // The socket is closed.
+        this.tabbedPane.add("TCP "+(tcpCtr++), panel);
+        TcpWorker tw = new TcpWorker(area);
+        this.tcpWorkers.put(evt.getKey(), tw);
+
+    }
+
+
+    public void nioServerDataReceived(NioServer.Event evt) {
+        if( evt.isTcp() ){
+
+            String s = Charset.forName("US-ASCII").decode(evt.getBuffer()).toString();
+            this.tcpWorkers.get(evt.getKey()).textReceived(s);
+
+        } else if( evt.isUdp() ){
+
+            String s = Charset.forName("US-ASCII").decode(evt.getBuffer()).toString();
+            JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
+            JScrollPane pane = new JScrollPane();
+            final JTextArea area = new JTextArea(s);
+            pane.setViewportView(area);
+            panel.add( pane, BorderLayout.CENTER );
+            this.tabbedPane.add("UDP "+(udpCtr++), panel);
+
+        }
+    }
+
+    public void nioServerConnectionClosed(NioServer.Event evt) {
+        if( evt.isTcp() ){
+            this.tcpWorkers.get(evt.getKey()).execute();
+        }
+    }
+
+    // Process the long-lived connection on another thread
+    // so that we can immediately return control to the server
+    // and wait for another connection while this one persists.
+    // Ordinary servers would not user a SwingWorker since they
+    // would not be tying themselves to the Swing GUI.
+    private class TcpWorker extends SwingWorker<Void,String> {
+        //sw = new SwingWorker<Object,String>() {
+        private JTextArea area;
+
+        private TcpWorker(JTextArea area){
+            this.area = area;
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception { return null; }
+
+        /**
+         * Even if I'm not running the SwingWorker, I can still
+         * use it to queue up work that is published to process
+         * when convenient on the event thread. Pretty handy, eh?
+         * @param s
+         */
+        public void textReceived( String s ){
+            publish(s);
+        }
+
+        @Override
+        protected void process( List<String> chunks ){      // Queued up published byte arrays
+            StringBuilder sb = new StringBuilder();         // Put together into one string
+            for( String s: chunks ){
+                sb.append(s);
+            }   // end for: each string
+            area.setText( area.getText() + sb );            // Add string to JTextArea
+        }   // end process
+
+        /**
+         * Call sw.execute() when done to have this method executed.
+         */
+        @Override
+        protected void done(){
+            try{
+                area.setText( area.getText() + "\nConnection Closed." );
+            } catch( Exception exc ){
+                exc.printStackTrace();
             }
-            
-            @Override
-            protected void process( List<String> chunks ){      // Queued up published byte arrays
-                StringBuilder sb = new StringBuilder();         // Put together into one string
-                for( String s: chunks ){
-                    sb.append(s);
-                }   // end for: each string
-                area.setText( area.getText() + sb );            // Add string to JTextArea
-            }   // end process
-            
-            @Override
-            protected void done(){
-                try{
-                    Socket socket = get();                      // As provided by doInBackground()
-                    try{ socket.close(); }                      // Try to close socket if needed
-                    catch( Exception e1 ){}
-                    area.setText( area.getText() + "\nSocket Closed." );
-                } catch( Exception exc ){
-                    exc.printStackTrace();
-                }
-            }   // end done
-        };
-        sw.execute();                                           // Don't forget to start the thread!
-        
+        }   // end done
+   
     }
     
 }

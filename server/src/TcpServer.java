@@ -1,4 +1,5 @@
 
+import java.beans.PropertyChangeEvent;
 import java.util.concurrent.ThreadFactory;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -29,7 +30,7 @@ import java.util.concurrent.Executor;
  * <p>Of course it won't be much help unless you register as a listener
  * so you'll know when a <tt>java.net.Socket</tt> has come in:</p>
  * 
- * <pre> server.addTcpServerListener( new TcpServer.Adapter(){
+ * <pre> server.addTcpServerListener( new TcpServer.Listener(){
  *     public void tcpServerSocketReceived( TcpServer.Event evt ){
  *         Socket socket = evt.getSocket();
  *         ...
@@ -107,6 +108,7 @@ public class TcpServer {
      */
     public static enum State { STARTING, STARTED, STOPPING, STOPPED };
     private State currentState = State.STOPPED;
+    public final static String STATE_PROP = "state";
     
     
     private Collection<Listener> listeners = new LinkedList<Listener>();                // Event listeners
@@ -144,6 +146,8 @@ public class TcpServer {
      * Constructs a new TcpServer that will listen on the given port 
      * (but not until {@link #start} is called). The provided
      * ThreadFactory will be used when starting and running the server.
+     * @param port the port to listen to
+     * @param factory for creating the io thread
      */
     public TcpServer( int port, ThreadFactory factory ){
         this.port = port;
@@ -233,8 +237,9 @@ public class TcpServer {
      * what is reflected by the currentState variable.
      */
     protected synchronized void setState( State state ){
+        State oldVal = this.currentState;
         this.currentState = state;
-        fireTcpServerStateChanged();
+        firePropertyChange(STATE_PROP,oldVal,state);
     }
     
     
@@ -244,9 +249,9 @@ public class TcpServer {
      * handy to set yourself up as a listener and then fire an
      * event in order to initialize this or that.
      */
-    public synchronized void fireState(){
-        fireTcpServerStateChanged();
-    }
+    //public synchronized void fireState(){
+    //    fireTcpServerStateChanged();
+    //}
     
     
     /**
@@ -259,16 +264,16 @@ public class TcpServer {
     public synchronized void reset(){
         switch( this.currentState ){
             case STARTED:
-                this.addTcpServerListener( new Adapter(){
-                    @Override
-                    public void tcpServerStateChanged( Event evt ){
-                        if( evt.getState() == State.STOPPED ){
+                this.addPropertyChangeListener(STATE_PROP, new PropertyChangeListener() {
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        State newState = (State)evt.getNewValue();
+                        if( newState == State.STOPPED ){
                             TcpServer server = (TcpServer)evt.getSource();
-                            server.removeTcpServerListener(this);
+                            server.removePropertyChangeListener(STATE_PROP,this);
                             server.start();
                         }   // end if: stopped
-                    }   // end state changed
-                }); // end adapter
+                    }   // end prop change
+                });
                 stop();
                 break;
         }   // end switch
@@ -290,7 +295,7 @@ public class TcpServer {
             LOGGER.info( "TCP Server listening..." );
             
             while( !this.tcpServer.isClosed() ){
-                synchronized( This ){
+                synchronized( this ){
                     if( this.currentState == State.STOPPING ){
                         LOGGER.info( "Stopping TCP Server by request." );
                         this.tcpServer.close();
@@ -312,7 +317,7 @@ public class TcpServer {
             }   // end while: keepGoing
             
         } catch( Exception exc ){
-            synchronized( This ){
+            synchronized( this ){
                 if( this.currentState == State.STOPPING ){  // User asked to stop
                     try{
                         this.tcpServer.close();
@@ -350,6 +355,7 @@ public class TcpServer {
     
     /**
      * Returns the last Socket received.
+     * @return the socket just received
      */
     public synchronized Socket getSocket(){
         return this.socket;
@@ -441,22 +447,28 @@ public class TcpServer {
     
     
 
-    /** Adds a {@link Listener}. */    
-    public synchronized void addTcpServerListener(Listener l) {
+    /** 
+     * Adds a {@link Listener}.
+     * @param l the listener
+     */
+    public synchronized void addTcpServerListener(TcpServer.Listener l) {
         listeners.add(l);
     }
 
     
-    /** Removes a {@link Listener}. */
-    public synchronized void removeTcpServerListener(Listener l) {
+    /** 
+     * Removes a {@link Listener}.
+     * @param l the listener
+     */
+    public synchronized void removeTcpServerListener(TcpServer.Listener l) {
         listeners.remove(l);
     }
     
     
-    /** Fires event on calling thread. */
+    /** Fires event when a socket is received */
     protected synchronized void fireTcpServerSocketReceived() {
         
-        final Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
+        final TcpServer.Listener[] ll = listeners.toArray(new TcpServer.Listener[ listeners.size() ] );
         
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -487,40 +499,6 @@ public class TcpServer {
     
     
     
-    /** Fires event on calling thread. */
-    protected synchronized void fireTcpServerStateChanged() {
-        
-        final Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
-        
-        // Make a Runnable object to execute the calls to listeners.
-        // In the event we don't have an Executor, this results in
-        // an unnecessary object instantiation, but it also makes
-        // the code more maintainable.
-        Runnable r = new Runnable(){
-            public void run(){
-            for( Listener l : ll ){
-                try{
-                    l.tcpServerStateChanged(event);
-                } catch( Exception exc ){
-                    LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
-                }   // end catch
-            }   // end for: each listener
-            }   // end run
-        };
-        
-        if( this.executor == null ){
-            r.run();
-        } else {
-            try{
-                this.executor.execute( r ); 
-            } catch( Exception exc ){
-                LOGGER.warning("Supplied Executor " + this.executor + " threw an exception: " + exc.getMessage() );
-            }   // end catch
-        }   // end else: other thread
-     }  // end fireTcpServerStateChanged
-    
-    
-    
     
 /* ********  P R O P E R T Y   C H A N G E  ******** */
     
@@ -531,12 +509,13 @@ public class TcpServer {
      */
     public synchronized void fireProperties(){
         firePropertyChange( PORT_PROP, null, getPort()  );      // Port
+        firePropertyChange( STATE_PROP, null, getState()  );      // State
     }
     
-    
+
     /**
      * Fire a property change event on the current thread.
-     * 
+     *
      * @param prop      name of property
      * @param oldVal    old value
      * @param newVal    new value
@@ -550,31 +529,46 @@ public class TcpServer {
                     ,exc);
         }   // end catch
     }   // end fire
-    
-    
-    
-    /** Add a property listener. */
+
+
+
+    /**
+     * Add a property listener.
+     * @param listener the property change listener
+     */
     public synchronized void addPropertyChangeListener( PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(listener);
     }
 
-    
-    /** Add a property listener for the named property. */
+
+    /**
+     * Add a property listener for the named property.
+     * @param property the sole property name for which to register
+     * @param listener the property change listener
+     */
     public synchronized void addPropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(property,listener);
     }
-    
-    
-    /** Remove a property listener. */
+
+
+    /**
+     * Remove a property listener.
+     * @param listener the property change listener
+     */
     public synchronized void removePropertyChangeListener( PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(listener);
     }
 
-    
-    /** Remove a property listener for the named property. */
+
+    /**
+     * Remove a property listener for the named property.
+     * @param property the sole property name for which to stop receiving events
+     * @param listener the property change listener
+     */
     public synchronized void removePropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(property,listener);
     }
+
     
     
     
@@ -637,18 +631,9 @@ public class TcpServer {
      * @author rharder@users.sourceforge.net
      * @version 0.1
      * @see TcpServer
-     * @see Adapter
      * @see Event
      */
     public static interface Listener extends java.util.EventListener {
-
-        /**
-         * Called when the state of the server has changed, such as
-         * "starting" or "stopped."
-         * @param evt the event
-         * @see TcpServer.State
-         */
-        public abstract void tcpServerStateChanged( Event evt );
 
         /**
          * Called when a packet is received. This is called on the IO thread,
@@ -695,22 +680,22 @@ public class TcpServer {
      * @see Listener
      * @see Event
      */
-    public class Adapter implements Listener {
+//    public class Adapter implements Listener {
 
         /**
          * Empty call for {@link TcpServer.Listener#tcpServerStateChanged}.
          * @param evt the event
          */
-        public void tcpServerStateChanged(Event evt) {}
+      //  public void tcpServerStateChanged(Event evt) {}
 
 
         /**
          * Empty call for {@link TcpServer.Listener#tcpServerSocketReceived}.
          * @param evt the event
          */
-        public void tcpServerSocketReceived(Event evt) {}
+//        public void tcpServerSocketReceived(Event evt) {}
 
-    }   // end static inner class Adapter
+//    }   // end static inner class Adapter
     
     
 /* ********                                                    ******** */
@@ -737,11 +722,11 @@ public class TcpServer {
      * @author rharder@users.sourceforge.net
      * @version 0.1
      * @see TcpServer
-     * @see Adapter
      * @see Listener
      */
     public static class Event extends java.util.EventObject {
 
+        private final static long serialVersionUID = 1;
 
         /**
          * Creates a Event based on the given {@link TcpServer}.

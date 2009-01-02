@@ -4,10 +4,12 @@
   <NonVisualComponents>
     <Component class="TcpServer" name="tcpServer">
     </Component>
+    <Component class="NioServer" name="nioServer">
+    </Component>
   </NonVisualComponents>
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="3"/>
-    <Property name="title" type="java.lang.String" value="Tcp Server Example"/>
+    <Property name="title" type="java.lang.String" value="Nio Server Example"/>
   </Properties>
   <SyntheticProperties>
     <SyntheticProperty name="formSizePolicy" type="int" value="1"/>
