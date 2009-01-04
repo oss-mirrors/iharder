@@ -1389,9 +1389,6 @@ public class NioServer {
          * methods from the key's channel after checking the type
          * of channel (SocketChannel or DatagramChannel).</p>
          *
-         * <p>For UDP datagrams, use the {@link #getSourceAddress}
-         * method to get the source of the datagram.</p>
-         *
          * @return remote address from which connection came
          */
         public SocketAddress getRemoteSocketAddress(){

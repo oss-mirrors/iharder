@@ -9,28 +9,43 @@
 </head>
 <body bgcolor="white">
 
-<p>This is a simple, robust, thread-safe UDP and TCP server 
+<p>These are simple, robust, thread-safe UDP and TCP servers
 suitable for many applications.</p>
 
 
 
 <h2>Package Specification</h2>
+
+<p>The {@link TcpServer} and {@link UdpServer} classes
+use the standard <code>java.io</code> classes with
+Streams and Datagrams and so forth. The {@link NioServer}
+class uses the <code>java.nio</code> classes and can handle
+TCP and UDP connections (and multiple ports) in a single
+server. It uses ByteBuffers.</p>
+
+<h2>Using These Servers in Your Projects</h2>
+
+<p>There's no need to (and you probably shouldn't) copy all of
+these source files to your projects or try to include them all
+in an attached jar file. You should copy whichever servers
+({@link TcpServer}, {@link UdpServer}, and {@link NioServer})
+to your project tree and give the file an appropriate
+<code>package com.you.yourproject</code> line at the top.</p>
+
+
+<h2>Licensing (Public Domain)</h2>
 <p>Since this is Public Domain, you don't need to worry about
-licensing, and you can simply copy the UdpServer.java 
+licensing, and you can simply copy the UdpServer.java
 or TcpServer.java files to your own package and use them as you like.</p>
 
+<h2>Home Page</h2>
 
-<h2>Related Documentation</h2>
-
-
-<h3>General Flow</h3>
-
-
-<h3>External Dependencies</h3>
-
+<p>This and other code is available at <a href="http://iharder.net">iHarder.net</a>.</p>
 
 <!-- Put @see and @since tags down here. -->
 
 @see UdpServer
+@see TcpServer
+@see NioServer
 </body>
 </html>

@@ -58,7 +58,7 @@ import java.util.LinkedList;
  * making an instance field to hold a UdpServer where you'd have to
  * pass along all the setPort(...) methods and so forth.</p>
  * 
- * <p>The supporting {@link Event}, {@link Listener}, and {@link Adapter}
+ * <p>The supporting {@link Event} and {@link Listener}
  * classes are static inner classes in this file so that you have only one
  * file to copy to your project. You're welcome.</p>
  * 
@@ -75,7 +75,6 @@ import java.util.LinkedList;
  * @author rharder@users.sourceforge.net
  * @version 0.1
  * @see UdpServer
- * @see Adapter
  * @see Event
  * @see Listener
  */
@@ -640,7 +639,6 @@ public class UdpServer {
      * @author rharder@users.sourceforge.net
      * @version 0.1
      * @see UdpServer
-     * @see Adapter
      * @see Event
      */
     public static interface Listener extends java.util.EventListener {
@@ -728,7 +726,6 @@ public class UdpServer {
      * @author rharder@users.sourceforge.net
      * @version 0.1
      * @see UdpServer
-     * @see Adapter
      * @see Listener
      */
     public static class Event extends java.util.EventObject {

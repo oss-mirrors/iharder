@@ -52,7 +52,7 @@ import java.util.concurrent.Executor;
  * making an instance field to hold a TcpServer where you'd have to
  * pass along all the setPort(...) methods and so forth.</p>
  * 
- * <p>The supporting {@link Event}, {@link Listener}, and {@link Adapter}
+ * <p>The supporting {@link Event} and {@link Listener}
  * classes are static inner classes in this file so that you have only one
  * file to copy to your project. You're welcome.</p>
  * 
@@ -69,7 +69,6 @@ import java.util.concurrent.Executor;
  * @author rharder@users.sourceforge.net
  * @version 0.1
  * @see TcpServer
- * @see Adapter
  * @see Event
  * @see Listener
  */

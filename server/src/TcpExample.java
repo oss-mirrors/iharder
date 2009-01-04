@@ -36,7 +36,6 @@ import javax.swing.SwingWorker;
  * @version 0.1
  * @see TcpServer
  * @see TcpServer.Listener
- * @see TcpServer.Adapter
  * @see TcpServer.Event
  */
 public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener {

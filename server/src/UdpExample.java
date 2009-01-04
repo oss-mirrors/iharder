@@ -28,11 +28,12 @@ import javax.swing.SwingUtilities;
  * @version 0.1
  * @see UdpServer
  * @see UdpServer.Listener
- * @see UdpServer.Adapter
  * @see UdpServer.Event
  */
 public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener {
     
+    private final static long serialVersionUID = 1;
+
     /** Creates new form UdpExample */
     public UdpExample() {
         initComponents();
