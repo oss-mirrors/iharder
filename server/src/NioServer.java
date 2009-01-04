@@ -111,6 +111,8 @@ public class NioServer {
 
     public final static String TCP_BINDINGS_PROP = "tcpBindings";
     public final static String UDP_BINDINGS_PROP = "udpBindings";
+    public final static String SINGLE_TCP_PORT_PROP = "singleTcpPort";
+    public final static String SINGLE_UDP_PORT_PROP = "singleUdpPort";
     
     private final Map<SocketAddress,SelectionKey> tcpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested TCP bindings, e.g., "listen on port 80"
     private final Map<SocketAddress,SelectionKey> udpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested UDP bindings
@@ -195,10 +197,16 @@ public class NioServer {
     public synchronized void stop(){
         if( this.currentState == State.STARTED || this.currentState == State.STARTING ){   // Only if already STARTED
             setState( State.STOPPING );             // Mark as STOPPING
-            if( this.selector != null ){           //
+            if( this.selector != null ){  
                 try{
+                    Set<SelectionKey> keys = this.selector.keys();
+                    for( SelectionKey key : this.selector.keys() ){
+                        key.channel().close();
+                        key.cancel();
+                    }
                     this.selector.close();
                 } catch( IOException exc ){
+                    exc.printStackTrace();
                     LOGGER.log( 
                       Level.SEVERE,
                       "An error occurred while closing the server. " +
@@ -643,10 +651,10 @@ public class NioServer {
      */
     public synchronized NioServer removeTcpBinding( SocketAddress addr ){
         Set<SocketAddress> oldVal = this.getTcpBindings();                      // Save old set for prop change event
-        this.tcpBindings.remove(addr);                                          // Remove binding
-        Set<SocketAddress> newVal = this.getTcpBindings();                      // Save new set for prop change event
         this.pendingTcpRemoves.put( addr, this.tcpBindings.get(addr) );         // Prepare pending remove action
+        this.tcpBindings.remove(addr);                                          // Remove binding
         this.pendingTcpAdds.remove(addr);                                       // In case it's also pending an add
+        Set<SocketAddress> newVal = this.getTcpBindings();                      // Save new set for prop change event
         
         if( this.selector != null ){                                            // If there's a selector...
             this.selector.wakeup();                                             // Wake it up to handle the remove action
@@ -781,11 +789,11 @@ public class NioServer {
      */
     public synchronized NioServer removeUdpBinding( SocketAddress addr ){
         Map<SocketAddress,String> oldVal = this.getUdpBindings();               // Save old set for prop change event
+        this.pendingUdpRemoves.put( addr, this.udpBindings.get(addr) );         // Prepare pending remove action
         this.udpBindings.remove(addr);                                          // Remove binding
         this.multicastGroups.remove(addr);                                      // Remove multicast note
-        Map<SocketAddress,String> newVal = this.getUdpBindings();               // Save new set for prop change event
-        this.pendingUdpRemoves.put( addr, this.udpBindings.get(addr) );         // Prepare pending remove action
         this.pendingUdpAdds.remove(addr);                                       // In case it's also pending an add
+        Map<SocketAddress,String> newVal = this.getUdpBindings();               // Save new set for prop change event
 
         if( this.selector != null ){                                            // If there's a selector...
             this.selector.wakeup();                                             // Wake it up to handle the remove action
@@ -867,8 +875,87 @@ public class NioServer {
     }
 
 
-    
-    
+/* ********  S I N G L E   P O R T  ******** */
+
+
+
+    /**
+     * Convenience method for clearing all bindings and
+     * setting up listening for TCP on the given port.
+     * @param port the port to listen to
+     * @return <code>this</code> to aid in chaining
+     * @throw IllegalArgumentException if port is out of range
+     */
+    public synchronized NioServer setSingleTcpPort( int port ){
+        int oldVal = getSingleTcpPort();
+        if( oldVal == port ){
+            return this;
+        }
+        clearTcpBindings();
+        addTcpBinding( new InetSocketAddress(port) );
+        int newVal =  port;
+        firePropertyChange( SINGLE_TCP_PORT_PROP, oldVal, newVal );
+        return this;
+    }
+
+
+    /**
+     * Convenience method for clearing all bindings and
+     * setting up listening for UDP on the given port.
+     * @param port the port to listen to
+     * @return <code>this</code> to aid in chaining
+     * @throw IllegalArgumentException if port is out of range
+     */
+    public synchronized NioServer setSingleUdpPort( int port ){
+        int oldVal = getSingleUdpPort();
+        if( oldVal == port ){
+            return this;
+        }
+        clearUdpBindings();
+        addUdpBinding( new InetSocketAddress(port) );
+        int newVal =  port;
+        firePropertyChange( SINGLE_UDP_PORT_PROP, oldVal, newVal );
+        return this;
+    }
+
+
+    /**
+     * Returns the port for the single TCP binding in effect,
+     * or -1 (minus one) if there are no or multiple TCP
+     * bindings or some other error.
+     * @return TCP listening port or -1
+     */
+    public synchronized int getSingleTcpPort(){
+        int port = -1;
+        Set<SocketAddress> bindings = getTcpBindings();
+        if( bindings.size() == 1 ){
+            SocketAddress sa = bindings.iterator().next();
+            if( sa instanceof InetSocketAddress ){
+                port = ((InetSocketAddress)sa).getPort();
+            }   // end if: inet
+        }   // end if: only one binding
+        return port;
+    }
+
+
+
+    /**
+     * Returns the port for the single UDP binding in effect,
+     * or -1 (minus one) if there are no or multiple UDP
+     * bindings or some other error.
+     * @return UDP listening port or -1
+     */
+    public synchronized int getSingleUdpPort(){
+        int port = -1;
+        Map<SocketAddress,String> bindings = getUdpBindings();
+        if( bindings.size() == 1 ){
+            SocketAddress sa = bindings.keySet().iterator().next();
+            if( sa instanceof InetSocketAddress ){
+                port = ((InetSocketAddress)sa).getPort();
+            }   // end if: inet
+        }   // end if: only one binding
+        return port;
+    }
     
 /* ********  E V E N T S  ******** */
     
