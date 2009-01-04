@@ -108,6 +108,9 @@ public class NioServer {
     private Thread ioThread;                                                            // Performs IO
     private Selector selector;                                                  // Brokers all the connections
 
+
+    public final static String TCP_BINDINGS_PROP = "tcpBindings";
+    public final static String UDP_BINDINGS_PROP = "udpBindings";
     
     private final Map<SocketAddress,SelectionKey> tcpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested TCP bindings, e.g., "listen on port 80"
     private final Map<SocketAddress,SelectionKey> udpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested UDP bindings
@@ -117,8 +120,8 @@ public class NioServer {
     private final Set<SocketAddress> pendingTcpAdds = new HashSet<SocketAddress>(); // TCP bindings to add to selector on next cycle
     private final Set<SocketAddress> pendingUdpAdds = new HashSet<SocketAddress>(); // UDP bindings to add to selector on next cycle
 
-    private final Set<SocketAddress> pendingTcpRemoves = new HashSet<SocketAddress>(); // TCP bindings to remove from selector on next cycle
-    private final Set<SocketAddress> pendingUdpRemoves = new HashSet<SocketAddress>(); // UDP bindings to remove from selector on next cycle
+    private final Map<SocketAddress,SelectionKey> pendingTcpRemoves = new HashMap<SocketAddress,SelectionKey>(); // TCP bindings to remove from selector on next cycle
+    private final Map<SocketAddress,SelectionKey> pendingUdpRemoves = new HashMap<SocketAddress,SelectionKey>(); // UDP bindings to remove from selector on next cycle
 
 
 /* ********  C O N S T R U C T O R S  ******** */
@@ -266,15 +269,17 @@ public class NioServer {
      */
     protected void runServer(){
         try{
-            this.selector = Selector.open();
             ByteBuffer buff = ByteBuffer.allocateDirect(this.bufferSize);
 
             // Add all the requested TCP and UDP bindings to the "pending" lists
             synchronized( this ){
+                this.selector = Selector.open();
                 this.pendingTcpAdds.clear();
                 this.pendingTcpAdds.addAll(this.tcpBindings.keySet());
                 this.pendingUdpAdds.clear();
                 this.pendingUdpAdds.addAll(this.udpBindings.keySet());
+                this.pendingTcpRemoves.clear();
+                this.pendingTcpRemoves.clear();
             }
             
             setState( State.STARTED );                                          // Mark as started
@@ -295,6 +300,7 @@ public class NioServer {
 
                     // Pending TCP Adds
                     for( SocketAddress addr : this.pendingTcpAdds ){            // For each add
+                        LOGGER.fine("Binding TCP: " + addr );
                         ServerSocketChannel sc = ServerSocketChannel.open();    // Open a channel
                         sc.socket().bind(addr);                                 // Bind as requested
                         sc.configureBlocking(false);                            // Make non-blocking
@@ -306,6 +312,7 @@ public class NioServer {
 
                     // Pending UDP Adds
                     for( SocketAddress addr : this.pendingUdpAdds ){            // Same comments as for TCP
+                        LOGGER.fine("Binding UDP: " + addr );
                         DatagramChannel dc = DatagramChannel.open();
                         dc.socket().bind(addr);
                         dc.configureBlocking(false);
@@ -364,26 +371,26 @@ public class NioServer {
                     this.pendingUdpAdds.clear();
 
                     // Pending TCP Removes
-                    for( SocketAddress addr : this.pendingTcpRemoves ){         // For each pending remove
-                        SelectionKey key = this.tcpBindings.get(addr);          // Get the registered key
+                    for( Map.Entry<SocketAddress,SelectionKey> e : this.pendingTcpRemoves.entrySet() ){
+                        SelectionKey key = e.getValue();                        // Get the registered key
                         if( key != null ){                                      // Might be null if someone gave us bogus address
                             key.channel().close();                              // Close the channel
                             key.cancel();                                       // And cancel the key (redundant?)
-                            this.tcpBindings.remove(addr);                      // Remove from master list
                         }   // end if: key != null
                     }   // end for: each remove
                     this.pendingTcpRemoves.clear();                             // Remove from list of pending removes
+                        
 
                     // Pending UDP Removes
-                    for( SocketAddress addr : this.pendingUdpRemoves ){         // Same comments as for TCP
-                        SelectionKey key = this.udpBindings.get(addr);
-                        if( key != null ){
-                            key.channel().close();
-                            key.cancel();
-                            this.udpBindings.remove(addr);
+                    for( Map.Entry<SocketAddress,SelectionKey> e : this.pendingUdpRemoves.entrySet() ){
+                        SelectionKey key = e.getValue();                        // Get the registered key
+                        if( key != null ){                                      // Might be null if someone gave us bogus address
+                            key.channel().close();                              // Close the channel
+                            key.cancel();                                       // And cancel the key (redundant?)
                         }   // end if: key != null
                     }   // end for: each remove
-                    this.pendingUdpRemoves.clear();
+                    this.pendingUdpRemoves.clear();                             // Remove from list of pending removes
+                    
                 }   // end sync: this
 
                 //
@@ -598,7 +605,7 @@ public class NioServer {
         firePropertyChange( BUFFER_SIZE_PROP, oldVal, size  );
     }
 
-/* ********  B I N D I N G S  ******** */
+/* ********  T C P   B I N D I N G S  ******** */
 
 
 
@@ -610,17 +617,107 @@ public class NioServer {
      * <code>addTcpBinding( new InetAddress(80) );</code>.
      * The server can listen on multiple ports at once.
      * @param addr The address on which to listen
+     * @return "this" to aid in chaining commands
      */
-    public synchronized void addTcpBinding( SocketAddress addr ){
-        this.tcpBindings.put(addr,null);
-        this.pendingTcpAdds.add(addr);
-        this.pendingTcpRemoves.remove(addr);
-        
-        if( this.selector != null ){
-            this.selector.wakeup();
+    public synchronized NioServer addTcpBinding( SocketAddress addr ){
+        Set<SocketAddress> oldVal = this.getTcpBindings();                      // Save old set for prop change event
+        this.tcpBindings.put(addr,null);                                        // Add binding
+        Set<SocketAddress> newVal = this.getTcpBindings();                      // Save new set for prop change event
+        this.pendingTcpAdds.add(addr);                                          // Prepare pending add action
+        this.pendingTcpRemoves.remove(addr);                                    // In case it's also pending a remove
+
+        if( this.selector != null ){                                            // If there's a selector...
+            this.selector.wakeup();                                             // Wake it up to handle the add action
         }
+        firePropertyChange(TCP_BINDINGS_PROP, oldVal, newVal);                  // Fire prop change
+        return this;
     }
 
+
+
+    /**
+     * Removes a TCP binding. Effectively stops the server from
+     * listening to this or that port.
+     * @param addr The address to stop listening to
+     * @return "this" to aid in chaining commands
+     */
+    public synchronized NioServer removeTcpBinding( SocketAddress addr ){
+        Set<SocketAddress> oldVal = this.getTcpBindings();                      // Save old set for prop change event
+        this.tcpBindings.remove(addr);                                          // Remove binding
+        Set<SocketAddress> newVal = this.getTcpBindings();                      // Save new set for prop change event
+        this.pendingTcpRemoves.put( addr, this.tcpBindings.get(addr) );         // Prepare pending remove action
+        this.pendingTcpAdds.remove(addr);                                       // In case it's also pending an add
+        
+        if( this.selector != null ){                                            // If there's a selector...
+            this.selector.wakeup();                                             // Wake it up to handle the remove action
+        }
+        firePropertyChange(TCP_BINDINGS_PROP, oldVal, newVal);                  // Fire prop change
+        return this;
+    }
+
+
+
+    /**
+     * Returns a set of socket addresses that the server is (or will
+     * be when started) bound to/listening on. This set is not
+     * backed by the actual data structures. Changes to this returned
+     * set have no effect on the server.
+     * @return set of tcp listening points
+     */
+    public synchronized Set<SocketAddress> getTcpBindings(){
+        Set<SocketAddress> bindings = new HashSet<SocketAddress>();
+        bindings.addAll( this.tcpBindings.keySet() );
+        return bindings;
+    }
+    
+
+    /**
+     * <p>Sets the TCP bindings that the server should use.
+     * The expression <code>setTcpBindings( getTcpBindings() )</code>
+     * should result in no change to the server.</p>
+     * @param newSet
+     * @return "this" to aid in chaining commands
+     */
+    public synchronized NioServer setTcpBindings( Set<SocketAddress> newSet ){
+        Set<SocketAddress> toAdd = new HashSet<SocketAddress>();
+        Set<SocketAddress> toRemove = new HashSet<SocketAddress>();
+
+        toRemove.addAll( getTcpBindings() );
+        for( SocketAddress addr : newSet ){
+            if( toRemove.contains(addr) ){
+                toRemove.remove(addr);
+            } else {
+                toAdd.add(addr);
+            }
+        }   // end for: each new addr
+
+
+        for( SocketAddress addr : toRemove ){
+            removeTcpBinding(addr);
+        }   // end for: each new addr
+
+        for( SocketAddress addr : toAdd ){
+            addTcpBinding(addr);
+        }   // end for: each new addr
+
+        return this;
+    }
+
+
+
+    /**
+     * Clears all TCP bindings.
+     * @return "this" to aid in chaining commands
+     */
+    public synchronized NioServer clearTcpBindings(){
+        for( SocketAddress addr : getTcpBindings() ){
+            removeTcpBinding(addr);
+        }
+        return this;
+    }
+
+
+/* ********  U D P   B I N D I N G S  ******** */
 
 
     /**
@@ -631,9 +728,10 @@ public class NioServer {
      * <code>addUdpBinding( new InetAddress(6997) );</code>.
      * The server can listen on multiple ports at once.
      * @param addr The address on which to listen
+     * @return "this" to aid in chaining commands
      */
-    public synchronized void addUdpBinding( SocketAddress addr ){
-        addUdpBinding(addr,null);
+    public synchronized NioServer addUdpBinding( SocketAddress addr ){
+        return addUdpBinding(addr,null);
     }
 
 
@@ -654,49 +752,120 @@ public class NioServer {
      * 
      * @param addr The address on which to listen
      * @param group The multicast group to join
+     * @return "this" to aid in chaining commands
      */
-    public synchronized void addUdpBinding( SocketAddress addr, String group ){
+    public synchronized NioServer addUdpBinding( SocketAddress addr, String group ){
+        Map<SocketAddress,String> oldVal = this.getUdpBindings();
         this.udpBindings.put(addr,null);
         this.pendingUdpAdds.add(addr);
         this.pendingUdpRemoves.remove(addr);
         if( group != null ){
             this.multicastGroups.put(addr,group);
-        }
+        }   // end if: multicast too
+        Map<SocketAddress,String> newVal = this.getUdpBindings();
         if( this.selector != null ){
             this.selector.wakeup();
         }
+        firePropertyChange(UDP_BINDINGS_PROP,oldVal,newVal);
+        return this;
     }
 
 
-
-
-    /**
-     * Removes a TCP binding. Effectively stops the server from
-     * listening to this or that port.
-     * @param addr The address to stop listening to
-     */
-    public synchronized void removeTcpBinding( SocketAddress addr ){
-        this.pendingTcpAdds.remove(addr);   // In case it's also pending an add
-        this.pendingTcpRemoves.add(addr);
-        if( this.selector != null ){
-            this.selector.wakeup();
-        }
-    }
 
 
     /**
      * Removes a UDP binding. Effectively stops the server from
      * listening to this or that port.
      * @param addr The address to stop listening to
+     * @return "this" to aid in chaining commands
      */
-    public synchronized void removeUdpBinding( SocketAddress addr ){
-        this.multicastGroups.remove(addr);
-        this.pendingUdpAdds.remove(addr);   // In case it's also pending an add
-        this.pendingUdpRemoves.add(addr);
-        if( this.selector != null ){
-            this.selector.wakeup();
+    public synchronized NioServer removeUdpBinding( SocketAddress addr ){
+        Map<SocketAddress,String> oldVal = this.getUdpBindings();               // Save old set for prop change event
+        this.udpBindings.remove(addr);                                          // Remove binding
+        this.multicastGroups.remove(addr);                                      // Remove multicast note
+        Map<SocketAddress,String> newVal = this.getUdpBindings();               // Save new set for prop change event
+        this.pendingUdpRemoves.put( addr, this.udpBindings.get(addr) );         // Prepare pending remove action
+        this.pendingUdpAdds.remove(addr);                                       // In case it's also pending an add
+
+        if( this.selector != null ){                                            // If there's a selector...
+            this.selector.wakeup();                                             // Wake it up to handle the remove action
         }
+        firePropertyChange(UDP_BINDINGS_PROP, oldVal, newVal);                  // Fire prop change
+        return this;
     }
+
+
+
+    /**
+     * Returns a map of socket addresses and multicast groups
+     * that the server is (or will
+     * be when started) bound to/listening on. This set is not
+     * backed by the actual data structures. Changes to this returned
+     * set have no effect on the server.
+     * The map's value portion will be null if not multicast group
+     * is joined for that port or it may have a String which would
+     * be the requested multicast group.
+     * @return map of udp listening points
+     */
+    public synchronized Map<SocketAddress,String> getUdpBindings(){
+        Map<SocketAddress,String>bindings = new HashMap<SocketAddress,String>();
+        for( SocketAddress addr : this.udpBindings.keySet() ){
+            bindings.put(addr, this.multicastGroups.get(addr) );
+        }   // end for: each address
+        return bindings;
+    }
+
+
+
+    /**
+     * <p>Sets the UDP bindings that the server should use.
+     * The expression <code>setTcpBindings( getTcpBindings() )</code>
+     * should result in no change to the server.</p>
+     *
+     * <p>The map consists of socket addresses (probably InetSocketAddress)
+     * and multicast addresses (the String value).</p>
+     * @param newMap
+     * @return "this" to aid in chaining commands
+     */
+    public synchronized NioServer setUdpBindings( Map<SocketAddress,String> newMap ){
+        Map<SocketAddress,String> toAdd = new HashMap<SocketAddress,String>();
+        Map<SocketAddress,String> toRemove = new HashMap<SocketAddress,String>();
+
+        toRemove.putAll( getUdpBindings() );
+        for( Map.Entry<SocketAddress,String> e : newMap.entrySet() ){
+            SocketAddress addr = e.getKey();
+            String group = e.getValue();
+            if( toRemove.containsKey(addr) ){
+                toRemove.remove(addr);
+            } else {
+                toAdd.put(addr,group);
+            }
+        }   // end for: each new addr
+
+
+        for( Map.Entry<SocketAddress,String> e : toRemove.entrySet() ){
+            removeUdpBinding(e.getKey());
+        }   // end for: each new addr
+
+        for( Map.Entry<SocketAddress,String> e : toAdd.entrySet() ){
+            addUdpBinding(e.getKey(),e.getValue());
+        }   // end for: each new addr
+
+        return this;
+    }
+
+
+    /**
+     * Clears all UDP bindings.
+     * @return "this" to aid in chaining commands
+     */
+    public synchronized NioServer clearUdpBindings(){
+        for( SocketAddress addr : getUdpBindings().keySet() ){
+            removeUdpBinding(addr);
+        }
+        return this;
+    }
+
 
     
     
