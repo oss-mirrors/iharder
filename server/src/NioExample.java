@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFormattedTextField;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -109,6 +110,15 @@ private final static long serialVersionUID = 1;
                         }   // end run
                     }); // end swing utilities
                 }   // end if: port
+
+
+                if( NioServer.LAST_EXCEPTION_PROP.equals( prop ) ){
+                    Throwable t = (Throwable)newVal;
+                    JOptionPane.showConfirmDialog(null, t.getMessage(), "Server Error", JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE );
+                }
+
+
+
             }   // end prop change
         });
         this.nioServer.addNioServerListener(this);
@@ -317,6 +327,7 @@ private final static long serialVersionUID = 1;
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new NioExample().setVisible(true);
@@ -363,7 +374,7 @@ private final static long serialVersionUID = 1;
     }
 
 
-    public void nioServerDataReceived(NioServer.Event evt) {
+    public void nioServerTcpDataReceived(NioServer.Event evt) {
         String s = null;
         try {
             s = this.decoder.reset().decode(evt.getBuffer()).toString();
@@ -371,28 +382,36 @@ private final static long serialVersionUID = 1;
             Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        if( evt.isTcp() ){
-            this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
-            this.tcpWorkers.get(evt.getKey()).textReceived(s);
+        this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
+        this.tcpWorkers.get(evt.getKey()).textReceived(s);
 
-        } else if( evt.isUdp() ){
-            this.udpIndicator.indicate();                     // New incoming connection: flash indicator at user
+    }
 
-            final JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
-            final JScrollPane pane = new JScrollPane();
-            final JTextArea area = new JTextArea(s);
-            final int count = udpCtr++;
-            pane.setViewportView(area);
+    
 
-            SwingUtilities.invokeLater( new Runnable(){
-                public void run(){
-                    panel.add( pane, BorderLayout.CENTER );
-                    tabbedPane.add("UDP "+count, panel);
-                }   // end run
-            });
-
-
+    public void nioServerUdpDataReceived(NioServer.Event evt) {
+        String s = null;
+        try {
+            s = this.decoder.reset().decode(evt.getBuffer()).toString();
+        } catch (CharacterCodingException ex) {
+            Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
         }
+
+        this.udpIndicator.indicate();                     // New incoming connection: flash indicator at user
+
+        final JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
+        final JScrollPane pane = new JScrollPane();
+        final JTextArea area = new JTextArea(s);
+        final int count = udpCtr++;
+        pane.setViewportView(area);
+
+        SwingUtilities.invokeLater( new Runnable(){
+            public void run(){
+                panel.add( pane, BorderLayout.CENTER );
+                tabbedPane.add("UDP "+count, panel);
+            }   // end run
+        });
+
     }
 
     public void nioServerConnectionClosed(NioServer.Event evt) {

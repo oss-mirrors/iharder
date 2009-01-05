@@ -55,6 +55,11 @@ import java.util.concurrent.Executor;
  * <p>The supporting {@link Event} and {@link Listener}
  * classes are static inner classes in this file so that you have only one
  * file to copy to your project. You're welcome.</p>
+ *
+ * <p>Since the TcpServer.java, UdpServer.java, and NioServer.java are
+ * so similar, and since lots of copying and pasting was going on among them,
+ * you may find some comments that refer to TCP instead of UDP or vice versa.
+ * Please feel free to let me know, so I can correct that.</p>
  * 
  * <p>This code is released into the Public Domain.
  * Since this is Public Domain, you don't need to worry about
@@ -119,6 +124,10 @@ public class TcpServer {
     private Thread ioThread;                                                            // Performs IO
     private ServerSocket tcpServer;                                                     // The server
     private Socket socket;
+
+
+    public final static String LAST_EXCEPTION_PROP = "lastException";
+    private Throwable lastException;
     
     
 /* ********  C O N S T R U C T O R S  ******** */
@@ -212,6 +221,7 @@ public class TcpServer {
                       "An error occurred while closing the TCP server. " +
                       "This may have left the server in an undefined state.",
                       exc );
+                    fireExceptionNotification(exc);
                 }
             }   // end if: not null
         }   // end if: already STARTED
@@ -288,10 +298,8 @@ public class TcpServer {
     protected void runServer(){
         try{
             this.tcpServer = new ServerSocket( getPort() );                 // Create server
-            LOGGER.info("TCP Server established on port " + getPort() );
-            
             setState( State.STARTED );                                      // Mark as started
-            LOGGER.info( "TCP Server listening..." );
+            LOGGER.info("TCP Server established on port " + getPort() );
             
             while( !this.tcpServer.isClosed() ){
                 synchronized( this ){
@@ -327,11 +335,13 @@ public class TcpServer {
                           "An error occurred while closing the TCP server. " +
                           "This may have left the server in an undefined state.",
                           exc2 );
+                        fireExceptionNotification(exc2);
                     }   // end catch IOException
                 } else {
                     LOGGER.log( Level.WARNING, "Server closed unexpectedly: " + exc.getMessage(), exc );
                 }   // end else
             }   // end sync
+            fireExceptionNotification(exc);
         } finally {
             setState( State.STOPPING );
             if( this.tcpServer != null ){
@@ -344,6 +354,7 @@ public class TcpServer {
                       "An error occurred while closing the TCP server. " +
                       "This may have left the server in an undefined state.",
                       exc2 );
+                    fireExceptionNotification(exc2);
                 }   // end catch IOException
             }   // end if: not null
             this.tcpServer = null;
@@ -480,6 +491,7 @@ public class TcpServer {
                     l.tcpServerSocketReceived(event);
                 } catch( Exception exc ){
                     LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
+                    fireExceptionNotification(exc);
                 }   // end catch
             }   // end for: each listener
             }   // end run
@@ -492,6 +504,7 @@ public class TcpServer {
                 this.executor.execute( r ); 
             } catch( Exception exc ){
                 LOGGER.warning("Supplied Executor " + this.executor + " threw an exception: " + exc.getMessage() );
+                fireExceptionNotification(exc);
             }   // end catch
         }   // end else: other thread
      }  // end fireTcpServerPacketReceived
@@ -526,6 +539,7 @@ public class TcpServer {
             LOGGER.log(Level.WARNING,
                     "A property change listener threw an exception: " + exc.getMessage()
                     ,exc);
+            fireExceptionNotification(exc);
         }   // end catch
     }   // end fire
 
@@ -569,7 +583,30 @@ public class TcpServer {
     }
 
     
-    
+
+
+/* ********  E X C E P T I O N S  ******** */
+
+
+    /**
+     * Returns the last exception (Throwable, actually)
+     * that the server encountered.
+     * @return last exception
+     */
+    public synchronized Throwable getLastException(){
+        return this.lastException;
+    }
+
+    /**
+     * Fires a property change event with the new exception.
+     * @param t
+     */
+    protected void fireExceptionNotification( Throwable t ){
+        Throwable oldVal = this.lastException;
+        this.lastException = t;
+        firePropertyChange( LAST_EXCEPTION_PROP, oldVal, t );
+    }
+
     
     
     

@@ -61,6 +61,11 @@ import java.util.LinkedList;
  * <p>The supporting {@link Event} and {@link Listener}
  * classes are static inner classes in this file so that you have only one
  * file to copy to your project. You're welcome.</p>
+ *
+ * <p>Since the TcpServer.java, UdpServer.java, and NioServer.java are
+ * so similar, and since lots of copying and pasting was going on among them,
+ * you may find some comments that refer to TCP instead of UDP or vice versa.
+ * Please feel free to let me know, so I can correct that.</p>
  * 
  * <p>This code is released into the Public Domain.
  * Since this is Public Domain, you don't need to worry about
@@ -128,7 +133,10 @@ public class UdpServer {
     private Thread ioThread;                                                            // Performs IO
     private MulticastSocket mSocket;                                                    // The server
     private DatagramPacket packet = new DatagramPacket( new byte[64*1024], 64*1024 );   // Shared datagram
-    
+
+
+    public final static String LAST_EXCEPTION_PROP = "lastException";
+    private Throwable lastException;
     
 /* ********  C O N S T R U C T O R S  ******** */
     
@@ -339,6 +347,7 @@ public class UdpServer {
                     LOGGER.log( Level.WARNING, "Server closed unexpectedly: " + exc.getMessage(), exc );
                 }   // end else
             }   // end sync
+            fireExceptionNotification(exc);
         } finally {
             setState( State.STOPPING );
             if( this.mSocket != null ){
@@ -499,6 +508,7 @@ public class UdpServer {
                 l.udpServerPacketReceived(event);
             } catch( Exception exc ){
                 LOGGER.warning("UdpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
+                fireExceptionNotification(exc);
             }   // end catch
         }   // end for: each listener
      }  // end fireUdpServerPacketReceived
@@ -536,6 +546,7 @@ public class UdpServer {
             LOGGER.log(Level.WARNING,
                     "A property change listener threw an exception: " + exc.getMessage()
                     ,exc);
+            fireExceptionNotification(exc);
         }   // end catch
     }   // end fire
     
@@ -578,6 +589,30 @@ public class UdpServer {
         propSupport.removePropertyChangeListener(property,listener);
     }
     
+
+
+/* ********  E X C E P T I O N S  ******** */
+
+
+    /**
+     * Returns the last exception (Throwable, actually)
+     * that the server encountered.
+     * @return last exception
+     */
+    public synchronized Throwable getLastException(){
+        return this.lastException;
+    }
+
+    /**
+     * Fires a property change event with the new exception.
+     * @param t
+     */
+    protected void fireExceptionNotification( Throwable t ){
+        Throwable oldVal = this.lastException;
+        this.lastException = t;
+        firePropertyChange( LAST_EXCEPTION_PROP, oldVal, t );
+    }
+
     
     
     
