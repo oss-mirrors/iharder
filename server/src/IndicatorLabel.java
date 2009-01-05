@@ -8,7 +8,7 @@ import javax.swing.SwingUtilities;
  * A handy subclass of JLabel that goes from disabled to enabled
  * when the {@link #indicate} method is called. Thread safe.
  * Useful for indicating things like "received packet."
- * @author rob@iharder.net
+ * @author rharder@users.sourceforge.net
  */
 public class IndicatorLabel extends javax.swing.JLabel{
 
