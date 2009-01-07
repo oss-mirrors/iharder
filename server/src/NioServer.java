@@ -541,7 +541,6 @@ public class NioServer {
 
         SelectableChannel sc = key.channel();                                   // Channel for th key
         assert sc instanceof ServerSocketChannel : sc;                          // Only our TCP connections have OP_ACCEPT
-//        if( sc instanceof ServerSocketChannel ){
 
         ServerSocketChannel ch = (ServerSocketChannel)key.channel();            // Server channel
         SocketChannel incoming = null;                                          // Reusable for all pending connections
@@ -551,13 +550,13 @@ public class NioServer {
               this.selector,                                                    // With the Selector
               SelectionKey.OP_READ );                                           // Want to READ data
 
-            buff.clear().flip();
-            fireNewConnection(incomingReadKey);
+            buff.clear().flip();                                                // Show buffer as having nothing
+            fireNewConnection(incomingReadKey,buff);                            // Fire new connection event
 
-            if( sc.isOpen() && buff.remaining() > 0 ){                              // Did someone leave data to write?
-                SocketChannel client = (SocketChannel) key.channel();               // Source socket
-                client.write(buff);                                                 // Write the data
-                System.out.println("After connection, wrote " + buff.position() + " bytes?");
+            SelectableChannel readCh = incomingReadKey.channel();               // This is the read/write channel (not the server channel)
+            if( readCh.isOpen() && buff.remaining() > 0 ){                      // Did someone leave data to write?
+                SocketChannel client = (SocketChannel)readCh;                   // Source socket
+                client.write(buff);                                             // Write the data
             }   // end if: data to write
 
             if( LOGGER.isLoggable(Level.FINEST) ){
@@ -1209,12 +1208,12 @@ public class NioServer {
      * Fire when a new connection is established.
      * @param key the SelectionKey associated with the connection
      */
-    protected synchronized void fireNewConnection(SelectionKey key) {
+    protected synchronized void fireNewConnection(SelectionKey key,ByteBuffer buff) {
 
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,null,null);
+        this.event.reset(key,buff,null);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
