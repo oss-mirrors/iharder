@@ -420,6 +420,8 @@ private final static long serialVersionUID = 1;
         }
     }
 
+    public void nioServerTcpReadyToWrite(NioServer.Event evt) {}
+
     // Process the long-lived connection on another thread
     // so that we can immediately return control to the server
     // and wait for another connection while this one persists.
