@@ -344,7 +344,7 @@ public class NioServer {
                     // Accept connections
                     // This should only be from the TCP bindings
                     if(  key.isAcceptable()  ){                                 // New, incoming connection?
-                        handleAccept( key );                                    // Handle accepting connections
+                        handleAccept( key, buff );                              // Handle accepting connections
                     }
 
                     // Data to read
@@ -535,7 +535,7 @@ public class NioServer {
      * @param key The OP_ACCEPT key
      * @throws java.io.IOException if an error occurs
      */
-    private void handleAccept( SelectionKey key ) throws IOException{
+    private void handleAccept( SelectionKey key, ByteBuffer buff ) throws IOException{
         assert key.isAcceptable() : key.readyOps();                             // We know it should be acceptable
         assert selector.isOpen();                                               // Not sure this matters. Meh.
 
@@ -551,7 +551,14 @@ public class NioServer {
               this.selector,                                                    // With the Selector
               SelectionKey.OP_READ );                                           // Want to READ data
 
+            buff.clear().flip();
             fireNewConnection(incomingReadKey);
+
+            if( sc.isOpen() && buff.remaining() > 0 ){                              // Did someone leave data to write?
+                SocketChannel client = (SocketChannel) key.channel();               // Source socket
+                client.write(buff);                                                 // Write the data
+                System.out.println("After connection, wrote " + buff.position() + " bytes?");
+            }   // end if: data to write
 
             if( LOGGER.isLoggable(Level.FINEST) ){
                 LOGGER.finest("  " + incoming + ", key: " + incomingReadKey );
@@ -594,7 +601,7 @@ public class NioServer {
 
             } else {
                 // Not End of Stream
-                buff.flip();                                                    // Flip the buffer to prepare to read
+                buff.flip();                                                    // Flip the buffer to prepare to be read
                 fireTcpDataReceived(key,buff);                                  // Fire event for new data
 
                 if( buff.remaining() > 0 ){                                     // Did the user leave data for next time?
