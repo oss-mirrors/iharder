@@ -1,22 +1,18 @@
-package examples;
 
 
 
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.nio.channels.SelectionKey;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.text.ParseException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFormattedTextField;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -44,28 +40,24 @@ import javax.swing.SwingWorker;
  * @see TcpServer.Listener
  * @see TcpServer.Event
  */
-public class NioExample extends javax.swing.JFrame implements NioServer.Listener {
-private final static long serialVersionUID = 1;
-
-    private int tcpCtr = 1;
-    private int udpCtr = 1;
-    private Map<SelectionKey,TcpWorker> tcpWorkers = new HashMap<SelectionKey,TcpWorker>();
-    private Charset charset = Charset.forName("US-ASCII");
-    private CharsetDecoder decoder = charset.newDecoder();
-
+public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener {
+    
+    private int sockCtr = 1;
+    private final static long serialVersionUID = 1;
+    
     /** Creates new form TcpExample */
-    public NioExample() {
+    public TcpExample() {
         initComponents();
         myInitComponents();
     }
     
     private void myInitComponents(){
         
-        NioServer.setLoggingLevel(Level.ALL);
+        TcpServer.setLoggingLevel(Level.OFF);
         
-        //this.tcpServer.setExecutor( Executors.newCachedThreadPool() );
+        this.tcpServer.setExecutor( Executors.newCachedThreadPool() );
         
-        this.nioServer.addPropertyChangeListener(new PropertyChangeListener() {
+        this.tcpServer.addPropertyChangeListener(new PropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent evt) {
 
                 final String prop = evt.getPropertyName();
@@ -73,8 +65,8 @@ private final static long serialVersionUID = 1;
                 final Object newVal = evt.getNewValue();
                 System.out.println("Property: " + prop + ", Old: " + oldVal + ", New: " + newVal );
 
-                if( NioServer.STATE_PROP.equals( prop ) ){
-                    final NioServer.State state = (NioServer.State)newVal;
+                if( TcpServer.STATE_PROP.equals( prop ) ){
+                    final TcpServer.State state = (TcpServer.State)newVal;
                     SwingUtilities.invokeLater( new Runnable() {
                         public void run() {
                             switch( state ){
@@ -104,27 +96,17 @@ private final static long serialVersionUID = 1;
                     });
                 }
                 
-                if( NioServer.SINGLE_TCP_PORT_PROP.equals( prop ) ||
-                    NioServer.SINGLE_UDP_PORT_PROP.equals( prop )){
+                if( TcpServer.PORT_PROP.equals( evt.getPropertyName() ) ){
                     SwingUtilities.invokeLater( new Runnable() {
                         public void run() {
                             portField.setValue( newVal );
                         }   // end run
                     }); // end swing utilities
                 }   // end if: port
-
-
-                if( NioServer.LAST_EXCEPTION_PROP.equals( prop ) ){
-                    Throwable t = (Throwable)newVal;
-                    JOptionPane.showConfirmDialog(null, t.getMessage(), "Server Error", JOptionPane.OK_OPTION, JOptionPane.ERROR_MESSAGE );
-                }
-
-
-
             }   // end prop change
         });
-        this.nioServer.addNioServerListener(this);
-        this.nioServer.fireProperties();
+        this.tcpServer.addTcpServerListener(this);
+        this.tcpServer.fireProperties();
     }
     
     /** This method is called from within the constructor to
@@ -135,7 +117,7 @@ private final static long serialVersionUID = 1;
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        nioServer = new NioServer();
+        tcpServer = new TcpServer();
         jLabel1 = new javax.swing.JLabel();
         portField = new javax.swing.JFormattedTextField(0);
         jPanel1 = new javax.swing.JPanel();
@@ -144,13 +126,12 @@ private final static long serialVersionUID = 1;
         stateLabel = new javax.swing.JLabel();
         startStopButton = new javax.swing.JButton();
         jButton1 = new javax.swing.JButton();
-        tcpIndicator = new IndicatorLabel();
-        udpIndicator = new IndicatorLabel();
+        newSocketIndicator = new IndicatorLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Nio Server Example");
+        setTitle("Tcp Server Example");
 
-        jLabel1.setText("Port (TCP and UDP):");
+        jLabel1.setText("Port:");
 
         portField.setColumns(12);
         portField.addActionListener(new java.awt.event.ActionListener() {
@@ -172,13 +153,13 @@ private final static long serialVersionUID = 1;
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 502, Short.MAX_VALUE)
+                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 390, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE)
+                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 155, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -201,9 +182,7 @@ private final static long serialVersionUID = 1;
             }
         });
 
-        tcpIndicator.setText("TCP");
-
-        udpIndicator.setText("UDP");
+        newSocketIndicator.setText("NEW");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -215,45 +194,41 @@ private final static long serialVersionUID = 1;
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jLabel1)
-                        .addGap(18, 18, 18)
-                        .addComponent(portField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
+                        .addGap(58, 58, 58)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
+                                .addComponent(portField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
                                 .addComponent(jLabel3)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(stateLabel))
                             .addGroup(layout.createSequentialGroup()
+                                .addGap(120, 120, 120)
                                 .addComponent(startStopButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jButton1)
                                 .addGap(18, 18, 18)
-                                .addComponent(tcpIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(10, 10, 10)
-                                .addComponent(udpIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(newSocketIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(4, 4, 4)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel1)
-                        .addComponent(portField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addGroup(layout.createSequentialGroup()
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel3)
-                                .addComponent(stateLabel))
-                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(startStopButton)
-                                .addComponent(jButton1)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(tcpIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(udpIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addGap(6, 6, 6)
+                            .addComponent(jLabel1)
+                            .addComponent(portField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3)
+                            .addComponent(stateLabel))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(startStopButton)
+                            .addComponent(jButton1)))
+                    .addComponent(newSocketIndicator, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap())
         );
@@ -265,21 +240,20 @@ private final static long serialVersionUID = 1;
         try {
             JFormattedTextField field = (JFormattedTextField) evt.getSource();
             field.commitEdit();//GEN-LAST:event_portFieldActionPerformed
-            int port = (Integer)field.getValue();
-            this.nioServer.setSingleTcpPort(port).setSingleUdpPort(port);
+            this.tcpServer.setPort((Integer)field.getValue());
         } catch (ParseException ex) {
             Logger.getLogger(TcpExample.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
     private void startStopButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startStopButtonActionPerformed
-        NioServer.State state = this.nioServer.getState();
+        TcpServer.State state = this.tcpServer.getState();
         switch( state ){
             case STOPPED:
-                this.nioServer.start();
+                this.tcpServer.start();
                 break;
             case STARTED:
-                this.nioServer.stop();
+                this.tcpServer.stop();
                 break;
             default:
                 System.err.println("Shouldn't see this. State: " + state );
@@ -291,8 +265,7 @@ private final static long serialVersionUID = 1;
         try {
             JFormattedTextField field = (JFormattedTextField) evt.getSource();
             field.commitEdit();
-            int port = (Integer)field.getValue();
-            this.nioServer.setSingleTcpPort(port).setSingleUdpPort(port);
+            this.tcpServer.setPort((Integer)field.getValue());
         } catch (ParseException ex) {
             Logger.getLogger(TcpExample.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -309,9 +282,9 @@ private final static long serialVersionUID = 1;
                     for( int i = 0; i < 100; i++ ){
                         double d = Math.random();
                         if( d < .5 ){
-                            nioServer.start();
+                            tcpServer.start();
                         } else {
-                            nioServer.stop();
+                            tcpServer.stop();
                         }
                         try{
                             Thread.sleep( (int)(Math.random()*100) );
@@ -329,10 +302,9 @@ private final static long serialVersionUID = 1;
      * @param args the command line arguments
      */
     public static void main(String args[]) {
-
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new NioExample().setVisible(true);
+                new TcpExample().setVisible(true);
             }
         });
     }
@@ -342,135 +314,68 @@ private final static long serialVersionUID = 1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JPanel jPanel1;
-    private NioServer nioServer;
+    private IndicatorLabel newSocketIndicator;
     private javax.swing.JFormattedTextField portField;
     private javax.swing.JButton startStopButton;
     private javax.swing.JLabel stateLabel;
     private javax.swing.JTabbedPane tabbedPane;
-    private IndicatorLabel tcpIndicator;
-    private IndicatorLabel udpIndicator;
+    private TcpServer tcpServer;
     // End of variables declaration//GEN-END:variables
 
-
-
-
-
-    public void nioServerNewConnectionReceived(final NioServer.Event evt) {
-        this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
-
-        final JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
-        final JScrollPane pane = new JScrollPane();
-        final JTextArea area = new JTextArea();
-        final int count = tcpCtr++;
-        TcpWorker tw = new TcpWorker(area);
-        this.tcpWorkers.put(evt.getKey(), tw);
-        pane.setViewportView(area);
-
-        SwingUtilities.invokeLater( new Runnable(){
-            public void run(){
-                panel.add( pane, BorderLayout.CENTER );
-                tabbedPane.add("TCP "+count, panel);
-            }   // end run
-        });
+    public void tcpServerSocketReceived(TcpServer.Event evt) {
+        this.newSocketIndicator.indicate();                     // New incoming connection: flash indicator at user
+        final Socket socket = evt.getSocket();                  // Get the TCP socket
         
-    }
-
-
-    public void nioServerTcpDataReceived(NioServer.Event evt) {
-        String s = null;
-        try {
-            s = this.decoder.reset().decode(evt.getBuffer()).toString();
-        } catch (CharacterCodingException ex) {
-            Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
-        this.tcpWorkers.get(evt.getKey()).textReceived(s);
-
-    }
-
-    
-
-    public void nioServerUdpDataReceived(NioServer.Event evt) {
-        String s = null;
-        try {
-            s = this.decoder.reset().decode(evt.getBuffer()).toString();
-        } catch (CharacterCodingException ex) {
-            Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        this.udpIndicator.indicate();                     // New incoming connection: flash indicator at user
-
-        final JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
-        final JScrollPane pane = new JScrollPane();
-        final JTextArea area = new JTextArea(s);
-        final int count = udpCtr++;
+        JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
+        JScrollPane pane = new JScrollPane();
+        final JTextArea area = new JTextArea();
         pane.setViewportView(area);
-
-        SwingUtilities.invokeLater( new Runnable(){
-            public void run(){
-                panel.add( pane, BorderLayout.CENTER );
-                tabbedPane.add("UDP "+count, panel);
-            }   // end run
-        });
-
-    }
-
-    public void nioServerConnectionClosed(NioServer.Event evt) {
-        if( evt.isTcp() ){
-            this.tcpWorkers.remove(evt.getKey()).execute();
-        }
-    }
-
-    public void nioServerTcpReadyToWrite(NioServer.Event evt) {}
-
-    // Process the long-lived connection on another thread
-    // so that we can immediately return control to the server
-    // and wait for another connection while this one persists.
-    // Ordinary servers would not user a SwingWorker since they
-    // would not be tying themselves to the Swing GUI.
-    private class TcpWorker extends SwingWorker<Void,String> {
-        //sw = new SwingWorker<Object,String>() {
-        private JTextArea area;
-
-        private TcpWorker(JTextArea area){
-            this.area = area;
-        }
-
-        @Override
-        protected Void doInBackground() throws Exception { return null; }
-
-        /**
-         * Even if I'm not running the SwingWorker, I can still
-         * use it to queue up work that is published to process
-         * when convenient on the event thread. Pretty handy, eh?
-         * @param s
-         */
-        public void textReceived( String s ){
-            publish(s);
-        }
-
-        @Override
-        protected void process( List<String> chunks ){      // Queued up published byte arrays
-            StringBuilder sb = new StringBuilder();         // Put together into one string
-            for( String s: chunks ){
-                sb.append(s);
-            }   // end for: each string
-            area.setText( area.getText() + sb );            // Add string to JTextArea
-        }   // end process
-
-        /**
-         * Call sw.execute() when done to have this method executed.
-         */
-        @Override
-        protected void done(){
-            try{
-                area.setText( area.getText() + "\nConnection Closed." );
-            } catch( Exception exc ){
-                exc.printStackTrace();
+        panel.add( pane, BorderLayout.CENTER );
+        this.tabbedPane.add(""+(sockCtr++), panel);
+        
+        // Process the long-lived connection on another thread
+        // so that we can immediately return control to the server
+        // and wait for another connection while this one persists.
+        // Ordinary servers would not user a SwingWorker since they
+        // would not be tying themselves to the Swing GUI.
+        SwingWorker<Socket,String> sw = new SwingWorker<Socket,String>() {
+            @Override
+            protected Socket doInBackground() throws Exception {
+                InputStream in = socket.getInputStream();       // Data in from remote user
+                OutputStream out = socket.getOutputStream();    // Response to remote user
+                
+                byte[] buff = new byte[1024];                   // Arbitrary buffer size
+                int num = -1;                                   // Number of bytes read
+                while( (num = in.read(buff)) >= 0 ){            // Read bytes into buffer
+                    publish( new String( buff, 0, num ) );      // Published bytes will be made available
+                }   // end while                                // on the event thread for GUI display.
+                
+                return socket;                                  // The socket is closed.
             }
-        }   // end done
-
+            
+            @Override
+            protected void process( List<String> chunks ){      // Queued up published byte arrays
+                StringBuilder sb = new StringBuilder();         // Put together into one string
+                for( String s: chunks ){
+                    sb.append(s);
+                }   // end for: each string
+                area.setText( area.getText() + sb );            // Add string to JTextArea
+            }   // end process
+            
+            @Override
+            protected void done(){
+                try{
+                    Socket socket = get();                      // As provided by doInBackground()
+                    try{ socket.close(); }                      // Try to close socket if needed
+                    catch( Exception e1 ){}
+                    area.setText( area.getText() + "\nSocket Closed." );
+                } catch( Exception exc ){
+                    exc.printStackTrace();
+                }
+            }   // end done
+        };
+        sw.execute();                                           // Don't forget to start the thread!
+        
     }
     
 }
