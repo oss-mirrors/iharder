@@ -5,6 +5,7 @@
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -377,12 +378,20 @@ private final static long serialVersionUID = 1;
 
 
     public void nioServerTcpDataReceived(NioServer.Event evt) {
+        ByteBuffer inBuff = evt.getInputBuffer();
+        ByteBuffer outBuff = evt.getOutputBuffer();
+
         String s = null;
+        inBuff.mark();
         try {
-            s = this.decoder.reset().decode(evt.getBuffer()).toString();
+            s = this.decoder.reset().decode(inBuff).toString();
         } catch (CharacterCodingException ex) {
             Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
         }
+        inBuff.reset();
+        outBuff.clear();
+        outBuff.put(inBuff).flip();
+
 
         this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
         this.tcpWorkers.get(evt.getKey()).textReceived(s);
@@ -394,7 +403,7 @@ private final static long serialVersionUID = 1;
     public void nioServerUdpDataReceived(NioServer.Event evt) {
         String s = null;
         try {
-            s = this.decoder.reset().decode(evt.getBuffer()).toString();
+            s = this.decoder.reset().decode(evt.getInputBuffer()).toString();
         } catch (CharacterCodingException ex) {
             Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
         }

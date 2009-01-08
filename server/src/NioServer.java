@@ -1,6 +1,5 @@
 
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.*;
 import java.nio.channels.*;
 import java.util.logging.*;
@@ -95,10 +94,12 @@ public class NioServer {
     private final static Logger LOGGER = Logger.getLogger(NioServer.class.getName());
 
 
-    /** The buffer size property. */
-    public final static String BUFFER_SIZE_PROP = "bufferSize";
+    /** The outBuff size property. */
+    public final static String INPUT_BUFFER_SIZE_PROP = "bufferSize";
+    public final static String OUTPUT_BUFFER_SIZE_PROP = "bufferSize";
     private final static int BUFFER_SIZE_DEFAULT = 4096;
-    private int bufferSize = BUFFER_SIZE_DEFAULT;
+    private int inputBufferSize = BUFFER_SIZE_DEFAULT;
+    private int outputBufferSize = BUFFER_SIZE_DEFAULT;
 
 
     /**
@@ -147,7 +148,8 @@ public class NioServer {
 
     private final Map<SelectionKey,Boolean> pendingTcpNotifyOnWritable = new HashMap<SelectionKey,Boolean>();   // Turning on and off writable notifications
 
-    private final Map<SelectionKey,ByteBuffer> leftoverData = new HashMap<SelectionKey,ByteBuffer>();   // Store leftovers here instead of key.attachment()
+    private final Map<SelectionKey,ByteBuffer> leftoverForReading = new HashMap<SelectionKey,ByteBuffer>();   // Store leftovers from the last read
+    private final Map<SelectionKey,ByteBuffer> leftoverForWriting = new HashMap<SelectionKey,ByteBuffer>();   // Store leftovers that still need to be written
 
 
 /* ********  C O N S T R U C T O R S  ******** */
@@ -170,6 +172,87 @@ public class NioServer {
     }
 
 
+    /**
+     * [PLC]
+     * [PrrrL...C]
+     * [..PL..C]
+     * [..PrrrL..C]
+     *
+     * @param buff
+     * @param state
+     */
+    private static boolean knownState( Buffer buff, CharSequence seq ){
+        boolean dotFound = false;   // .
+        boolean undFound = false;   // _
+        boolean rFound = false;     // r
+        boolean PFound = false;     // P
+        boolean LFound = false;     // L
+        boolean endFound = false;   // ]
+
+        assert seq.charAt(0) == '[' : seq + " Expected '[' at beginning: " +seq.charAt(0);
+        assert seq.charAt( seq.length()-1 ) == ']' : seq + " Expected ']': " + seq.charAt( seq.length()-1 );
+        for( int i = 1; i < seq.length(); i++ ){
+            char c = seq.charAt(i);
+            switch(c){
+                case '.':
+                    assert !(PFound && !LFound) : seq + " Between 'P' and 'L' should be 'r': " + c;
+                    assert !undFound : seq + " Should not mix '.' and '_'";
+                    dotFound = true;
+                    break;
+
+                case '_':
+                    assert !(PFound && !LFound) : seq + " Between 'P' and 'L' should be 'r': " + c;
+                    assert !dotFound : seq + " Should not mix '.' and '_'";
+                    undFound = true;
+                    break;
+
+                case 'r':
+                    assert PFound && !LFound : seq + " Should only see 'r' between 'P' and 'L'";
+                    rFound = true;
+                    break;
+
+                case 'P':
+                    assert !PFound : seq + " Too many P's";
+                    if( undFound ){
+                        assert buff.position() > 0 : seq + " Expected position to be positive: " + buff;
+                    } else if( !dotFound ){
+                        assert buff.position() == 0 : seq + " Expected position to be zero: " + buff;
+                    }
+                    PFound = true;
+                    dotFound = false;
+                    undFound = false;
+                    break;
+
+                case 'L':
+                    assert PFound : seq + " 'L' should not come before 'P'";
+                    assert !LFound : seq + " Too many L's";
+                    if( rFound ){
+                        assert buff.position() <= buff.limit() : seq + " Expected possible space between position and limit: " + buff;
+                    } else {
+                        assert buff.position() == buff.limit() : seq + " Expected position to equal limit: " + buff;
+                    }
+                    LFound = true;
+                    rFound = false;
+                    break;
+
+                case ']':
+                    assert PFound && LFound : seq + " 'P' and 'L' not found before ']'";
+                    assert !endFound : seq + " Too many ]'s";
+                    if( undFound ){
+                        assert buff.limit() < buff.capacity() : seq + " Expected space between limit and capacity: " + buff;
+                    } else if( !dotFound ){
+                        assert buff.limit() == buff.capacity() : seq + " Expected limit to equal capacity: " + buff;
+                    }
+                    endFound = true;
+                    dotFound = false;
+                    undFound = false;
+                    break;
+                default:
+                    assert false : seq + " Unexpected character: " + c;
+            }   // end switch curr char
+        }   // end for: through sequence
+        return true;
+    }
 
 
 /* ********  R U N N I N G  ******** */
@@ -220,21 +303,7 @@ public class NioServer {
         if( this.currentState == State.STARTED || this.currentState == State.STARTING ){   // Only if already STARTED
             setState( State.STOPPING );             // Mark as STOPPING
             if( this.selector != null ){
-                try{
-                    Set<SelectionKey> keys = this.selector.keys();
-                    for( SelectionKey key : this.selector.keys() ){
-                        key.channel().close();
-                        key.cancel();
-                    }
-                    this.selector.close();
-                } catch( IOException exc ){
-                    fireExceptionNotification(exc);
-                    LOGGER.log(
-                      Level.SEVERE,
-                      "An error occurred while closing the server. " +
-                      "This may have left the server in an undefined state.",
-                      exc );
-                }
+                this.selector.wakeup();
             }   // end if: not null
         }   // end if: already STARTED
     }   // end stop
@@ -300,19 +369,14 @@ public class NioServer {
     protected void runServer(){
         try{
 
-            // One Time: add all the requested TCP and UDP bindings to the "pending" lists
-            //synchronized( this ){
-            //    this.selector = Selector.open();
-            //    this.pendingTcpAdds.clear();
-            //    this.pendingTcpAdds.addAll(this.tcpBindings.keySet());
-            //    this.pendingUdpAdds.clear();
-            //    this.pendingUdpAdds.addAll(this.udpBindings.keySet());
-            //    this.pendingTcpRemoves.clear();
-            //    this.pendingTcpRemoves.clear();
-            //}
+            ByteBuffer inBuff  = ByteBuffer.allocateDirect(this.inputBufferSize);   // Buffer to use for everything
+            ByteBuffer outBuff = ByteBuffer.allocateDirect(this.outputBufferSize);  // Buffer to use for everything
 
-            this.selector = Selector.open();
-            ByteBuffer buff = ByteBuffer.allocateDirect(this.bufferSize);       // Buffer to use for everything
+            synchronized( this ){
+                this.pendingTcpAdds.addAll(this.tcpBindings.keySet());
+                this.pendingUdpAdds.addAll(this.udpBindings.keySet());
+            }
+
             setState( State.STARTED );                                          // Mark as started
             while( runLoopCheck() ){
 
@@ -320,17 +384,47 @@ public class NioServer {
                 if( this.selector.select() <= 0 ){                              // Block until notified
                     LOGGER.finer("selector.select() <= 0");                     // Possible false start
                     Thread.sleep(100);                                          // Let's not run away from ourselves
-                    continue;
                 }///////  B L O C K S   H E R E
+                
 
 
-                // Possibly resize buffer if a change was requested since last cycle
-                if( this.bufferSize != buff.capacity() ){                       // Mismatch size means someone asked for something new
-                    assert this.bufferSize >= 0 : this.bufferSize;              // We check for this in setBufferSize(..)
-                    buff = ByteBuffer.allocateDirect(this.bufferSize);          // Resize and use direct for OS efficiencies
+                synchronized( this ){
+                    if( this.currentState == State.STOPPING ){
+                        try{
+                            Set<SelectionKey> keys = this.selector.keys();
+                            for( SelectionKey key : this.selector.keys() ){
+                                key.channel().close();
+                                key.cancel();
+                            }
+                        } catch( IOException exc ){
+                            fireExceptionNotification(exc);
+                            LOGGER.log(
+                              Level.SEVERE,
+                              "An error occurred while closing the server. " +
+                              "This try{may have left the server in an undefined state.",
+                              exc );
+                        } finally {
+                            continue;
+                        }
+                    }
+                }   // end sync
+
+
+
+
+
+                // Possibly resize outBuff if a change was requested since last cycle
+                if( this.inputBufferSize != inBuff.capacity() ){                // Mismatch size means someone asked for something new
+                    assert this.inputBufferSize >= 0 : this.inputBufferSize;    // We check for this in setBufferSize(..)
+                    inBuff = ByteBuffer.allocateDirect(this.inputBufferSize);   // Resize and use direct for OS efficiencies
                 }
 
-                Set<SelectionKey> allkeys = this.selector.keys();
+                // Possibly resize outBuff if a change was requested since last cycle
+                if( this.outputBufferSize != outBuff.capacity() ){              // Mismatch size means someone asked for something new
+                    assert this.outputBufferSize >= 0 : this.outputBufferSize;  // We check for this in setBufferSize(..)
+                    outBuff = ByteBuffer.allocateDirect(this.outputBufferSize); // Resize and use direct for OS efficiencies
+                }
+
                 Set<SelectionKey> keys = this.selector.selectedKeys();          // These keys need attention
                 if( LOGGER.isLoggable(Level.FINEST ) ){                         // Only report this at finest grained logging level
                     LOGGER.finest("Keys: " + keys );                            // Which keys are being examined this round
@@ -344,21 +438,21 @@ public class NioServer {
                     // Accept connections
                     // This should only be from the TCP bindings
                     if(  key.isAcceptable()  ){                                 // New, incoming connection?
-                        handleAccept( key, buff );                              // Handle accepting connections
+                        handleAccept( key, outBuff );                           // Handle accepting connections
                     }
 
                     // Data to read
                     // This could be an ongoing TCP connection
                     // or a new (is there any other kind) UDP datagram
                     else if( key.isReadable() ){                                // Existing connection has data (or is closing)
-                        handleRead( key, buff );                                // Handle data
+                        handleRead( key, inBuff, outBuff );                     // Handle data
                     }   // end if: readable
 
                     // Available to write
                     // This could be an ongoing TCP connection
                     // or a new (is there any other kind) UDP datagram
                     else if( key.isWritable() ){                                // Existing connection has data (or is closing)
-                        handleWrite( key, buff );                                // Handle data
+                        handleWrite( key, inBuff, outBuff );                    // Handle data
                     }   // end if: readable
 
                 }   // end while: keys
@@ -371,6 +465,7 @@ public class NioServer {
                 if( this.currentState == State.STOPPING ){  // User asked to stop
                     try{
                         this.selector.close();
+                        this.selector = null;
                         LOGGER.info( "Server closed normally." );
                     } catch( IOException exc2 ){
                         this.lastException = exc2;
@@ -391,7 +486,6 @@ public class NioServer {
             if( this.selector != null ){
                 try{
                     this.selector.close();
-                    LOGGER.info( "Server closed normally." );
                 } catch( IOException exc2 ){
                     LOGGER.log(
                       Level.SEVERE,
@@ -401,6 +495,7 @@ public class NioServer {
                     fireExceptionNotification(exc2);
                 }   // end catch IOException
             }   // end if: not null
+
             this.selector = null;
         }   // end finally
     }
@@ -416,8 +511,11 @@ public class NioServer {
 
         if( this.currentState == State.STOPPING ){
             LOGGER.finer( "Stopping server by request." );
+            assert this.selector != null;
             this.selector.close();
-        }   // end if: stopping
+        } else if( this.selector == null ){
+            this.selector = Selector.open();
+        }
 
         if( !this.selector.isOpen() ){
             return false;
@@ -535,7 +633,7 @@ public class NioServer {
      * @param key The OP_ACCEPT key
      * @throws java.io.IOException if an error occurs
      */
-    private void handleAccept( SelectionKey key, ByteBuffer buff ) throws IOException{
+    private void handleAccept( SelectionKey key, ByteBuffer outBuff ) throws IOException{
         assert key.isAcceptable() : key.readyOps();                             // We know it should be acceptable
         assert selector.isOpen();                                               // Not sure this matters. Meh.
 
@@ -548,16 +646,25 @@ public class NioServer {
             incoming.configureBlocking(false);                                  // Non-blocking IO
             SelectionKey incomingReadKey = incoming.register(                   // Register new connection
               this.selector,                                                    // With the Selector
-              SelectionKey.OP_READ );                                           // Want to READ data
+              SelectionKey.OP_READ | SelectionKey.OP_WRITE );                                           // Want to READ data
 
-            buff.clear().flip();                                                // Show buffer as having nothing
-            fireNewConnection(incomingReadKey,buff);                            // Fire new connection event
+            outBuff.clear().flip();                                             // Show outBuff as having nothing
+            assert knownState(outBuff, "[PL..]");
+            
+            ////////  FIRE EVENT  ////////
+            fireNewConnection(incomingReadKey,outBuff);                         // Fire new connection event
+            ////////  FIRE EVENT  ////////
 
-            SelectableChannel readCh = incomingReadKey.channel();               // This is the read/write channel (not the server channel)
-            if( readCh.isOpen() && buff.remaining() > 0 ){                      // Did someone leave data to write?
-                SocketChannel client = (SocketChannel)readCh;                   // Source socket
-                client.write(buff);                                             // Write the data
-            }   // end if: data to write
+
+            // If there are leftovers, save them for next
+            // time the channel is ready.
+            if( outBuff.remaining() > 0 ){                                      // Did the user leave data to be written?
+                ByteBuffer leftover = ByteBuffer.allocateDirect(outBuff.remaining()); // Create/resize
+                leftover.put(outBuff).flip();                                   // Save new leftovers
+                assert knownState(leftover,"[PrrL..]");
+                this.leftoverForWriting.put(key,leftover);                      // Save leftovers for next time
+                this.setNotifyOnWritable(incomingReadKey, true);                // Notify that we have something to write
+            }   // end if: has remaining bytes
 
             if( LOGGER.isLoggable(Level.FINEST) ){
                 LOGGER.finest("  " + incoming + ", key: " + incomingReadKey );
@@ -572,46 +679,107 @@ public class NioServer {
      * @param buff the ByteBuffer to hold the data
      * @throws java.io.IOException if an error occurs
      */
-    private void handleRead(SelectionKey key, ByteBuffer buff ) throws IOException {
+    private void handleRead(SelectionKey key, ByteBuffer inBuff, ByteBuffer outBuff ) throws IOException {
 
         SelectableChannel sc = key.channel();
-        buff.clear();                                                           // Clear input buffer
+        inBuff.clear();                                                         // Clear input outBuff
+        assert knownState( inBuff, "[PrrrL]" );
 
         // TCP
         if( sc instanceof SocketChannel ){
 
             SocketChannel client = (SocketChannel) key.channel();               // Source socket
-            ByteBuffer leftover = this.leftoverData.get(key);                   // Leftover data from last read
+            ByteBuffer leftoverR = this.leftoverForReading.get(key);            // Leftover data from last read
 
-            if( leftover != null && leftover.remaining() > 0 ){                 // Have a leftover buffer
-                buff.put(leftover);                                             // Preload leftovers
-            }   // end if: have leftover buffer
+            // See if there's leftover data to be read
+            // and copy that into inBuff first.
+            if( leftoverR != null && leftoverR.remaining() > 0 ){               // Have a leftoverR outBuff
+                assert knownState( leftoverR, "[..PrrL..]" );
 
-            // Read into the buffer here
+                if( leftoverR.remaining() <= inBuff.remaining() ){              // Is inBuff big enough to hold leftover
+                    inBuff.put(leftoverR);                                      // Preload all of leftoverR
+                    assert knownState( inBuff, "[..PrrL]" );
+
+                } else {
+                    while( leftoverR.hasRemaining() && inBuff.hasRemaining() ){ // While they both have more to copy
+                        inBuff.put(leftoverR.get());                            // Copy one byte at a time. Yuck.
+                    }   // end while
+                    assert knownState( inBuff, "[..PL]" );
+                }   // end else
+            }   // end if: have leftoverR outBuff
+
+            // Read into the outBuff here
             // If End of Stream
-            if( client.read(buff) == -1 ){                                      // End of stream?
+            if( client.read(inBuff) == -1 ){                                    // End of stream?
                 key.cancel();                                                   // Cancel the key
                 client.close();                                                 // And cancel the client
                 fireConnectionClosed(key);                                      // Fire event for connection closed
-                this.leftoverData.remove(key);                                  // Remove any leftover data
                 if( LOGGER.isLoggable(Level.FINER) ){
                     LOGGER.finer("Connection closed: " + key );
                 }
 
-            } else {
-                // Not End of Stream
-                buff.flip();                                                    // Flip the buffer to prepare to be read
-                fireTcpDataReceived(key,buff);                                  // Fire event for new data
+            } else {                                                            // Not End of Stream
 
-                if( buff.remaining() > 0 ){                                     // Did the user leave data for next time?
-                    if( leftover == null ||                                     // Leftover buffer not yet created?
-                        buff.remaining() > leftover.capacity() ){               // Or is too small?
-                        leftover = ByteBuffer.allocateDirect(buff.remaining()); // Create/resize
-                    }   // end if: need to resize
-                    leftover.clear();                                           // Clear old leftovers
-                    leftover.put(buff).flip();                                  // Save new leftovers
+                inBuff.flip();                                                  // Flip the outBuff to prepare to be read
+                outBuff.clear().flip();                                         // Empty output outBuff
+                assert knownState( inBuff, "[PrrL..]" );
+                assert knownState( outBuff, "[PL...]" );
+
+                fireTcpDataReceived(key,inBuff,outBuff);                        // Fire event for new data
+
+                // If there is also data to be written,
+                // save them in the leftover-for-writing outBuff
+                // and indicate that we should be notified about writability.
+                if( outBuff.remaining() > 0 ){                                  // Did the user leave data to be written?
+                    ByteBuffer leftoverW = this.leftoverForWriting.get(key);    // Leftover still to be written
+                    if( leftoverW == null ){                                    // Leftover outBuff not yet created?
+                        leftoverW = ByteBuffer.allocate(outBuff.remaining());   // Create/resize
+                    } else {
+                        assert knownState( outBuff, "[..PrrL..]" );
+                        if( outBuff.remaining() >                               // Amount requested to be written
+                            leftoverW.capacity() - leftoverW.limit() ){         // vs. space remaining in leftoverW
+
+                            ByteBuffer temp = ByteBuffer.allocateDirect(        // Resize outBuff to...
+                              leftoverW.limit() - leftoverW.position() +        // data remaining in leftover plus
+                              outBuff.remaining() );                            // amount requested this round
+
+                            temp.put(leftoverW).flip();                         // Put new buff in proper state (ready to be read)
+                            leftoverW = temp;                                   // Replace old leftoverW outBuff
+                            assert knownState( leftoverW, "[PrrL__]" );
+
+                        }   // end if: resize leftoverW
+                        assert knownState( leftoverW, "[PrrL..]" );
+                        leftoverW.position( leftoverW.limit() );                // Move position to end of relevant data
+                        leftoverW.limit( leftoverW.capacity() );                // Move limit to end of outBuff
+                        assert knownState( leftoverW, "[__PrrL]" );
+                    }
+                    assert knownState( leftoverW, "[..PrrL]" );
+                    assert knownState( outBuff, "[..PrrL..]" );
+                    leftoverW.put(outBuff).flip();                              // Record newly-arrived data and flip leftoverW
+
+                    assert knownState( leftoverW, "[PrrL..]" );
+                    assert knownState( outBuff, "[..PL..]" );
+
+                    this.leftoverForWriting.put(key,leftoverW);                 // Save leftovers for next time
+                    this.setNotifyOnWritable(key, true);                        // Make sure server processes writes
                 }   // end if: has remaining bytes
-                this.leftoverData.put(key,leftover);                            // Save leftovers for next time
+
+
+
+                // If there's leftover data that wasn't read,
+                // save that for next time the event is fired.
+                if( inBuff.remaining() > 0 ){                                   // Did the user leave data for next time?
+                    if( leftoverR == null ||                                    // Leftover outBuff not yet created?
+                        inBuff.remaining() > leftoverR.capacity() ){            // Or is too small?
+                        leftoverR = ByteBuffer.allocate(inBuff.remaining());    // Create/resize
+                    }   // end if: need to resize
+                    assert knownState( inBuff, "[..PrrL..]" );
+                    leftoverR.clear();                                          // Clear old leftovers
+                    leftoverR.put(inBuff).flip();                               // Save new leftovers
+                    assert knownState( leftoverR, "[PrrL..]" );
+
+                }   // end if: has remaining bytes
+                this.leftoverForReading.put(key,leftoverR);                      // Save leftovers for next time
             }   // end else: read
         }   // end if: SocketChannel
 
@@ -619,10 +787,10 @@ public class NioServer {
         else if( sc instanceof DatagramChannel ){
             DatagramChannel dc = (DatagramChannel)sc;                           // Cast to datagram channel
             SocketAddress remote = null;
-            while( (remote = dc.receive(buff)) != null ){                       // Loop over all pending datagrams
-                buff.flip();                                                    // Flip after reading in
-                key.attach( buff );                                             // Attach buffer to key
-                fireUdpDataReceived(key,buff,remote);                           // Fire event
+            while( (remote = dc.receive(inBuff)) != null ){                     // Loop over all pending datagrams
+                inBuff.flip();                                                  // Flip after reading in
+                key.attach( inBuff );                                           // Attach outBuff to key
+                fireUdpDataReceived(key,inBuff,remote);                         // Fire event
             }   // end while: each pending datagram
         }   // end else: UDP
 
@@ -635,19 +803,63 @@ public class NioServer {
      * @param buff the ByteBuffer to hold the data
      * @throws java.io.IOException if an error occurs
      */
-    private void handleWrite(SelectionKey key, ByteBuffer buff ) throws IOException {
+    private void handleWrite(SelectionKey key, ByteBuffer inBuff, ByteBuffer outBuff ) throws IOException {
 
-        SelectableChannel sc = key.channel();
-        assert sc instanceof SocketChannel : sc;
-        buff.clear().flip();                                                    // Clear input buffer.
+        SocketChannel ch = (SocketChannel)key.channel();                        // Source socket
+        outBuff.clear();
 
-        fireTcpReadyToWrite(key,buff);                                          // Notify listeners who will load buffer
+        // First see if we need to write old data
+        // that still hasn't been sent.
+        ByteBuffer leftover = this.leftoverForWriting.get(key);                 // Leftover data still needing to be written
+        if( leftover != null && leftover.remaining() > 0 ){                     // Have a leftoverR outBuff
+            assert knownState( leftover, "[PrrL..]" );
 
-        if( sc.isOpen() && buff.remaining() > 0 ){                              // Did someone leave data to write?
-            SocketChannel client = (SocketChannel) key.channel();               // Source socket
-            client.write(buff);                                                 // Write the data
-        }   // end if: data to write
+            ch.write(leftover); // SUBTLE BUG. leftover COULD BE HUGE -- BAD ON SLOW CONNECTIONS
+                                // SUPPOSED TO MOVE leftover TO OUTBUFF AND WRITE THAT.
+        }   // end if: have leftoverW outBuff
 
+
+        // If we're done with leftovers, or there were none,
+        // notify user to ask for more.
+        if( leftover == null || !leftover.hasRemaining() ){
+            outBuff.clear().flip();                                             // Clear outBuff
+
+            ////////  FIRE EVENT  ////////
+            fireTcpReadyToWrite(key,outBuff);                                   // Notify listeners who will load outBuff
+            ////////  FIRE EVENT  ////////
+
+
+            // Try writing once, stopping even if the
+            // channel is stalled before we're done.
+            if( ch.isOpen() ){
+                if( outBuff.hasRemaining() ){                                   // Did someone leave data to write?
+                    ch.write(outBuff);                                          // Write some data
+                }   // end if: something to write
+            } else {
+                return;                                                         // Channel is closed
+            }
+
+            // If there are leftovers, save them for next
+            // time the channel is ready.
+            if( outBuff.remaining() > 0 ){                                      // Is there _still_ data left to write?
+                if( leftover == null ||                                         // Leftover outBuff not yet created?
+                    outBuff.remaining() > leftover.capacity() ){                // Or is too small?
+                    leftover = ByteBuffer.allocateDirect(outBuff.remaining());  // Create/resize
+                }   // end if: need to resize
+                leftover.clear();                                               // Clear old leftovers
+                assert knownState( outBuff, "[..PrrL..]" );
+                leftover.put(outBuff).flip();                                   // Save new leftovers
+                assert knownState( leftover, "[PrrL..]" );
+            }   // end if: has remaining bytes
+            this.leftoverForWriting.put(key,leftover);                          // Save leftovers for next time
+        }   // end if: proceed with fresh buffer to user
+
+        
+        if( leftover != null && leftover.hasRemaining() ){                      // Is there more to write?
+            this.setNotifyOnWritable(key, true);                                // Make sure we have notifications turned on. (Unnecessary?)
+        } else {
+            this.setNotifyOnWritable(key, false);                               // No need to provide notifications
+        }
     }   // end handleWrite
 
 
@@ -663,6 +875,11 @@ public class NioServer {
      * @throws NullPointerException if key is null
      */
     public synchronized void setNotifyOnWritable( SelectionKey key, boolean notify ){
+        //if(notify){
+        //    System.out.println("Turning on notifications for " + key );
+        //} else {
+        //    System.out.println("Turning off notifications for " + key );
+        //}
         if( key == null ){
             throw new NullPointerException( "Cannot set notifications for null key." );
         }
@@ -684,8 +901,8 @@ public class NioServer {
      * objects as data is received and so forth.
      * @return The size of the ByteBuffer
      */
-    public synchronized int getBufferSize(){
-        return this.bufferSize;
+    public synchronized int getInputBufferSize(){
+        return this.inputBufferSize;
     }
 
     /**
@@ -696,18 +913,52 @@ public class NioServer {
      * @param size The size of the ByteBuffer
      * @throws IllegalArgumentException if size is not positive
      */
-    public synchronized void setBufferSize( int size ){
+    public synchronized void setInputBufferSize( int size ){
         if( size <= 0 ){
             throw new IllegalArgumentException( "New buffer size must be positive: " + size );
         }   // end if: size outside range
 
-        int oldVal = this.bufferSize;
-        this.bufferSize = size;
+        int oldVal = this.inputBufferSize;
+        this.inputBufferSize = size;
         if( this.selector != null ){
             this.selector.wakeup();
         }
 
-        firePropertyChange( BUFFER_SIZE_PROP, oldVal, size  );
+        firePropertyChange( INPUT_BUFFER_SIZE_PROP, oldVal, size  );
+    }
+
+
+    /**
+     * Returns the size of the ByteBuffer used to write
+     * to the connections. This refers to the buffer
+     * that will be passed along with {@link Event}
+     * objects.
+     * @return The size of the ByteBuffer
+     */
+    public synchronized int getOutputBufferSize(){
+        return this.outputBufferSize;
+    }
+
+    /**
+     * Sets the size of the ByteBuffer used to write
+     * from the connections. This refers to the buffer
+     * that will be passed along with {@link Event}
+     * objects.
+     * @param size The size of the ByteBuffer
+     * @throws IllegalArgumentException if size is not positive
+     */
+    public synchronized void setOutputBufferSize( int size ){
+        if( size <= 0 ){
+            throw new IllegalArgumentException( "New buffer size must be positive: " + size );
+        }   // end if: size outside range
+
+        int oldVal = this.outputBufferSize;
+        this.outputBufferSize = size;
+        if( this.selector != null ){
+            this.selector.wakeup();
+        }
+
+        firePropertyChange( OUTPUT_BUFFER_SIZE_PROP, oldVal, size  );
     }
 
 /* ********  T C P   B I N D I N G S  ******** */
@@ -1094,14 +1345,14 @@ public class NioServer {
     /**
      * Fire when data is received.
      * @param key the SelectionKey associated with the data
-     * @param buffer the buffer containing the new (and possibly leftover) data
+     * @param outBuff the outBuff containing the new (and possibly leftoverR) data
      */
-    protected synchronized void fireTcpDataReceived(SelectionKey key, ByteBuffer buffer) {
+    protected synchronized void fireTcpDataReceived(SelectionKey key, ByteBuffer inBuff, ByteBuffer outBuff ) {
 
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,buffer,null);
+        this.event.reset(key,inBuff,outBuff,null);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -1121,14 +1372,15 @@ public class NioServer {
     /**
      * Fire when data is received.
      * @param key the SelectionKey associated with the data
-     * @param buffer the buffer containing the new (and possibly leftover) data
+     * @param outBuff the outBuff containing the new (and possibly leftoverR) data
      */
-    protected synchronized void fireTcpReadyToWrite(SelectionKey key, ByteBuffer buffer) {
+    protected synchronized void fireTcpReadyToWrite(SelectionKey key, ByteBuffer outBuff) {
+        assert knownState( outBuff, "[PL..]" );
 
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,buffer,null);
+        this.event.reset(key,null,outBuff,null);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -1149,16 +1401,16 @@ public class NioServer {
     /**
      * Fire when data is received.
      * @param key the SelectionKey associated with the data
-     * @param buffer the buffer containing the data
+     * @param outBuff the outBuff containing the data
      * @param remote the source address of the datagram or null if not available
-     * @param buffer the buffer containing the data
+     * @param outBuff the outBuff containing the data
      */
-    protected synchronized void fireUdpDataReceived(SelectionKey key, ByteBuffer buffer, SocketAddress remote) {
+    protected synchronized void fireUdpDataReceived(SelectionKey key, ByteBuffer inBuff, SocketAddress remote) {
 
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,buffer,remote);
+        this.event.reset(key,inBuff,null,remote);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -1185,7 +1437,7 @@ public class NioServer {
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,null,null);
+        this.event.reset(key,null,null,null);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -1208,12 +1460,12 @@ public class NioServer {
      * Fire when a new connection is established.
      * @param key the SelectionKey associated with the connection
      */
-    protected synchronized void fireNewConnection(SelectionKey key,ByteBuffer buff) {
+    protected synchronized void fireNewConnection(SelectionKey key, ByteBuffer outBuff) {
 
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,buff,null);
+        this.event.reset(key,null,outBuff,null);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -1242,7 +1494,8 @@ public class NioServer {
      */
     public synchronized void fireProperties(){
         firePropertyChange( STATE_PROP, null, getState()  );
-        firePropertyChange( BUFFER_SIZE_PROP, null, getBufferSize()  );
+        firePropertyChange( INPUT_BUFFER_SIZE_PROP, null, getInputBufferSize()  );
+        firePropertyChange( OUTPUT_BUFFER_SIZE_PROP, null, getOutputBufferSize()  );
     }
 
 
@@ -1368,9 +1621,30 @@ public class NioServer {
 
 
     /**
-     * An interface for listening to events from a {@link NioServer}.
+     * <p>An interface for listening to events from a {@link NioServer}.
      * A single {@link Event} is shared for all invocations
-     * of these methods.
+     * of these methods.</p>
+     *
+     * <p>Of critical importance are the input and output buffers,
+     * as provided by
+     * {@link NioServer.Event#getInputBuffer()} and
+     * {@link NioServer.Event#getOutputBuffer()}. Below is a table
+     * describing the significance of the input and output buffers
+     * upon entering and exiting the listener's events.<p>
+     *
+     * <table>
+     *  <thead>
+     *   <tr><th>Event</th><th>Input outBuff upon entering event</th><th>Output outBuff upon exiting event</th></tr>
+     *  </thead>
+     *  <tbody>
+     *   <tr>
+     *    <td>New connection received</td>
+     *    <td><code>null</code></td>
+     *    <td>NA</td>
+     *   </tr>
+     *  </tbody>
+     * </table>
+     *
      *
      * <p>This code is released into the Public Domain.
      * Since this is Public Domain, you don't need to worry about
@@ -1390,9 +1664,10 @@ public class NioServer {
      */
     public static interface Listener extends java.util.EventListener {
 
+
         /**
          * <p>Called when a new connection is received. The SelectionKey associated
-         * with the event (an <code>OP_READ</code> key), is the key that will be
+         * with the event (with <code>OP_READ</code> interest), is the key that will be
          * used with the data received event. In this way, you can seed a
          * <code>Map</code> or other data structure and associate this very
          * key with the connection. You will only get new connection
@@ -1414,6 +1689,34 @@ public class NioServer {
          *       }
          *   }
          * </pre>
+         *
+         * <p>You may also make use of the direct byte outBuff used by the server.
+         * It is already allocated and is direct, possibly yielding better
+         * performance. Here is a more thorough version of the above method
+         * that seeks to minimize object instantiation (at the expense
+         * of more complicated code):</p>
+         *
+         * <pre>
+         *   private CharsetEncoder encoder = Charset.forName("US-ASCII");
+         *   private CharBuffer greeting = CharBuffer.wrap("Greetings\r\n");
+         *   ...
+         *   public void nioServerNewConnectionReceived(NioServer.Event evt) {
+         *       SocketChannel ch = (SocketChannel) evt.getKey().channel();
+         *       ByteBuffer buff = evt.getBuffer();
+         *       buff.clear();
+         *       greeting.rewind();
+         *       encoder.reset().encode( greeting, buff, true );
+         *       buff.flip();
+         *       try {
+         *           while( buff.hasRemaining() ){
+         *               ch.write(buff);
+         *           }
+         *       } catch (IOException ex) {
+         *           ex.printStackTrace(); // Please don't do printStackTrace in production code
+         *       }
+         *   }
+         * </pre>
+         *
          * @param evt the shared event
          */
         public abstract void nioServerNewConnectionReceived( NioServer.Event evt );
@@ -1429,19 +1732,45 @@ public class NioServer {
          * of <code>position()</code> will be saved for the next
          * time an event is fired. In this way, you can defer
          * processing incomplete data until everything arrives.
-         * <em>Be careful that you don't leave the buffer full</em>
+         * <em>Be careful that you don't leave the outBuff full</em>
          * or you won't be able to receive anything next time around
-         * (unless you call {@link #setBufferSize} to resize buffer).</p>
+         * (unless you call {@link #setBufferSize} to resize outBuff).
+         * On the other hand, this has the effect of possibly throttling
+         * back the client sending the data, depending on the underlying
+         * operating systems networking stack and specifics of the
+         * Java Virtual Machine being used.</p>
          *
          * <p>The key's attachment mechanism is unused by NioServer and is
          * available for you to store whatever you like.</p>
          *
+         * <p>Because data left in the ByteBuffer is your way of telling
+         * the {@link NioServer} that you want it left behind for the
+         * next read event, you cannot use the same technique for
+         * writing as you do when {@link #nioServerTcpReadyToWrite(NioServer.Event)}
+         * is fired. Instead, if you want to write to the channel
+         * "in the same breath" as you read from it, you'll need to
+         * retrieve the key's channel, cast it to
+         * a <code>SocketChannel</code> and write to it that way, but
+         * you risk stalling the whole server if you're writing large
+         * amounts of data over a slow connection.</p>
+         *
+         * <p>Perhaps a better approach, more in line with the style of
+         * the <code>java.nio</code> package and selectable channels and
+         * so forth would be that if, in the course of reading the data,
+         * you discover that you wish to write to the channel, then
+         * you call {@link NioServer.Event#setNotifyOnTcpWritable(boolean)
+         * to tell the server you have something to write. Then you save
+         * what you wish to say in your own data structure, and when
+         * the channel is actually ready to write (which it might not
+         * be immediately), you write it during a
+         * {@link #nioServerTcpReadyToWrite} firing.</p>
+         *
          * <p>Example: You are receiving lines of text. The ByteBuffer
          * returned here contains one and a half lines of text.
          * When you realize this, you process the first line as you
-         * like, but you leave this buffer's position at the beginning
+         * like, but you leave this outBuff's position at the beginning
          * of the second line. In this way, The beginning of the second
-         * line will be the start of the buffer the next time around.</p>
+         * line will be the start of the outBuff the next time around.</p>
          *
          * @param evt the shared event
          */
@@ -1464,47 +1793,39 @@ public class NioServer {
 
         /**
          * <p>Fired when a TCP channel is ready to be written to.
-         * The suggested way to write to the channel is to retrieve the
-         * ByteBuffer with {@link NioServer.Event#getBuffer()} and
-         * leave data in the buffer. Whatever data is there when the event
-         * firing is done will be written to the channel. Note that the
-         * buffer will arrive to you with position = limit = 0.</p>
+         * The preferred way to write is to leave data in the outBuff
+         * attached to the event. The server will take care of sending
+         * it even if it can't all be sent at once (perhaps a slow
+         * network connection).</p>
          *
-         * <p>Example of writing some data from another source (maybe a
-         * file) to the channel in chunks as the channel is ready:</p>
+         * <p>Here is an example of how to write to the channel:</p>
          *
-         * <pre>public void nioServerTcpReadyToWrite(NioServer.Event evt){
-         *    ByteBuffer buff = evt.getBuffer();
-         *    buff.clear();                                       // Sets limit to capacity so there's room to write
-         *    int lastPos = (Integer)evt.getKey().attachment();   // Perhaps save your place in the key's attachment
-         *    buff.put(somedata, lastPos, buff.remaining() );     // Copy in your data
-         *    lastPos += buff.position();                         // Update your place
-         *    buff.flip();                                        // Leave buffer in ready-to-read state
-         *    evt.getKey().attach(lastPos);                       // Save it for next time
-         *  }</pre>
+         * <pre>
+         *   public void nioServerTcpReadyToWrite(NioServer.Event evt) {
+         *       ByteBuffer buff = evt.getBuffer();             // Reuse it since it's already allocated
+         *       buff.clear();                                  // Prepare outBuff for writing
+         *       buff.putLong( System.currentTimeMillis() );    // Store data
+         *       buff.flip();                                   // Put outBuff in "read me from here" mode
+         *   }
+         * </pre>
          *
-         * <p>Of course you'll catch the subtle bug in the buff.put(...) line
-         * above: you'll get an ArrayIndexOutOfRangeException unless you
-         * do something like Math.min(..) to balance buff.remaining() and
-         * remaining space in your array.</p>
+         * <p>You can also just retrieve the key's channel, cast it to
+         * a <code>SocketChannel</code> and write to it that way, but
+         * you risk stalling the whole server if you're writing large
+         * amounts of data over a slow connection. Still, this may not
+         * come up very often, so you may prefer that approach.</p>
          *
-         * <p>Writing in this way will help preserve the everyone-shares-the-IO-thread
-         * nature of the <code>java.nio</code> package, but you can also simply
-         * retrieve the channel from the key and write to it directly (and even
-         * save it for writing on other threads, if you must):</p>
-         *
-         * <pre>public void nioServerTcpReadyToWrite(NioServer.Event evt){
-         *    SelectableChannel sc = evt.getKey().channel();        // Channel associated with key
-         *    if( sc instanceof WritableByteChannel ){              // It will probably be a SocketChannel, in fact
-         *      ((WritableByteChannel)sc).write(mydatabuffer);      // Write your own buffer
-         *    }
-         *  }</pre>
+         * <p>Be aware of how large the outBuff is. You can change the
+         * outBuff size that the server uses with the {@link NioServer#setBufferSize(int)}
+         * method, but that will not take effect until the server has finished processing
+         * the current set of selected SelectionKeys.</p>
          *
          * <p><strong>You must tell the server that you wish to receive these events.</strong>
          * The mechanism for this is the {@link NioServer.Event#setNotifyOnTcpWritable(boolean)}
-         * method in an event you receive such as from
-         * {@link #nioServerNewConnectionReceived(NioServer.Event)} or
-         * {@link #nioServerTcpDataReceived(NioServer.Event)}. Be aware that when
+         * method in an event you receive such as a registered listener or
+         * with the {@link NioServer#setNotifyOnWritable(java.nio.channels.SelectionKey, boolean)}
+         * method in {@link NioServer}.
+         * Be aware that when
          * you have notifications turned on, you will probably enter a very tight
          * loop where this is fired very quickly. If you made the mistake of
          * turning this on, doing nothing when the event fired, and connecting
@@ -1516,8 +1837,7 @@ public class NioServer {
         public abstract void nioServerTcpReadyToWrite( NioServer.Event evt );
 
         /**
-         * Called when a connection is closed remotely. If you close the connection
-         * somewhere in your own code, this event probably won't be fired.
+         * Called when a TCP connection is closed.
          * @param evt the shared event
          */
         public abstract void nioServerConnectionClosed( NioServer.Event evt );
@@ -1640,9 +1960,14 @@ public class NioServer {
         private SelectionKey key;
 
         /**
-         * The buffer that holds the data, for some events.
+         * The outBuff that holds the data from the client, for some events.
          */
-        private ByteBuffer buffer;
+        private ByteBuffer inBuff;
+
+        /**
+         * The outBuff that holds the data to send to the client, for some events.
+         */
+        private ByteBuffer outBuff;
 
 
         /**
@@ -1696,31 +2021,51 @@ public class NioServer {
          * @param key The SelectionKey for the event
          * @param remoteUdp the remote UDP source or null for TCP
          */
-        protected void reset( SelectionKey key, ByteBuffer buffer, SocketAddress remoteUdp ){
+        protected void reset( SelectionKey key, ByteBuffer inBuff, ByteBuffer outBuff, SocketAddress remoteUdp ){
             this.key = key;
-            this.buffer = buffer;
+            this.inBuff = inBuff;
+            this.outBuff = outBuff;
             this.remoteUdp = remoteUdp;
         }
 
 
         /**
          * <p>Returns the {@link java.nio.ByteBuffer} that contains
-         * the data for this connection. Read from it as much as
+         * the incoming data for this connection. Read from it as much as
          * you can. Any data that remains on or after the value
          * of <code>position()</code> will be saved for the next
          * time an event is fired. In this way, you can defer
-         * processing incomplete data until everything arrives.</p>
+         * processing incomplete data until everything arrives.
+         * This applies to the
+         * {@link NioServer.Listener#nioServerTcpDataReceived(NioServer.Event)}
+         * event.</p>
          *
          * <p>Example: You are receiving lines of text. The ByteBuffer
          * returned here contains one and a half lines of text.
          * When you realize this, you process the first line as you
-         * like, but you leave this buffer's position at the beginning
+         * like, but you leave this outBuff's position at the beginning
          * of the second line. In this way, The beginning of the second
-         * line will be the start of the buffer the next time around.</p>
-         * @return buffer with the data
+         * line will be the start of the outBuff the next time around.</p>
+         * @return outBuff with the data
          */
-        public ByteBuffer getBuffer(){
-            return this.buffer;
+        public ByteBuffer getInputBuffer(){
+            return this.inBuff;
+        }
+
+
+        /**
+         * <p>Returns the {@link java.nio.ByteBuffer} in which you leave
+         * data to be written to the client.
+         * This applies to the
+         * {@link NioServer.Listener#nioServerNewConnectionReceived(NioServer.Event)},
+         * {@link NioServer.Listener#nioServerTcpDataReceived(NioServer.Event)}, and
+         * {@link NioServer.Listener#nioServerTcpReadyToWrite(NioServer.Event)}
+         * events.</p>
+         *
+         * @return outBuff with the data
+         */
+        public ByteBuffer getOutputBuffer(){
+            return this.outBuff;
         }
 
 

@@ -84,7 +84,7 @@ public class HttpNioExample implements NioServer.Listener {
     }
 
     public void nioServerTcpDataReceived(NioServer.Event evt) {
-        ByteBuffer buff = evt.getBuffer();                                      // Buffer with data in it
+        ByteBuffer buff = evt.getInputBuffer();                                      // Buffer with data in it
         Object att = evt.getKey().attachment();
         if( att == null || att instanceof StringBuilder ){
             StringBuilder request = (StringBuilder)evt.getKey().attachment();       // Read characters from input
@@ -142,7 +142,7 @@ public class HttpNioExample implements NioServer.Listener {
 
     public void nioServerTcpReadyToWrite(NioServer.Event evt) {
         try {
-            ByteBuffer buff = evt.getBuffer(); // Buffer to leave data in
+            ByteBuffer buff = evt.getOutputBuffer(); // Buffer to leave data in
             buff.clear();
             FileChannel fc = (FileChannel)evt.getKey().attachment();
             
