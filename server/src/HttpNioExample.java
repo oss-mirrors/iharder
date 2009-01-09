@@ -1,12 +1,10 @@
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
@@ -104,7 +102,7 @@ public class HttpNioExample implements NioServer.Listener {
 
             // http://localhost:1234/build.xml
             // Have we received the GET /filename HTTP/1.0 line yet?
-            Pattern patt = Pattern.compile("^GET /(.+) HTTP.*",Pattern.DOTALL);
+            Pattern patt = Pattern.compile("^GET /(\\S+) HTTP.*",Pattern.DOTALL);
             Matcher mat = patt.matcher(request);
             if( mat.matches() ){
                 String filename = mat.group(1);
@@ -146,13 +144,17 @@ public class HttpNioExample implements NioServer.Listener {
         try {
             ByteBuffer buff = evt.getOutputBuffer(); // Buffer to leave data in
             buff.clear();
-            FileChannel fc = (FileChannel)evt.getKey().attachment();
-            
-            if( fc != null && fc.read(buff) < 0 ){
-                fc.close();
-                evt.close();
+            Object att = evt.getKey().attachment();
+            if( att instanceof FileChannel ){
+                FileChannel fc = (FileChannel)evt.getKey().attachment();
+
+                if( fc != null && fc.read(buff) < 0 ){
+                    System.out.println("Done sending file" );
+                    fc.close();
+                    evt.close();
+                }
+                buff.flip();
             }
-            buff.flip();
         } catch (IOException ex) {
             Logger.getLogger(HttpNioExample.class.getName()).log(Level.SEVERE, null, ex);
         }

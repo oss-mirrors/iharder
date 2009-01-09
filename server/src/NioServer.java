@@ -435,6 +435,8 @@ public class NioServer {
                     SelectionKey key = iter.next();                             // The key
                     iter.remove();                                              // Remove from list
 
+                    TODO: WRAP THESE HANDLE FUNCTIONS IN THEIR OWN TRY/CATCH
+                            
                     // Accept connections
                     // This should only be from the TCP bindings
                     if(  key.isAcceptable()  ){                                 // New, incoming connection?
@@ -828,6 +830,10 @@ public class NioServer {
             fireTcpReadyToWrite(key,outBuff);                                   // Notify listeners who will load outBuff
             ////////  FIRE EVENT  ////////
 
+            if( leftover != null && !leftover.hasRemaining() ){                      // Is there more to write?
+                this.setNotifyOnWritable(key, false); 
+            } 
+
 
             // Try writing once, stopping even if the
             // channel is stalled before we're done.
@@ -854,12 +860,6 @@ public class NioServer {
             this.leftoverForWriting.put(key,leftover);                          // Save leftovers for next time
         }   // end if: proceed with fresh buffer to user
 
-        
-        if( leftover != null && leftover.hasRemaining() ){                      // Is there more to write?
-            this.setNotifyOnWritable(key, true);                                // Make sure we have notifications turned on. (Unnecessary?)
-        } else {
-            this.setNotifyOnWritable(key, false);                               // No need to provide notifications
-        }
     }   // end handleWrite
 
 
