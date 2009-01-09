@@ -84,7 +84,7 @@ public class HttpNioExample implements NioServer.Listener {
     }
 
     public void nioServerTcpDataReceived(NioServer.Event evt) {
-        ByteBuffer buff = evt.getInputBuffer();                                      // Buffer with data in it
+        ByteBuffer inBuff = evt.getInputBuffer();                                      // Buffer with data in it
         Object att = evt.getKey().attachment();
         if( att == null || att instanceof StringBuilder ){
             StringBuilder request = (StringBuilder)evt.getKey().attachment();       // Read characters from input
@@ -94,7 +94,7 @@ public class HttpNioExample implements NioServer.Listener {
             }   // end if: lazy create
 
             cbuff.clear();
-            while( decoder.decode(buff, cbuff, false) == CoderResult.OVERFLOW ){
+            while( decoder.decode(inBuff, cbuff, false) == CoderResult.OVERFLOW ){
                 cbuff.flip();
                 request.append(cbuff);
                 cbuff.clear();
@@ -104,11 +104,11 @@ public class HttpNioExample implements NioServer.Listener {
 
             // http://localhost:1234/build.xml
             // Have we received the GET /filename HTTP/1.0 line yet?
-            Pattern patt = Pattern.compile("^GET (.+) HTTP.*",Pattern.DOTALL);
+            Pattern patt = Pattern.compile("^GET /(.+) HTTP.*",Pattern.DOTALL);
             Matcher mat = patt.matcher(request);
             if( mat.matches() ){
-                System.out.println("match");
                 String filename = mat.group(1);
+                System.out.println("match " + filename );
                 File file = new File( this.root, filename );
                 if( file.isFile() ){
                     try {
@@ -116,13 +116,15 @@ public class HttpNioExample implements NioServer.Listener {
                         FileChannel fc = fis.getChannel();
                         evt.getKey().attach(fc);
                         evt.setNotifyOnTcpWritable(true);
-                        buff.clear();
                         String resp = "Content-type: text/plain\r\nContent-length: " + fc.size() + "\r\n\r\n";
                         cbuff.clear();
                         cbuff.put(resp).flip();
-                        encoder.encode(cbuff, buff, true);
-                        ((SocketChannel)evt.getKey().channel()).write(buff);
-                        buff.clear().flip();
+                        ByteBuffer outBuff = evt.getOutputBuffer();
+                        outBuff.clear();
+                        encoder.encode(cbuff, outBuff, true);
+                        outBuff.flip();
+//                        ((SocketChannel)evt.getKey().channel()).write(buff);
+//                        buff.clear().flip();
                     } catch (IOException ex) {
                         Logger.getLogger(HttpNioExample.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -146,7 +148,7 @@ public class HttpNioExample implements NioServer.Listener {
             buff.clear();
             FileChannel fc = (FileChannel)evt.getKey().attachment();
             
-            if( fc.read(buff) < 0 ){
+            if( fc != null && fc.read(buff) < 0 ){
                 fc.close();
                 evt.close();
             }

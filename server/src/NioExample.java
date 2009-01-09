@@ -388,9 +388,11 @@ private final static long serialVersionUID = 1;
         } catch (CharacterCodingException ex) {
             Logger.getLogger(NioExample.class.getName()).log(Level.SEVERE, null, ex);
         }
-        inBuff.reset();
-        outBuff.clear();
-        outBuff.put(inBuff).flip();
+        
+        // Uncomment these lines to echo
+        //inBuff.reset();
+        //outBuff.clear();
+        //outBuff.put(inBuff).flip();
 
 
         this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
