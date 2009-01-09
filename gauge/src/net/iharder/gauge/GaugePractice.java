@@ -92,9 +92,9 @@ public class GaugePractice extends javax.swing.JFrame {
             System.out.println(slider.getValue());
             //this.temperatureGauge1.setTemp(slider.getValue());
         }
-//        this.altimeterPhotorealisticGauge1.setAltitude(slider.getValue());
-//        this.verticalSpeedGauge1.setAltitude(slider.getValue());
-    }//GEN-LAST:event_jSlider1StateChanged
+        //        this.altimeterPhotorealisticGauge1.setAltitude(slider.getValue());
+        //        this.verticalSpeedGauge1.setAltitude(slider.getValue());
+}//GEN-LAST:event_jSlider1StateChanged
     
     /**
      * @param args the command line arguments

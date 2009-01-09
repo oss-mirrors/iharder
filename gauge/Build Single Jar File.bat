@@ -1,4 +1,5 @@
 @echo off
+set PATH=%PATH%;C:\java\jdk1.6.0_10\bin
 
 REM rmdir is part of cygwin - not sure how to do it in DOS
 rmdir /s /q build

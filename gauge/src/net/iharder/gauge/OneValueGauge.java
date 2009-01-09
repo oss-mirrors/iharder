@@ -16,56 +16,56 @@ public class OneValueGauge extends DefaultGauge {
     private float value = 50;
     private float[] hands = new float[1];
 
-    /** The property "max_value" corresponding to property change events. */
-    public final static String MAX_VALUE = "max_value";
+    /** The property "maxValue" corresponding to property change events. */
+    public final static String MAX_VALUE = "maxValue";
     private float maxValue = 100;
 
-    /** The property "min_value" corresponding to property change events. */
-    public final static String MIN_VALUE = "min_value";
+    /** The property "minValue" corresponding to property change events. */
+    public final static String MIN_VALUE = "minValue";
     private float minValue = 0;
 
-    /** The property "intermediate_steps" corresponding to property change events. */
-    public final static String INTERMEDIATE_STEPS = "intermediate_steps";
+    /** The property "intermediateSteps" corresponding to property change events. */
+    public final static String INTERMEDIATE_STEPS = "intermediateSteps";
     private int intermediateSteps = 4;
 
-    /** The property "red_min" corresponding to property change events. */
-    public final static String RED_MIN_PROP = "red_min";
+    /** The property "redMin" corresponding to property change events. */
+    public final static String RED_MIN_PROP = "redMin";
     private float redMin = 95;
 
-    /** The property "red_max" corresponding to property change events. */
-    public final static String RED_MAX_PROP = "red_max";
+    /** The property "redMax" corresponding to property change events. */
+    public final static String RED_MAX_PROP = "redMax";
     private float redMax = 100;
 
-    /** The property "yellow_min" corresponding to property change events. */
-    public final static String YELLOW_MIN_PROP = "yellow_min";
+    /** The property "yellowMin" corresponding to property change events. */
+    public final static String YELLOW_MIN_PROP = "yellowMin";
     private float yellowMin = 90;
 
-    /** The property "yellow_max" corresponding to property change events. */
-    public final static String YELLOW_MAX_PROP = "yellow_max";
+    /** The property "yellowMax" corresponding to property change events. */
+    public final static String YELLOW_MAX_PROP = "yellowMax";
     private float yellowMax = 95;
 
-    /** The property "green_min" corresponding to property change events. */
-    public final static String GREEN_MIN_PROP = "green_min";
+    /** The property "greenMin" corresponding to property change events. */
+    public final static String GREEN_MIN_PROP = "greenMin";
     private float greenMin = 70;
 
-    /** The property "green_max" corresponding to property change events. */
-    public final static String GREEN_MAX_PROP = "green_max";
+    /** The property "greenMax" corresponding to property change events. */
+    public final static String GREEN_MAX_PROP = "greenMax";
     private float greenMax = 90;
 
-    /** The property "degrees_start" corresponding to property change events. */
-    public final static String DEGREES_START_PROP = "degrees_start";
+    /** The property "degreesStart" corresponding to property change events. */
+    public final static String DEGREES_START_PROP = "degreesStart";
     private int degreesStart = 225;
 
-    /** The property "degrees_range" corresponding to property change events. */
-    public final static String DEGREES_RANGE_PROP = "degrees_range";
+    /** The property "degreesRange" corresponding to property change events. */
+    public final static String DEGREES_RANGE_PROP = "degreesRange";
     private int degreesRange = 270;
 
-    /** The property "minor_tick_spacing" corresponding to property change events. */
-    public final static String MINOR_TICK_SPACING_PROP = "minor_tick_spacing";
+    /** The property "minorTickSpacing" corresponding to property change events. */
+    public final static String MINOR_TICK_SPACING_PROP = "minorTickSpacing";
     private float minorTickSpacing = 5;
 
-    /** The property "minor_tick_values" corresponding to property change events. */
-    public final static String MINOR_TICK_VALUES_PROP = "minor_tick_values";
+    /** The property "minorTickValues" corresponding to property change events. */
+    public final static String MINOR_TICK_VALUES_PROP = "minorTickValues";
     private float[] minorTickValues = null;
     
 
@@ -96,7 +96,6 @@ public class OneValueGauge extends DefaultGauge {
     public void setGreenPaint( java.awt.Paint pnt ){
         this.bands[greenBandIndex][2] = pnt;
         updateMarkings();
-        repaint();
     }
 
     /**
@@ -118,7 +117,6 @@ public class OneValueGauge extends DefaultGauge {
     public void setYellowPaint( java.awt.Paint pnt ){
         this.bands[yellowBandIndex][2] = pnt;
         updateMarkings();
-        repaint();
     }
 
     /**
@@ -139,7 +137,6 @@ public class OneValueGauge extends DefaultGauge {
     public void setRedPaint( java.awt.Paint pnt ){
         this.bands[redBandIndex][2] = pnt;
         updateMarkings();
-        repaint();
     }
 
     /**
@@ -241,6 +238,60 @@ public class OneValueGauge extends DefaultGauge {
 
 
 
+
+    /**
+     * Sets the point in degrees (north is zero) where
+     * the minimum value will be represented.
+     * @param start the starting point of the gauge
+     */
+    public void setDegreesStart( int start ){
+        int oldVal = this.degreesStart;
+        this.degreesStart = start;
+        updateMarkings();
+        firePropertyChange( DEGREES_START_PROP, oldVal, start );
+    }
+
+
+    /**
+     * Gets the point in degrees (north is zero) where
+     * the minimum value will be represented.
+     * @return the starting point of the gauge
+     */
+    public int setDegreesStart(){
+        return this.degreesStart;
+    }
+
+
+
+
+    /**
+     * Sets how many degrees the gauge should span.
+     * A typical car fuel gauge, for example, might have
+     * a range of 60 degrees, whereas a speedometer that
+     * takes up most of the circle might have a 270 degree range.
+     * @param range The range, in degrees, of the gauge, min to max
+     */
+    public void setDegreesRange( int range ){
+        int oldVal = this.degreesRange;
+        this.degreesRange = range;
+        updateMarkings();
+        firePropertyChange( DEGREES_RANGE_PROP, oldVal, range );
+    }
+
+
+    /**
+     * Gets how many degrees the gauge should span.
+     * A typical car fuel gauge, for example, might have
+     * a range of 60 degrees, whereas a speedometer that
+     * takes up most of the circle might have a 270 degree range.
+     * @return The range, in degrees, of the gauge, min to max
+     */
+    public int setDegreesRange(){
+        return this.degreesRange;
+    }
+
+
+
     /**
      * Sets how many intermediate major tick marks will be
      * evenly distributed between the minimum and maximum values.
@@ -316,6 +367,8 @@ public class OneValueGauge extends DefaultGauge {
         this.bands[this.yellowBandIndex][1] = degreeForValue( this.yellowMax ); // Yellow
         this.bands[this.redBandIndex][0] = degreeForValue( this.redMin );       // Red
         this.bands[this.redBandIndex][1] = degreeForValue( this.redMax );       // Red
+
+        repaint();
     }
 
     /**

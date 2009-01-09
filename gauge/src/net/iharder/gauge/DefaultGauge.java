@@ -617,7 +617,7 @@ public class DefaultGauge extends JComponent {
         if( bands != null ){
             Rectangle2D bounds = new Rectangle2D.Float(squareSize*.03f,squareSize*.03f,squareSize*.94f,squareSize*.94f);
             Arc2D arc = new Arc2D.Float(bounds,0,0, Arc2D.OPEN);
-            g2d.setStroke(new BasicStroke(10*scale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
+            g2d.setStroke(new BasicStroke(9*scale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
             for( int i = 0; i < bands.length; i++ ){
                 if( bands[i].length >= 3 ){
                     if( bands[i][0] instanceof Number && bands[i][1] instanceof Number && bands[i][2] instanceof Paint ){
