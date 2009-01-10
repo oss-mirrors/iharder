@@ -173,13 +173,13 @@ private final static long serialVersionUID = 1;
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 502, Short.MAX_VALUE)
+                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE)
+                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 257, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -356,7 +356,7 @@ private final static long serialVersionUID = 1;
 
 
 
-    public void nioServerNewConnectionReceived(final NioServer.Event evt) {
+    public void newConnectionReceived(final NioServer.Event evt) {
         this.tcpIndicator.indicate();                     // New incoming connection: flash indicator at user
 
         final JPanel panel = new JPanel( new BorderLayout() );        // Add special place to write the text
@@ -377,7 +377,7 @@ private final static long serialVersionUID = 1;
     }
 
 
-    public void nioServerTcpDataReceived(NioServer.Event evt) {
+    public void tcpDataReceived(NioServer.Event evt) {
         ByteBuffer inBuff = evt.getInputBuffer();
         ByteBuffer outBuff = evt.getOutputBuffer();
 
@@ -402,7 +402,7 @@ private final static long serialVersionUID = 1;
 
     
 
-    public void nioServerUdpDataReceived(NioServer.Event evt) {
+    public void udpDataReceived(NioServer.Event evt) {
         String s = null;
         try {
             s = this.decoder.reset().decode(evt.getInputBuffer()).toString();
@@ -427,13 +427,13 @@ private final static long serialVersionUID = 1;
 
     }
 
-    public void nioServerConnectionClosed(NioServer.Event evt) {
+    public void connectionClosed(NioServer.Event evt) {
         if( evt.isTcp() ){
             this.tcpWorkers.remove(evt.getKey()).execute();
         }
     }
 
-    public void nioServerTcpReadyToWrite(NioServer.Event evt) {}
+    public void tcpReadyToWrite(NioServer.Event evt) {}
 
     // Process the long-lived connection on another thread
     // so that we can immediately return control to the server

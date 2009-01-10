@@ -36,12 +36,12 @@ import java.lang.reflect.Method;
  * so you'll know when data has come in:</p>
  *
  * <pre> server.addNioServerListener( new NioServer.Adapter(){
- *     public void nioServerTcpDataReceived( NioServer.Event evt ){
+ *     public void tcpDataReceived( NioServer.Event evt ){
  *         ByteBuffer buff = evt.getBuffer();
  *         ...
  *     }   // end data received
  *
- *     public void nioServerUdpDataReceived( NioServer.Event evt ){
+ *     public void udpDataReceived( NioServer.Event evt ){
  *         ByteBuffer buff = evt.getBuffer();
  *         ...
  *     }   // end data received
@@ -94,9 +94,20 @@ public class NioServer {
     private final static Logger LOGGER = Logger.getLogger(NioServer.class.getName());
 
 
-    /** The outBuff size property. */
+    /**
+     * Refers to the size of the input buffer.
+     * @see #setInputBufferSize(int) 
+     * @see #getInputBufferSize()
+     */
     public final static String INPUT_BUFFER_SIZE_PROP = "bufferSize";
+
+    /**
+     * Refers to the size of the output buffer.
+     * @see #setOutputBufferSize(int)
+     * @see #getOutputBufferSize()
+     */
     public final static String OUTPUT_BUFFER_SIZE_PROP = "bufferSize";
+    
     private final static int BUFFER_SIZE_DEFAULT = 4096;
     private int inputBufferSize = BUFFER_SIZE_DEFAULT;
     private int outputBufferSize = BUFFER_SIZE_DEFAULT;
@@ -111,17 +122,29 @@ public class NioServer {
      *  <li>STOPPING</li>
      *  <li>STOPPED</li>
      * </ul>
+     *
+     * @see #getState() 
      */
     public static enum State { STARTING, STARTED, STOPPING, STOPPED };
     private State currentState = State.STOPPED;
+
+    /**
+     * Refers to the state of the server (STARTING, STARTED, STOPPING, STOPPED).
+     * @see #getState() 
+     */
     public final static String STATE_PROP = "state";
 
 
+    /**
+     * Refers to the last exception encountered internally on the server thread.
+     *
+     * @see #getLastException() 
+     */
     public final static String LAST_EXCEPTION_PROP = "lastException";
     private Throwable lastException;
 
 
-    private final Collection<NioServer.Listener> listeners = new LinkedList<NioServer.Listener>();          // Event listeners
+    private final Collection<NioServer.Listener> listeners = new LinkedList<NioServer.Listener>(); // Event listeners
     private NioServer.Listener[] cachedListeners = null;
     private final NioServer.Event event = new NioServer.Event(this);                    // Shared event
     private final PropertyChangeSupport propSupport = new PropertyChangeSupport(this);  // Properties
@@ -130,10 +153,48 @@ public class NioServer {
     private Thread ioThread;                                                            // Performs IO
     private Selector selector;                                                          // Brokers all the connections
 
+    /**
+     * Refers to the TCP bindings for the server.
+     * @see #addTcpBinding(java.net.SocketAddress)
+     * @see #getTcpBindings()
+     * @see #clearTcpBindings()
+     * @see #setSingleTcpPort(int)
+     * @see #getSingleTcpPort()
+     */
     public final static String TCP_BINDINGS_PROP = "tcpBindings";
+
+
+    /**
+     * Refers to the UDP bindings for the server.
+     * @see #addUdpBinding(java.net.SocketAddress)
+     * @see #getUdpBindings()
+     * @see #clearUdpBindings()
+     * @see #setSingleUdpPort(int)
+     * @see #getSingleUdpPort()
+     */
     public final static String UDP_BINDINGS_PROP = "udpBindings";
+
+    /**
+     * Refers to the convenience methods for listening on a single port.
+     * @see #addTcpBinding(java.net.SocketAddress)
+     * @see #getTcpBindings()
+     * @see #clearTcpBindings()
+     * @see #setSingleTcpPort(int)
+     * @see #getSingleTcpPort()
+     */
     public final static String SINGLE_TCP_PORT_PROP = "singleTcpPort";
+
+
+    /**
+     * Refers to the convenience methods for listening on a single port.
+     * @see #addUdpBinding(java.net.SocketAddress)
+     * @see #getUdpBindings()
+     * @see #clearUdpBindings()
+     * @see #setSingleUdpPort(int)
+     * @see #getSingleUdpPort()
+     */
     public final static String SINGLE_UDP_PORT_PROP = "singleUdpPort";
+    
 
     private final Map<SocketAddress,SelectionKey> tcpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested TCP bindings, e.g., "listen on port 80"
     private final Map<SocketAddress,SelectionKey> udpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested UDP bindings
@@ -151,8 +212,10 @@ public class NioServer {
     private final Map<SelectionKey,ByteBuffer> leftoverForReading = new HashMap<SelectionKey,ByteBuffer>();   // Store leftovers from the last read
     private final Map<SelectionKey,ByteBuffer> leftoverForWriting = new HashMap<SelectionKey,ByteBuffer>();   // Store leftovers that still need to be written
 
+    private final Set<SelectionKey> closeAfterWriting = new HashSet<SelectionKey>();
 
 /* ********  C O N S T R U C T O R S  ******** */
+
 
 
     /**
@@ -161,10 +224,11 @@ public class NioServer {
     public NioServer(){
     }
 
+    
     /**
      * Constructs a new NioServer, listening to nothing, and not started.
-     * The provided
-     * ThreadFactory will be used when starting and running the server.
+     * The provided ThreadFactory will be used when starting and running the server.
+     * 
      * @param factory the ThreadFactory to use when starting the server
      */
     public NioServer( ThreadFactory factory ){
@@ -173,13 +237,12 @@ public class NioServer {
 
 
     /**
-     * [PLC]
-     * [PrrrL...C]
-     * [..PL..C]
-     * [..PrrrL..C]
+     * Used to aid in assertions. If you are running with assertions
+     * turned off, then this method will never be run since it is
+     * always called in the form <code>assert knownState(buff, "[PL..]").</code>
      *
-     * @param buff
-     * @param state
+     * @param buff the buffer
+     * @param seq the format
      */
     private static boolean knownState( Buffer buff, CharSequence seq ){
         boolean dotFound = false;   // .
@@ -263,7 +326,7 @@ public class NioServer {
      * Listen for start events to know if the server was
      * successfully started.
      *
-     * @see Listener
+     * @see NioServer.Listener
      */
     public synchronized void start(){
         if( this.currentState == State.STOPPED ){           // Only if we're stopped now
@@ -297,7 +360,7 @@ public class NioServer {
      * Be sure to listen for stop events to know if the server was
      * successfully stopped.
      *
-     * @see Listener
+     * @see NioServer.Listener
      */
     public synchronized void stop(){
         if( this.currentState == State.STARTED || this.currentState == State.STARTING ){   // Only if already STARTED
@@ -313,7 +376,7 @@ public class NioServer {
 
     /**
      * Returns the current state of the server, one of
-     * STOPPED, STARTING, or STARTED.
+     * STARTING, STARTED, STOPPING, or STOPPED.
      * @return state of the server
      */
     public synchronized State getState(){
@@ -362,7 +425,7 @@ public class NioServer {
 
     /**
      * This method starts up and listens indefinitely
-     * for TCP packets. On entering this method,
+     * for network connections. On entering this method,
      * the state is assumed to be STARTING. Upon exiting
      * this method, the state will be STOPPING.
      */
@@ -411,8 +474,6 @@ public class NioServer {
 
 
 
-
-
                 // Possibly resize outBuff if a change was requested since last cycle
                 if( this.inputBufferSize != inBuff.capacity() ){                // Mismatch size means someone asked for something new
                     assert this.inputBufferSize >= 0 : this.inputBufferSize;    // We check for this in setBufferSize(..)
@@ -431,31 +492,37 @@ public class NioServer {
                 }
 
                 Iterator<SelectionKey> iter = keys.iterator();                  // Iterate over keys -- cannot use "for" loop since we remove keys
-                while( iter.hasNext() ){                                        // Each key
-                    SelectionKey key = iter.next();                             // The key
+                while( iter.hasNext() ){                                        // Each accKey
+                    SelectionKey key = iter.next();                             // The accKey
                     iter.remove();                                              // Remove from list
 
-                    TODO: WRAP THESE HANDLE FUNCTIONS IN THEIR OWN TRY/CATCH
+                    try{
                             
-                    // Accept connections
-                    // This should only be from the TCP bindings
-                    if(  key.isAcceptable()  ){                                 // New, incoming connection?
-                        handleAccept( key, outBuff );                           // Handle accepting connections
-                    }
+                        // Accept connections
+                        // This should only be from the TCP bindings
+                        if(  key.isAcceptable()  ){                                 // New, incoming connection?
+                            handleAccept( key, outBuff );                           // Handle accepting connections
+                        }
 
-                    // Data to read
-                    // This could be an ongoing TCP connection
-                    // or a new (is there any other kind) UDP datagram
-                    else if( key.isReadable() ){                                // Existing connection has data (or is closing)
-                        handleRead( key, inBuff, outBuff );                     // Handle data
-                    }   // end if: readable
+                        // Data to read
+                        // This could be an ongoing TCP connection
+                        // or a new (is there any other kind) UDP datagram
+                        else if( key.isReadable() ){                                // Existing connection has data (or is closing)
+                            handleRead( key, inBuff, outBuff );                     // Handle data
+                        }   // end if: readable
 
-                    // Available to write
-                    // This could be an ongoing TCP connection
-                    // or a new (is there any other kind) UDP datagram
-                    else if( key.isWritable() ){                                // Existing connection has data (or is closing)
-                        handleWrite( key, inBuff, outBuff );                    // Handle data
-                    }   // end if: readable
+                        // Available to write
+                        // This could be an ongoing TCP connection
+                        // or a new (is there any other kind) UDP datagram
+                        else if( key.isWritable() ){                                // Existing connection has data (or is closing)
+                            handleWrite( key, inBuff, outBuff );                    // Handle data
+                        }   // end if: readable
+
+                    } catch( IOException exc ){
+                        LOGGER.warning( "Encountered an error with a connection: " + exc.getMessage() );
+                        fireExceptionNotification(exc);
+                        key.channel().close();
+                    }   // end catch
 
                 }   // end while: keys
 
@@ -502,7 +569,6 @@ public class NioServer {
         }   // end finally
     }
 
-
     /**
      * Determines if server's "while" loop should continue and performs
      * inter-cycle actions such as modifying server bindings.
@@ -510,7 +576,7 @@ public class NioServer {
      * @throws java.io.IOException if something within throws it
      */
     private synchronized boolean runLoopCheck() throws IOException {
-
+        
         if( this.currentState == State.STOPPING ){
             LOGGER.finer( "Stopping server by request." );
             assert this.selector != null;
@@ -531,7 +597,7 @@ public class NioServer {
             sc.configureBlocking(false);                                        // Make non-blocking
             SelectionKey acceptKey = sc.register(                               // Register with master Selector
               this.selector, SelectionKey.OP_ACCEPT );                          // We want to "accept" connections
-            this.tcpBindings.put(addr, acceptKey);                              // Save the key
+            this.tcpBindings.put(addr, acceptKey);                              // Save the accKey
         }   // end for: each address
         this.pendingTcpAdds.clear();                                            // Remove list of pending adds
 
@@ -587,22 +653,22 @@ public class NioServer {
 
         // Pending TCP Removes
         for( Map.Entry<SocketAddress,SelectionKey> e : this.pendingTcpRemoves.entrySet() ){
-            SelectionKey key = e.getValue();                                    // Get the registered key
+            SelectionKey key = e.getValue();                                    // Get the registered accKey
             if( key != null ){                                                  // Might be null if someone gave us bogus address
                 key.channel().close();                                          // Close the channel
-                key.cancel();                                                   // And cancel the key (redundant?)
-            }   // end if: key != null
+                key.cancel();                                                   // And cancel the accKey (redundant?)
+            }   // end if: accKey != null
         }   // end for: each remove
         this.pendingTcpRemoves.clear();                                         // Remove from list of pending removes
 
 
         // Pending UDP Removes
         for( Map.Entry<SocketAddress,SelectionKey> e : this.pendingUdpRemoves.entrySet() ){
-            SelectionKey key = e.getValue();                                    // Get the registered key
+            SelectionKey key = e.getValue();                                    // Get the registered accKey
             if( key != null ){                                                  // Might be null if someone gave us bogus address
                 key.channel().close();                                          // Close the channel
-                key.cancel();                                                   // And cancel the key (redundant?)
-            }   // end if: key != null
+                key.cancel();                                                   // And cancel the accKey (redundant?)
+            }   // end if: accKey != null
         }   // end for: each remove
         this.pendingUdpRemoves.clear();                                         // Remove from list of pending removes
 
@@ -618,7 +684,7 @@ public class NioServer {
                     ops &= ~SelectionKey.OP_WRITE;                              // Remove OP_WRITE
                 }
                 e.getKey().interestOps(ops);                                    // Set new interests
-            }   // end if: valid key
+            }   // end if: valid accKey
         }   // end for: each notify on writable
         this.pendingTcpNotifyOnWritable.clear();                                // Remove from list of pending changes
 
@@ -632,26 +698,25 @@ public class NioServer {
     /**
      * Handles accepting new connections.
      * @param sel The selector with which we'll register
-     * @param key The OP_ACCEPT key
+     * @param key The OP_ACCEPT accKey
      * @throws java.io.IOException if an error occurs
      */
-    private void handleAccept( SelectionKey key, ByteBuffer outBuff ) throws IOException{
-        assert key.isAcceptable() : key.readyOps();                             // We know it should be acceptable
+    private void handleAccept( SelectionKey accKey, ByteBuffer outBuff ) throws IOException{
+        assert accKey.isAcceptable() : accKey.readyOps();                       // We know it should be acceptable
         assert selector.isOpen();                                               // Not sure this matters. Meh.
 
-        SelectableChannel sc = key.channel();                                   // Channel for th key
+        SelectableChannel sc = accKey.channel();                                // Channel for th accKey
         assert sc instanceof ServerSocketChannel : sc;                          // Only our TCP connections have OP_ACCEPT
 
-        ServerSocketChannel ch = (ServerSocketChannel)key.channel();            // Server channel
+        ServerSocketChannel ch = (ServerSocketChannel)accKey.channel();         // Server channel
         SocketChannel incoming = null;                                          // Reusable for all pending connections
         while( (incoming = ch.accept()) != null ){                              // Iterate over all pending connections
             incoming.configureBlocking(false);                                  // Non-blocking IO
             SelectionKey incomingReadKey = incoming.register(                   // Register new connection
               this.selector,                                                    // With the Selector
-              SelectionKey.OP_READ | SelectionKey.OP_WRITE );                                           // Want to READ data
+              SelectionKey.OP_READ | SelectionKey.OP_WRITE );                   // Want to READ and write data
 
             outBuff.clear().flip();                                             // Show outBuff as having nothing
-            assert knownState(outBuff, "[PL..]");
             
             ////////  FIRE EVENT  ////////
             fireNewConnection(incomingReadKey,outBuff);                         // Fire new connection event
@@ -664,7 +729,7 @@ public class NioServer {
                 ByteBuffer leftover = ByteBuffer.allocateDirect(outBuff.remaining()); // Create/resize
                 leftover.put(outBuff).flip();                                   // Save new leftovers
                 assert knownState(leftover,"[PrrL..]");
-                this.leftoverForWriting.put(key,leftover);                      // Save leftovers for next time
+                this.leftoverForWriting.put(incomingReadKey,leftover);          // Save leftovers for next time
                 this.setNotifyOnWritable(incomingReadKey, true);                // Notify that we have something to write
             }   // end if: has remaining bytes
 
@@ -677,7 +742,7 @@ public class NioServer {
 
     /**
      * Handles reading incoming data and then firing events.
-     * @param key The key associated with the reading
+     * @param key The accKey associated with the reading
      * @param buff the ByteBuffer to hold the data
      * @throws java.io.IOException if an error occurs
      */
@@ -713,8 +778,9 @@ public class NioServer {
             // Read into the outBuff here
             // If End of Stream
             if( client.read(inBuff) == -1 ){                                    // End of stream?
-                key.cancel();                                                   // Cancel the key
+                key.cancel();                                                   // Cancel the accKey
                 client.close();                                                 // And cancel the client
+                cleanupClosedConnection(key);
                 fireConnectionClosed(key);                                      // Fire event for connection closed
                 if( LOGGER.isLoggable(Level.FINER) ){
                     LOGGER.finer("Connection closed: " + key );
@@ -735,7 +801,7 @@ public class NioServer {
                 if( outBuff.remaining() > 0 ){                                  // Did the user leave data to be written?
                     ByteBuffer leftoverW = this.leftoverForWriting.get(key);    // Leftover still to be written
                     if( leftoverW == null ){                                    // Leftover outBuff not yet created?
-                        leftoverW = ByteBuffer.allocate(outBuff.remaining());   // Create/resize
+                        leftoverW = ByteBuffer.allocateDirect(outBuff.remaining()); // Create/resize
                     } else {
                         assert knownState( outBuff, "[..PrrL..]" );
                         if( outBuff.remaining() >                               // Amount requested to be written
@@ -753,7 +819,7 @@ public class NioServer {
                         assert knownState( leftoverW, "[PrrL..]" );
                         leftoverW.position( leftoverW.limit() );                // Move position to end of relevant data
                         leftoverW.limit( leftoverW.capacity() );                // Move limit to end of outBuff
-                        assert knownState( leftoverW, "[__PrrL]" );
+                        assert knownState( leftoverW, "[..PrrL]" );
                     }
                     assert knownState( leftoverW, "[..PrrL]" );
                     assert knownState( outBuff, "[..PrrL..]" );
@@ -773,7 +839,7 @@ public class NioServer {
                 if( inBuff.remaining() > 0 ){                                   // Did the user leave data for next time?
                     if( leftoverR == null ||                                    // Leftover outBuff not yet created?
                         inBuff.remaining() > leftoverR.capacity() ){            // Or is too small?
-                        leftoverR = ByteBuffer.allocate(inBuff.remaining());    // Create/resize
+                        leftoverR = ByteBuffer.allocateDirect(inBuff.remaining()); // Create/resize
                     }   // end if: need to resize
                     assert knownState( inBuff, "[..PrrL..]" );
                     leftoverR.clear();                                          // Clear old leftovers
@@ -791,8 +857,13 @@ public class NioServer {
             SocketAddress remote = null;
             while( (remote = dc.receive(inBuff)) != null ){                     // Loop over all pending datagrams
                 inBuff.flip();                                                  // Flip after reading in
-                key.attach( inBuff );                                           // Attach outBuff to key
-                fireUdpDataReceived(key,inBuff,remote);                         // Fire event
+                outBuff.clear().flip();
+                key.attach( inBuff );                                           // Attach outBuff to accKey
+                fireUdpDataReceived(key,inBuff,outBuff,remote);                 // Fire event
+
+                if( outBuff.hasRemaining() ){                                   // User left data for response?
+                    dc.send(outBuff, remote);                                   // Try sending it
+                }   // end if: something to write
             }   // end while: each pending datagram
         }   // end else: UDP
 
@@ -801,14 +872,13 @@ public class NioServer {
 
     /**
      * Handles notifying listeners that a channel is ready to write.
-     * @param key The key associated with the writing
+     * @param key The accKey associated with the writing
      * @param buff the ByteBuffer to hold the data
      * @throws java.io.IOException if an error occurs
      */
     private void handleWrite(SelectionKey key, ByteBuffer inBuff, ByteBuffer outBuff ) throws IOException {
 
         SocketChannel ch = (SocketChannel)key.channel();                        // Source socket
-        outBuff.clear();
 
         // First see if we need to write old data
         // that still hasn't been sent.
@@ -816,8 +886,32 @@ public class NioServer {
         if( leftover != null && leftover.remaining() > 0 ){                     // Have a leftoverR outBuff
             assert knownState( leftover, "[PrrL..]" );
 
-            ch.write(leftover); // SUBTLE BUG. leftover COULD BE HUGE -- BAD ON SLOW CONNECTIONS
-                                // SUPPOSED TO MOVE leftover TO OUTBUFF AND WRITE THAT.
+            // DISCUSSION POINT:
+            //     On the one hand, "leftover" will never
+            // be bigger than the output buffer because we only give
+            // the user an opportunity to load the output buffer when
+            // the leftover buffer is empty. In this case, we don't
+            // need to worry about the leftover buffer somehow growing
+            // too big such that we might hog the server's thread,
+            // especially on a slow connection.
+            //     However it's possible that someone could resize the
+            // output buffer with setOutputBufferSize(..) and that
+            // could result in a larger or smaller leftover buffer.
+            // This doesn't seem so bad since the leftover size must
+            // still be something reasonable that was _once_ the
+            // output buffer size and was therefore _once_ considered
+            // a reasonable size perhaps.
+            //     In any event, there would be no need to copy the
+            // leftover buffer to the output buffer before writing,
+            // a notion that might come up for efficiency reasons,
+            // since A) the leftover buffer is a direct buffer anyway,
+            // and B) if it wasn't, the system would automatically
+            // copy the data to system memory eventually anyway.
+            ch.write(leftover);
+
+            if( !leftover.hasRemaining() ){
+                leftover.clear().flip();
+            }
         }   // end if: have leftoverW outBuff
 
 
@@ -830,24 +924,15 @@ public class NioServer {
             fireTcpReadyToWrite(key,outBuff);                                   // Notify listeners who will load outBuff
             ////////  FIRE EVENT  ////////
 
-            if( leftover != null && !leftover.hasRemaining() ){                      // Is there more to write?
-                this.setNotifyOnWritable(key, false); 
+            if( outBuff.hasRemaining() ){                                       // Did they give us something?
+                ch.write(outBuff);                                              // Write what we can of it
+            } else {                                                            // They gave us nothing
+                this.setNotifyOnWritable(key, false);                           // Stop notifying 
             } 
 
-
-            // Try writing once, stopping even if the
-            // channel is stalled before we're done.
-            if( ch.isOpen() ){
-                if( outBuff.hasRemaining() ){                                   // Did someone leave data to write?
-                    ch.write(outBuff);                                          // Write some data
-                }   // end if: something to write
-            } else {
-                return;                                                         // Channel is closed
-            }
-
-            // If there are leftovers, save them for next
+            // If there are new leftovers, save them for next
             // time the channel is ready.
-            if( outBuff.remaining() > 0 ){                                      // Is there _still_ data left to write?
+            if( outBuff.hasRemaining() ){                                       // Is there _still_ data left to write?
                 if( leftover == null ||                                         // Leftover outBuff not yet created?
                     outBuff.remaining() > leftover.capacity() ){                // Or is too small?
                     leftover = ByteBuffer.allocateDirect(outBuff.remaining());  // Create/resize
@@ -856,29 +941,60 @@ public class NioServer {
                 assert knownState( outBuff, "[..PrrL..]" );
                 leftover.put(outBuff).flip();                                   // Save new leftovers
                 assert knownState( leftover, "[PrrL..]" );
-            }   // end if: has remaining bytes
+            }
             this.leftoverForWriting.put(key,leftover);                          // Save leftovers for next time
         }   // end if: proceed with fresh buffer to user
+
+        
+        // After all this writing, see if there's anything left.
+        // If nothing is left, and "close after writing" has been set,
+        // then close the channel.
+        if( this.closeAfterWriting.contains(key) &&                             // Has user requested "close after writing?"
+            (leftover == null || !leftover.hasRemaining())){                    // And is there nothing left to write?
+            ch.close();                                                         // Then close the channel
+        }
 
     }   // end handleWrite
 
 
+
+    /**
+     * Removes the accKey and associated data from any maps, sets, etc
+     * that the server uses for state information.
+     * @param key the accKey that's closing
+     */
+    private void cleanupClosedConnection(SelectionKey key) {
+
+        this.pendingTcpNotifyOnWritable.remove(key);
+        this.leftoverForReading.remove(key);
+        this.leftoverForWriting.remove(key);
+        this.closeAfterWriting.remove(key);
+        this.pendingTcpNotifyOnWritable.remove(key);
+
+    }
+
+
+
+
+
+
     /**
      * Sets whether or not events will fire when a channel is ready
-     * to be written to. These events are "chatty." That is, when they're
-     * turned on, you'll receive a constant barrage of the events as long
-     * as the channel <strong>is</strong> writable (which is pretty much
-     * always) and until you turn them off.
+     * to be written to. After a
+     * {@link NioServer.Listener#tcpReadyToWrite(NioServer.Event)}
+     * returns with no data in the output buffer, this will
+     * be turned off until you either A) turn it on yourself, or
+     * B) provide data in an output buffer from another event.</p>
      *
-     * @param key The key representing the connection in question
+     * @param key The accKey representing the connection in question
      * @param notify Whether or not to notify
-     * @throws NullPointerException if key is null
+     * @throws NullPointerException if accKey is null
      */
     public synchronized void setNotifyOnWritable( SelectionKey key, boolean notify ){
         //if(notify){
-        //    System.out.println("Turning on notifications for " + key );
+        //    System.out.println("Turning on notifications for " + accKey );
         //} else {
-        //    System.out.println("Turning off notifications for " + key );
+        //    System.out.println("Turning off notifications for " + accKey );
         //}
         if( key == null ){
             throw new NullPointerException( "Cannot set notifications for null key." );
@@ -889,6 +1005,15 @@ public class NioServer {
         }
     }
 
+
+    /**
+     * Convenience method for telling the server to close the connection
+     * after the last byte of the output buffer has been written.
+     * @param key the SelectionKey for the corresponding connection
+     */
+    public synchronized void closeAfterWriting( SelectionKey key ){
+        this.closeAfterWriting.add(key);
+    }   // end closeAfterWriting
 
 
 
@@ -1232,7 +1357,7 @@ public class NioServer {
      * setting up listening for TCP on the given port.
      * @param port the port to listen to
      * @return <code>this</code> to aid in chaining
-     * @throw IllegalArgumentException if port is out of range
+     * @throws IllegalArgumentException if port is out of range
      */
     public synchronized NioServer setSingleTcpPort( int port ){
         int oldVal = getSingleTcpPort();
@@ -1252,7 +1377,7 @@ public class NioServer {
      * setting up listening for UDP on the given port.
      * @param port the port to listen to
      * @return <code>this</code> to aid in chaining
-     * @throw IllegalArgumentException if port is out of range
+     * @throws IllegalArgumentException if port is out of range
      */
     public synchronized NioServer setSingleUdpPort( int port ){
         return setSingleUdpPort( port, null );
@@ -1266,7 +1391,7 @@ public class NioServer {
      * and joining the provided multicast group.
      * @param port the port to listen to
      * @return <code>this</code> to aid in chaining
-     * @throw IllegalArgumentException if port is out of range
+     * @throws IllegalArgumentException if port is out of range
      */
     public synchronized NioServer setSingleUdpPort( int port, String group ){
         int oldVal = getSingleUdpPort();
@@ -1360,7 +1485,7 @@ public class NioServer {
         // the code more maintainable.
         for( NioServer.Listener l : cachedListeners ){
             try{
-                l.nioServerTcpDataReceived(event);
+                l.tcpDataReceived(event);
             } catch( Exception exc ){
                 LOGGER.warning("NioServer.Listener " + l + " threw an exception: " + exc.getMessage() );
                 fireExceptionNotification(exc);
@@ -1388,7 +1513,7 @@ public class NioServer {
         // the code more maintainable.
         for( NioServer.Listener l : cachedListeners ){
             try{
-                l.nioServerTcpReadyToWrite(event);
+                l.tcpReadyToWrite(event);
             } catch( Exception exc ){
                 exc.printStackTrace();//TODO REMOVE THIS
                 LOGGER.warning("NioServer.Listener " + l + " threw an exception: " + exc.getMessage() );
@@ -1401,16 +1526,16 @@ public class NioServer {
     /**
      * Fire when data is received.
      * @param key the SelectionKey associated with the data
-     * @param outBuff the outBuff containing the data
+     * @param inBuff the input buffer containing the data
      * @param remote the source address of the datagram or null if not available
-     * @param outBuff the outBuff containing the data
+     * @param outBuff the output buffer for writing data
      */
-    protected synchronized void fireUdpDataReceived(SelectionKey key, ByteBuffer inBuff, SocketAddress remote) {
+    protected synchronized void fireUdpDataReceived(SelectionKey key, ByteBuffer inBuff, ByteBuffer outBuff, SocketAddress remote) {
 
         if( cachedListeners == null ){
             cachedListeners = listeners.toArray(new NioServer.Listener[ listeners.size() ] );
         }
-        this.event.reset(key,inBuff,null,remote);
+        this.event.reset(key,inBuff,outBuff,remote);
 
         // Make a Runnable object to execute the calls to listeners.
         // In the event we don't have an Executor, this results in
@@ -1418,7 +1543,7 @@ public class NioServer {
         // the code more maintainable.
         for( NioServer.Listener l : cachedListeners ){
             try{
-                l.nioServerUdpDataReceived(event);
+                l.udpDataReceived(event);
             } catch( Exception exc ){
                 LOGGER.warning("NioServer.Listener " + l + " threw an exception: " + exc.getMessage() );
                 fireExceptionNotification(exc);
@@ -1430,7 +1555,7 @@ public class NioServer {
 
     /**
      * Fire when a connection is closed remotely.
-     * @param key The key for the closed connection.
+     * @param key The accKey for the closed connection.
      */
     protected synchronized void fireConnectionClosed(SelectionKey key) {
 
@@ -1445,7 +1570,7 @@ public class NioServer {
         // the code more maintainable.
         for( NioServer.Listener l : cachedListeners ){
             try{
-                l.nioServerConnectionClosed(event);
+                l.connectionClosed(event);
             } catch( Exception exc ){
                 LOGGER.warning("NioServer.Listener " + l + " threw an exception: " + exc.getMessage() );
                 fireExceptionNotification(exc);
@@ -1473,7 +1598,7 @@ public class NioServer {
         // the code more maintainable.
         for( NioServer.Listener l : cachedListeners ){
             try{
-                l.nioServerNewConnectionReceived(event);
+                l.newConnectionReceived(event);
             } catch( Exception exc ){
                 LOGGER.warning("NioServer.Listener " + l + " threw an exception: " + exc.getMessage() );
                 fireExceptionNotification(exc);
@@ -1667,133 +1792,114 @@ public class NioServer {
 
         /**
          * <p>Called when a new connection is received. The SelectionKey associated
-         * with the event (with <code>OP_READ</code> interest), is the key that will be
+         * with the event (with <code>OP_READ</code> interest), is the accKey that will be
          * used with the data received event. In this way, you can seed a
          * <code>Map</code> or other data structure and associate this very
-         * key with the connection. You will only get new connection
+         * accKey with the connection. You will only get new connection
          * events for TCP connections (not UDP).</p>
          *
-         * <p>The key's attachment mechanism is unused by NioServer and is
+         * <p>The accKey's attachment mechanism is unused by NioServer and is
          * available for you to store whatever you like.</p>
          *
          * <p>If your protocol requires the server to respond to a client
-         * upon connection, this sample code demonstrates such an arrangement:</p>
-         *
-         * <pre>
-         *   public void nioServerNewConnectionReceived(NioServer.Event evt) {
-         *       SocketChannel ch = (SocketChannel) evt.getKey().channel();
-         *       try {
-         *           ch.write(ByteBuffer.wrap("Greetings\r\n".getBytes()));
-         *       } catch (IOException ex) {
-         *           ex.printStackTrace(); // Please don't do printStackTrace in production code
-         *       }
-         *   }
-         * </pre>
-         *
-         * <p>You may also make use of the direct byte outBuff used by the server.
-         * It is already allocated and is direct, possibly yielding better
-         * performance. Here is a more thorough version of the above method
-         * that seeks to minimize object instantiation (at the expense
-         * of more complicated code):</p>
+         * upon connection, this sample code demonstrates such an arrangement
+         * being careful not to instantiate objects at each event:</p>
          *
          * <pre>
          *   private CharsetEncoder encoder = Charset.forName("US-ASCII");
          *   private CharBuffer greeting = CharBuffer.wrap("Greetings\r\n");
          *   ...
-         *   public void nioServerNewConnectionReceived(NioServer.Event evt) {
-         *       SocketChannel ch = (SocketChannel) evt.getKey().channel();
-         *       ByteBuffer buff = evt.getBuffer();
-         *       buff.clear();
+         *   public void newConnectionReceived(NioServer.Event evt) {
+         *       ByteBuffer outBuff = evt.getOutputBuffer();
+         *       outBuff.clear();
          *       greeting.rewind();
-         *       encoder.reset().encode( greeting, buff, true );
-         *       buff.flip();
-         *       try {
-         *           while( buff.hasRemaining() ){
-         *               ch.write(buff);
-         *           }
-         *       } catch (IOException ex) {
-         *           ex.printStackTrace(); // Please don't do printStackTrace in production code
-         *       }
+         *       encoder.reset().encode( greeting, outBuff, true );
+         *       outBuff.flip();
          *   }
          * </pre>
          *
          * @param evt the shared event
          */
-        public abstract void nioServerNewConnectionReceived( NioServer.Event evt );
+        public abstract void newConnectionReceived( NioServer.Event evt );
 
 
         /**
          * <p>Called when TCP data is received. Retrieve the associated ByteBuffer
-         * with <code>evt.getBuffer()</code>. This is the source ByteBuffer
+         * with {@link NioServer.Event#getInputBuffer()}.
+         * This is the source ByteBuffer
          * used by the server directly to receive the data. It is a
-         * "direct" ByteBuffer (created with <code>ByteBuffer.allocateDirect(..)</code>).
-         * Read from it as much as
+         * "direct" ByteBuffer (created with <code>ByteBuffer.allocateDirect(..)</code>).</p>
+         *
+         * <p>Read from it as much as
          * you can. Any data that remains on or after the value
          * of <code>position()</code> will be saved for the next
          * time an event is fired. In this way, you can defer
-         * processing incomplete data until everything arrives.
-         * <em>Be careful that you don't leave the outBuff full</em>
-         * or you won't be able to receive anything next time around
-         * (unless you call {@link #setBufferSize} to resize outBuff).
-         * On the other hand, this has the effect of possibly throttling
-         * back the client sending the data, depending on the underlying
-         * operating systems networking stack and specifics of the
-         * Java Virtual Machine being used.</p>
+         * processing incomplete data until everything arrives.</p>
          *
-         * <p>The key's attachment mechanism is unused by NioServer and is
+         * <p><em>If you leave the buffer full, all the way up to the
+         * very last byte at <code>capacity()</code>, then that
+         * connection cannot receive any more data.</em> On some operating systems
+         * and Java virtual machines, this will serve to throttle back
+         * the client sending the data.</p>
+         *
+         * <p>The accKey's attachment mechanism is unused by NioServer and is
          * available for you to store whatever you like.</p>
          *
-         * <p>Because data left in the ByteBuffer is your way of telling
-         * the {@link NioServer} that you want it left behind for the
-         * next read event, you cannot use the same technique for
-         * writing as you do when {@link #nioServerTcpReadyToWrite(NioServer.Event)}
-         * is fired. Instead, if you want to write to the channel
-         * "in the same breath" as you read from it, you'll need to
-         * retrieve the key's channel, cast it to
-         * a <code>SocketChannel</code> and write to it that way, but
-         * you risk stalling the whole server if you're writing large
-         * amounts of data over a slow connection.</p>
+         * <p>If you wish to also write data as a result of what is read,
+         * the preferred method is to retrieve the output buffer with
+         * {@link NioServer.Event#getOutputBuffer()} and write bytes
+         * there, leaving the buffer in a ready-to-read state:</p>
          *
-         * <p>Perhaps a better approach, more in line with the style of
-         * the <code>java.nio</code> package and selectable channels and
-         * so forth would be that if, in the course of reading the data,
-         * you discover that you wish to write to the channel, then
-         * you call {@link NioServer.Event#setNotifyOnTcpWritable(boolean)
-         * to tell the server you have something to write. Then you save
-         * what you wish to say in your own data structure, and when
-         * the channel is actually ready to write (which it might not
-         * be immediately), you write it during a
-         * {@link #nioServerTcpReadyToWrite} firing.</p>
+         * <pre>
+         *       ByteBuffer buff = evt.getOutputBuffer();       // Reuse it since it's already allocated
+         *       buff.clear();                                  // Prepare outBuff for writing
+         *       buff.putLong( System.currentTimeMillis() );    // Store data
+         *       buff.flip();                                   // Put outBuff in "read me from here" mode
+         * </pre>
          *
-         * <p>Example: You are receiving lines of text. The ByteBuffer
-         * returned here contains one and a half lines of text.
-         * When you realize this, you process the first line as you
-         * like, but you leave this outBuff's position at the beginning
-         * of the second line. In this way, The beginning of the second
-         * line will be the start of the outBuff the next time around.</p>
+         * <p>To make a trivial "echo" program, simple copy the contents
+         * of the input buffer to the output buffer:</p>
+         *
+         * <pre>
+         * NioServer ns = new NioServer();
+         * ns.addNioServerListener(new NioServer.Adapter(){
+         *      public void tcpDataReceived(NioServer.Event evt) {
+         *          ByteBuffer inBuff = evt.getInputBuffer();
+         *          ByteBuffer outBuff = evt.getOutputBuffer();
+         *          outBuff.clear();
+         *          outBuff.put(inBuff);
+         *          outBuff.flip();
+         *      }
+         * });
+         * </pre>
          *
          * @param evt the shared event
          */
-        public abstract void nioServerTcpDataReceived( NioServer.Event evt );
+        public abstract void tcpDataReceived( NioServer.Event evt );
 
 
 
         /**
          * <p>Called when UDP data is received. Retrieve the associated ByteBuffer
-         * with <code>evt.getBuffer()</code>. This is the source ByteBuffer
+         * with {@link NioServer.Event#getInputBuffer()}.
+         * This is the source ByteBuffer
          * used by the server directly to receive the data. It is a
          * "direct" ByteBuffer (created with <code>ByteBuffer.allocateDirect(..)</code>).
          * The contents of the ByteBuffer will be the entire contents
-         * received from the UDP datagram.</p>
+         * received from the UDP datagram. If you leave data in the output buffer
+         * ({@link NioServer.Event#getOutputBuffer()}), the server will attempt
+         * to send a UDP reply to the IP and port specified as the source
+         * IP and port in the datagram. Your firewall mileage may vary.</p>
          *
          * @param evt the shared event
          */
-        public abstract void nioServerUdpDataReceived( NioServer.Event evt );
+        public abstract void udpDataReceived( NioServer.Event evt );
 
 
         /**
          * <p>Fired when a TCP channel is ready to be written to.
-         * The preferred way to write is to leave data in the outBuff
+         * The preferred way to write is to leave data in the output buffer
+         * ({@link NioServer.Event#getOutputBuffer()})
          * attached to the event. The server will take care of sending
          * it even if it can't all be sent at once (perhaps a slow
          * network connection).</p>
@@ -1801,46 +1907,36 @@ public class NioServer {
          * <p>Here is an example of how to write to the channel:</p>
          *
          * <pre>
-         *   public void nioServerTcpReadyToWrite(NioServer.Event evt) {
-         *       ByteBuffer buff = evt.getBuffer();             // Reuse it since it's already allocated
+         *   public void tcpReadyToWrite(NioServer.Event evt) {
+         *       ByteBuffer buff = evt.getOutputBuffer();       // Reuse it since it's already allocated
          *       buff.clear();                                  // Prepare outBuff for writing
          *       buff.putLong( System.currentTimeMillis() );    // Store data
          *       buff.flip();                                   // Put outBuff in "read me from here" mode
-         *   }
-         * </pre>
+         *   }</pre>
          *
-         * <p>You can also just retrieve the key's channel, cast it to
+         * <p>You can also just retrieve the accKey's channel, cast it to
          * a <code>SocketChannel</code> and write to it that way, but
          * you risk stalling the whole server if you're writing large
-         * amounts of data over a slow connection. Still, this may not
-         * come up very often, so you may prefer that approach.</p>
+         * amounts of data over a slow connection. Plus if there is
+         * data leftover from an earlier write via the output buffer,
+         * then you risk writing your data out of sequence.</p>
          *
-         * <p>Be aware of how large the outBuff is. You can change the
-         * outBuff size that the server uses with the {@link NioServer#setBufferSize(int)}
+         * <p>Be aware of how large the output buffer is. You can change the
+         * output buffer size that the server uses with the 
+         * {@link NioServer#setOutputBufferSize(int)}
          * method, but that will not take effect until the server has finished processing
          * the current set of selected SelectionKeys.</p>
          *
-         * <p><strong>You must tell the server that you wish to receive these events.</strong>
-         * The mechanism for this is the {@link NioServer.Event#setNotifyOnTcpWritable(boolean)}
-         * method in an event you receive such as a registered listener or
-         * with the {@link NioServer#setNotifyOnWritable(java.nio.channels.SelectionKey, boolean)}
-         * method in {@link NioServer}.
-         * Be aware that when
-         * you have notifications turned on, you will probably enter a very tight
-         * loop where this is fired very quickly. If you made the mistake of
-         * turning this on, doing nothing when the event fired, and connecting
-         * to your server via a loopback address, you'd probably see your
-         * processor usage spike to 100% while nothing productive happened.</p>
          *
          * @param evt the shared event
          */
-        public abstract void nioServerTcpReadyToWrite( NioServer.Event evt );
+        public abstract void tcpReadyToWrite( NioServer.Event evt );
 
         /**
          * Called when a TCP connection is closed.
          * @param evt the shared event
          */
-        public abstract void nioServerConnectionClosed( NioServer.Event evt );
+        public abstract void connectionClosed( NioServer.Event evt );
 
 
     }   // end inner static class Listener
@@ -1880,22 +1976,14 @@ public class NioServer {
      * @see Listener
      * @see Event
      */
-    public class Adapter implements NioServer.Listener {
+    public static class Adapter implements NioServer.Listener {
 
         /**
          * Empty method.
          * @see Listener
          * @param evt the shared event
          */
-        public void nioServerTcpDataReceived(NioServer.Event evt) {}
-
-
-        /**
-         * Empty method.
-         * @see Listener
-         * @param evt the shared event
-         */
-        public void nioServerUdpDataReceived(NioServer.Event evt) {}
+        public void tcpDataReceived(NioServer.Event evt) {}
 
 
         /**
@@ -1903,14 +1991,7 @@ public class NioServer {
          * @see Listener
          * @param evt the shared event
          */
-        public void nioServerNewConnectionReceived(NioServer.Event evt) {}
-
-        /**
-         * Empty method.
-         * @see Listener
-         * @param evt the shared event
-         */
-        public void nioServerConnectionClosed(NioServer.Event evt) {}
+        public void udpDataReceived(NioServer.Event evt) {}
 
 
         /**
@@ -1918,7 +1999,22 @@ public class NioServer {
          * @see Listener
          * @param evt the shared event
          */
-        public void nioServerTcpReadyToWrite(NioServer.Event evt){}
+        public void newConnectionReceived(NioServer.Event evt) {}
+
+        /**
+         * Empty method.
+         * @see Listener
+         * @param evt the shared event
+         */
+        public void connectionClosed(NioServer.Event evt) {}
+
+
+        /**
+         * Empty method.
+         * @see Listener
+         * @param evt the shared event
+         */
+        public void tcpReadyToWrite(NioServer.Event evt){}
 
     }   // end static inner class Adapter
 
@@ -1954,8 +2050,8 @@ public class NioServer {
         private final static long serialVersionUID = 1;
 
         /**
-         * The key associated with this (reusable) event.
-         * Use setKey(..) to change the key between firings.
+         * The accKey associated with this (reusable) event.
+         * Use setKey(..) to change the accKey between firings.
          */
         private SelectionKey key;
 
@@ -2037,7 +2133,7 @@ public class NioServer {
          * time an event is fired. In this way, you can defer
          * processing incomplete data until everything arrives.
          * This applies to the
-         * {@link NioServer.Listener#nioServerTcpDataReceived(NioServer.Event)}
+         * {@link NioServer.Listener#tcpDataReceived(NioServer.Event)}
          * event.</p>
          *
          * <p>Example: You are receiving lines of text. The ByteBuffer
@@ -2057,9 +2153,9 @@ public class NioServer {
          * <p>Returns the {@link java.nio.ByteBuffer} in which you leave
          * data to be written to the client.
          * This applies to the
-         * {@link NioServer.Listener#nioServerNewConnectionReceived(NioServer.Event)},
-         * {@link NioServer.Listener#nioServerTcpDataReceived(NioServer.Event)}, and
-         * {@link NioServer.Listener#nioServerTcpReadyToWrite(NioServer.Event)}
+         * {@link NioServer.Listener#newConnectionReceived(NioServer.Event)},
+         * {@link NioServer.Listener#tcpDataReceived(NioServer.Event)}, and
+         * {@link NioServer.Listener#tcpReadyToWrite(NioServer.Event)}
          * events.</p>
          *
          * @return outBuff with the data
@@ -2076,7 +2172,7 @@ public class NioServer {
          * (probably) that indicated /127.0.0.1:80.</p>
          * <p>This is
          * essentially a convenience method for returning the same-name
-         * methods from the key's channel after checking the type
+         * methods from the accKey's channel after checking the type
          * of channel (SocketChannel or DatagramChannel).</p>
          *
          * @return local address that server is bound to for this connection
@@ -2100,7 +2196,7 @@ public class NioServer {
          * connected to, or null if it is unconnected. </p>
          * <p>This is
          * essentially a convenience method for returning the same-name
-         * methods from the key's channel after checking the type
+         * methods from the accKey's channel after checking the type
          * of channel (SocketChannel or DatagramChannel).</p>
          *
          * @return remote address from which connection came
@@ -2147,6 +2243,16 @@ public class NioServer {
          */
         public void setNotifyOnTcpWritable( boolean notify ){
             this.getNioServer().setNotifyOnWritable(this.key, notify);
+        }
+
+        /**
+         * Convenience method for indicating that you would like the
+         * connection closed after the last byte in the output buffer
+         * is written. Equivalent to
+         * <code>evt.getNioServer().closeAfterWriting(evt.getKey());</code>.
+         */
+        public void closeAfterWriting(){
+            this.getNioServer().closeAfterWriting( this.key );
         }
 
         /**
