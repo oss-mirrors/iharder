@@ -1,4 +1,8 @@
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+
+
 
 
 /**
@@ -507,7 +511,59 @@ public class Base64
                 return destination;
         }   // end switch
     }   // end encode3to4
-    
+
+
+
+    /**
+     * Performs Base64 encoding on the <code>raw</code> ByteBuffer,
+     * writing it to the <code>encoded</code> ByteBuffer.
+     * This is an experimental feature. Currently it does not
+     * pass along any options (such as {@link #DO_BREAK_LINES}
+     * or {@link #GZIP}.
+     *
+     * @param raw input buffer
+     * @param encoded output buffer
+     * @since 2.3
+     */
+    public static void encode( ByteBuffer raw, ByteBuffer encoded ){
+        byte[] raw3 = new byte[3];
+        byte[] enc4 = new byte[4];
+
+        while( raw.hasRemaining() ){
+            int rem = Math.min(3,raw.remaining());
+            raw.get(raw3,0,rem);
+            Base64.encode3to4(enc4, raw3, rem, Base64.NO_OPTIONS );
+            encoded.put(enc4);
+        }   // end input remaining
+    }
+
+
+    /**
+     * Performs Base64 encoding on the <code>raw</code> ByteBuffer,
+     * writing it to the <code>encoded</code> CharBuffer.
+     * This is an experimental feature. Currently it does not
+     * pass along any options (such as {@link #DO_BREAK_LINES}
+     * or {@link #GZIP}.
+     *
+     * @param raw input buffer
+     * @param encoded output buffer
+     * @since 2.3
+     */
+    public static void encode( ByteBuffer raw, CharBuffer encoded ){
+        byte[] raw3 = new byte[3];
+        byte[] enc4 = new byte[4];
+
+        while( raw.hasRemaining() ){
+            int rem = Math.min(3,raw.remaining());
+            raw.get(raw3,0,rem);
+            Base64.encode3to4(enc4, raw3, rem, Base64.NO_OPTIONS );
+            for( int i = 0; i < 4; i++ ){
+                encoded.put( (char)(enc4[i] & 0xFF) );
+            }
+        }   // end input remaining
+    }
+
+
     
     
     /**
