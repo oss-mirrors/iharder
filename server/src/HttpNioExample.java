@@ -21,8 +21,10 @@ import java.util.regex.Pattern;
 
 
 /**
- *
- * @author Student
+ * A rather crude HTTP server demonstrating some ways to interact
+ * with the <code>java.nio</code> package and NioServer.
+ * 
+ * @author Robert Harder
  */
 public class HttpNioExample implements NioServer.Listener {
 
@@ -111,8 +113,18 @@ public class HttpNioExample implements NioServer.Listener {
 
 
     private String getMimeType(String filename){
-        //return "application/octet-stream";
-        return "text/plain";
+        int lastDot = -1;
+        if( (lastDot = filename.lastIndexOf('.')) > 0 && lastDot < filename.length()-2 ){
+            String suffix = filename.substring(lastDot+1);
+            String mime = mimeTypes.getProperty(suffix);
+            if( mime == null ){
+                return "application/octet-stream";
+            } else {
+                return mime;
+            }
+        } else {
+            return "application/octet-stream";
+        }
     }
 
     private CharBuffer contentTypeLine( String filename ){

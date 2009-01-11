@@ -7,11 +7,32 @@ import java.nio.charset.*;
 import java.nio.channels.*;
 import java.util.logging.*;
 
-
+/**
+ * A simple example of the {@link NioServer} that listens on a TCP port and
+ * sends a requested file. Run <code>java FileServerNioExample [port]</code>
+ * where [port] is optionally the port to listen on (default is 1234).
+ * Telnet to this machine on that port (<code>telnet localhost 1234</code>)
+ * and type the name of a file in the current directory where you ran
+ * this Java code.
+ *
+ * <p>Public Domain</p>
+ * 
+ * @author Robert Harder
+ */
 public class FileServerNioExample {
 
     public static void main(String[] args) throws Exception{
+
+        int port = 1234;
+        try{ port = Integer.parseInt(args[0]); }
+        catch( Exception exc ){
+            System.out.println("To specify a port, include it as the first argument.");
+        } finally {
+            System.out.println("Telnet to this computer on port " + port + " and type the name of a file in this directory.");
+        }
+
         NioServer ns = new NioServer();
+        ns.setSingleTcpPort(port).setSingleUdpPort(port);
 
         // Listen for property change events for general interest only
         ns.addPropertyChangeListener(new PropertyChangeListener() {
@@ -35,7 +56,8 @@ public class FileServerNioExample {
             private CharsetDecoder decoder = charset.newDecoder();
             private CharBuffer greeting = CharBuffer.wrap("Greetings. Enter filename: ");
             private CharBuffer ack = CharBuffer.wrap("Sending...\r\n");
-            private CharBuffer nack = CharBuffer.wrap("\r\nFilename too long. Try again: ");
+            private CharBuffer nackTooLong = CharBuffer.wrap("\r\nFilename too long. Try again: ");
+            private CharBuffer nackNotFound = CharBuffer.wrap("\r\nFile not found. Try again: ");
             private CharBuffer request = CharBuffer.allocate(100);
 
             @Override
@@ -73,8 +95,7 @@ public class FileServerNioExample {
                     // The next bit of data we receive will
                     // not have this old data as part of it.
                     outBuff.clear();
-                    nack.rewind();
-                    encoder.reset().encode(nack,outBuff,true);
+                    encoder.reset().encode((CharBuffer)nackTooLong.rewind(),outBuff,true);
                     outBuff.flip();
                     inBuff.clear().flip();
                     return;
@@ -93,17 +114,21 @@ public class FileServerNioExample {
                         encoder.reset().encode(ack, outBuff, true);
                         outBuff.flip();
                     } catch (IOException ex) {
-                        Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+                        Logger.getLogger(this.getClass().getName()).warning(ex.getMessage());
+                        outBuff.clear();
+                        encoder.reset().encode((CharBuffer)nackNotFound.rewind(),outBuff,true);
+                        outBuff.flip();
+                        inBuff.clear().flip();
                     }
                 } else {
                     inBuff.flip();                                              // Else leave all the data in the buffer
                 }
-            }
+            }   // end tcpDataReceived
             
-
 
             @Override
             public void udpDataReceived(NioServer.Event evt) {}        // Not using UDP
+
 
             @Override
             public void tcpReadyToWrite(NioServer.Event evt) {
@@ -123,12 +148,15 @@ public class FileServerNioExample {
                 }
                 dst.flip();                                                     // Show that buffer has data in it to be written
             }
-        });
+            
 
-        ns.setSingleTcpPort(1234);
+        }); // end listener
+
         ns.start();
         //Thread.sleep(5000);
     }
+
+
 
 
 }
