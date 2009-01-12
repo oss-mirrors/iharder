@@ -1,16 +1,10 @@
 
-import java.beans.PropertyChangeEvent;
-import java.util.concurrent.ThreadFactory;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.net.ServerSocket;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.io.IOException;
-import java.net.Socket;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
+import java.util.logging.*;
+import java.beans.*;
+import java.util.*;
+import java.net.*;
+import java.io.*;
 
 
 
@@ -19,8 +13,8 @@ import java.util.concurrent.Executor;
  * its listening port.
  * The {@link Event}s and property change events make
  * it an appropriate tool in a threaded, GUI application.
- * It is almost identical in design to the UdpServer class that
- * should have accompanied this class when you downloaded it.</p>
+ * It is almost identical in design to the UdpServer class
+ * which accompanies this one at <a href="http://iHarder.net">iHarder.net</a>.</p>
  * 
  * <p>To start a TCP server, create a new TcpServer and call start():</p>
  * 
@@ -31,17 +25,17 @@ import java.util.concurrent.Executor;
  * so you'll know when a <tt>java.net.Socket</tt> has come in:</p>
  * 
  * <pre> server.addTcpServerListener( new TcpServer.Listener(){
- *     public void tcpServerSocketReceived( TcpServer.Event evt ){
+ *     public void socketReceived( TcpServer.Event evt ){
  *         Socket socket = evt.getSocket();
  *         ...
  *     }   // end socket received
  * });</pre>
  * 
- * <p>The server runs on one thread, and all events are fired on that thread.
- * Consider offloading heavy processing to another thread. Be aware that
- * you can register multiple listeners to respond to an incoming socket,
- * so be mindful of more than one listener being around to makes calls
- * on the new Socket.</p>
+ * <p>The server runs on one thread, and all events may be fired on that thread
+ * if desired by setting the executor to null <code>server.setExecutor(null)</code>.
+ * By default a cached thread pool is used (<code>Executors.newCachedThreadPool()</code>)
+ * so that when you handle a socketReceived event, you are already working
+ * in a dedicated thread.</p>
  * 
  * <p>The public methods are all synchronized on <tt>this</tt>, and great
  * care has been taken to avoid deadlocks and race conditions. That being said,
@@ -87,7 +81,7 @@ public class TcpServer {
      * if a preferences object is given.
      */
     public final static String PORT_PROP = "port";
-    private final static int PORT_DEFAULT = 8000;
+    private final static int PORT_DEFAULT = 1234;
     private int port = PORT_DEFAULT;
     
     /**
@@ -96,7 +90,7 @@ public class TcpServer {
      * if a preferences object is given.
      */
     public final static String EXECUTOR_PROP = "executor";
-    private final static Executor EXECUTOR_DEFAULT = null;
+    private final static Executor EXECUTOR_DEFAULT = Executors.newCachedThreadPool();
     private Executor executor = EXECUTOR_DEFAULT;
     
     
@@ -134,7 +128,7 @@ public class TcpServer {
     
     
     /**
-     * Constructs a new TcpServer that will listen on the default port 8000
+     * Constructs a new TcpServer that will listen on the default port 1234
      * (but not until {@link #start} is called).
      * The I/O thread will not be in daemon mode.
      */
@@ -145,6 +139,7 @@ public class TcpServer {
      * Constructs a new TcpServer that will listen on the given port 
      * (but not until {@link #start} is called).
      * The I/O thread will not be in daemon mode.
+     * @param port the port on which to listen
      */
     public TcpServer( int port ){
         this.port = port;
@@ -244,6 +239,7 @@ public class TcpServer {
      * Sets the state and fires an event. This method
      * does not change what the server is doing, only
      * what is reflected by the currentState variable.
+     * @param state the new server state
      */
     protected synchronized void setState( State state ){
         State oldVal = this.currentState;
@@ -488,7 +484,7 @@ public class TcpServer {
             public void run(){
             for( Listener l : ll ){
                 try{
-                    l.tcpServerSocketReceived(event);
+                    l.socketReceived(event);
                 } catch( Exception exc ){
                     LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
                     fireExceptionNotification(exc);
@@ -679,7 +675,7 @@ public class TcpServer {
          * 
          * @param evt the event
          */
-        public abstract void tcpServerSocketReceived( Event evt );
+        public abstract void socketReceived( Event evt );
 
 
     }   // end inner static class Listener
@@ -726,10 +722,10 @@ public class TcpServer {
 
 
         /**
-         * Empty call for {@link TcpServer.Listener#tcpServerSocketReceived}.
+         * Empty call for {@link TcpServer.Listener#socketReceived}.
          * @param evt the event
          */
-//        public void tcpServerSocketReceived(Event evt) {}
+//        public void socketReceived(Event evt) {}
 
 //    }   // end static inner class Adapter
     

@@ -322,7 +322,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     private TcpServer tcpServer;
     // End of variables declaration//GEN-END:variables
 
-    public void tcpServerSocketReceived(TcpServer.Event evt) {
+    public void socketReceived(TcpServer.Event evt) {
         this.newSocketIndicator.indicate();                     // New incoming connection: flash indicator at user
         final Socket socket = evt.getSocket();                  // Get the TCP socket
         

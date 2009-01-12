@@ -302,15 +302,17 @@ public class UdpServer {
             }   // end catch
             
             String gg = getGroups();                                        // Get multicast groups
-            String[] proposed = gg.split("[\\s,]+");                        // Split along whitespace
-            for( String p : proposed ){                                     // See which ones are valid
-                try{
-                    this.mSocket.joinGroup( InetAddress.getByName(p) );
-                    LOGGER.info( "UDP Server joined multicast group " + p );
-                } catch( IOException exc ){
-                    LOGGER.warning("Could not join " + p + " as a multicast group: " + exc.getMessage() );
-                }   // end catch
-            }   // end for: each proposed
+            if( gg != null ){
+                String[] proposed = gg.split("[\\s,]+");                        // Split along whitespace
+                for( String p : proposed ){                                     // See which ones are valid
+                    try{
+                        this.mSocket.joinGroup( InetAddress.getByName(p) );
+                        LOGGER.info( "UDP Server joined multicast group " + p );
+                    } catch( IOException exc ){
+                        LOGGER.warning("Could not join " + p + " as a multicast group: " + exc.getMessage() );
+                    }   // end catch
+                }   // end for: each proposed
+            }   // end if: groups not null
 
             
             setState( State.STARTED );                                   // Mark as started
@@ -365,6 +367,25 @@ public class UdpServer {
      */
     public synchronized DatagramPacket getPacket(){
         return this.packet;
+    }
+
+
+    
+    /**
+     * Attempts to send a datagram packet on the active
+     * server socket.
+     * 
+     * @param packet the packet to send
+     * @throws java.io.IOException if the server throws an exception
+     *         or if the server is not running (in which case
+     *         there is no underlying server socket to send the datagram)
+     */
+    public synchronized void send( DatagramPacket packet ) throws IOException {
+        if( this.mSocket == null ){
+            throw new IOException("No socket available to send packet; is the server running?");
+        } else {
+            this.mSocket.send( packet );
+        }
     }
 
 
@@ -505,7 +526,7 @@ public class UdpServer {
         UdpServer.Listener[] ll = listeners.toArray(new UdpServer.Listener[ listeners.size() ] );
         for( UdpServer.Listener l : ll ){
             try{
-                l.udpServerPacketReceived(event);
+                l.packetReceived(event);
             } catch( Exception exc ){
                 LOGGER.warning("UdpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
                 fireExceptionNotification(exc);
@@ -687,7 +708,7 @@ public class UdpServer {
          * @param evt the event
          * @see Event#getPacket
          */
-        public abstract void udpServerPacketReceived( UdpServer.Event evt );
+        public abstract void packetReceived( UdpServer.Event evt );
 
 
     }   // end inner static class Listener
@@ -840,6 +861,22 @@ public class UdpServer {
                   packet.getLength() );
                 return s;
             }   // end else
+        }
+
+
+        /**
+         * Convenience method for sending datagram packets,
+         * intended to be used for replying to the sender but
+         * could be used for anything. Equivalent to
+         * <code>evt.getUdpServer.send( packet )</code>.
+         * 
+         * @param packet the packet to send
+         * @throws java.io.IOException if the server throws an exception
+         *         or if the server is not running (in which case
+         *         there is no underlying server socket to send the datagram)
+         */
+        public void send( DatagramPacket packet ) throws IOException {
+            this.getUdpServer().send( packet );
         }
 
     }   // end static inner class Event

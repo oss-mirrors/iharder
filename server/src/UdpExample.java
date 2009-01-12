@@ -109,7 +109,7 @@ public class UdpExample extends javax.swing.JFrame implements UdpServer.Listener
 
 
 
-    public void udpServerPacketReceived(UdpServer.Event evt) {
+    public void packetReceived(UdpServer.Event evt) {
         this.receiveIndicator.indicate();
         DatagramPacket packet = evt.getUdpServer().getPacket(); // Not actually using this here.
         final String s = evt.getPacketAsString();
