@@ -163,7 +163,7 @@ public class OneValueGauge extends DefaultGauge {
         } else {
             hands[0] = degreeForValue(val);
         }
-        setHands(hands);
+        setValues(hands);
         firePropertyChange(VALUE_PROP,oldVal,val);
     }
     

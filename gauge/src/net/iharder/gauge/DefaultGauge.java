@@ -17,17 +17,59 @@ import java.util.logging.Logger;
  * @author rob
  */
 public class DefaultGauge extends JComponent { 
-   
+
+
+
+/* ********  S T A T I C   F I E L D S  ******** */
+
+    /** The X values defining the hand (like a clock) polygon. */
+    private final static int[] HAND_X = {0,-2,-1,0,1,2};
+
+
+    /** The Y values defining the hand (like a clock) polygon. */
+    private final static int[] HAND_Y = {0,2,37,40,37,2};
+
+    /** The largest Y value defining the hand (like a clock) polygon. */
+    private final static int HAND_MAX_Y = 40;
+
+    /** The paint for the hand. */
+    private final static Paint HAND_PAINT = Color.white;
+
+    /** The paint for the button over the values. */
+    //private final static Paint HAND_BUTTON_PAINT = Color.black.brighter().brighter();
+
+    /** The hand (like a clock) polygon. */
+    private final static Polygon HAND = new Polygon(HAND_X,HAND_Y,HAND_X.length);
+
+
+    /** The border paint of the gauge. */
+    private final static Paint BORDER_PAINT = Color.black.brighter();
+
+    /** The paint for tick marks. */
+    private final static Paint TICK_PAINT = new Color(250,250,250);
+
+
+
     private final static Logger LOGGER = Logger.getLogger(DefaultGauge.class.getName());
     
 /** ********  P R O P E R T I E S  ******** */    
     
     
-    /** The property name <tt>hands</tt>. */
-    public final static String HANDS_PROP = "hands";
-    private float[] hands;
-    
-    
+    /** The property name <tt>values</tt> referring to the array of values. */
+    public final static String VALUES_PROP = "values";
+    private float[] values;
+
+
+    /** The property name <tt>hand</tt> referring to the hand shape. */
+    public final static String HAND_PROP = "hand";
+    private Shape hand = HAND;
+
+
+    /** The property name <tt>hand_scale</tt> referring to a scaling factor when drawing the hand shape. */
+    public final static String HAND_SCALE_PROP = "hand_scale";
+    private float handScale = 1.0f;
+
+
     /** The property name <tt>major_tick_degrees</tt>. */
     public final static String MAJOR_TICK_DEGREES_PROP = "major_tick_degrees";
     private float[] majorTicks;
@@ -68,40 +110,9 @@ public class DefaultGauge extends JComponent {
 
     private Paint handButtonPaint;
 
-    /** Optional image to draw instead of the normal hands. */
+    /** Optional image to draw instead of the normal values. */
     public final static String HANDS_IMAGE_PROP = "hands_image";
     private Image handsImage;
-    
-    
-/* ********  S T A T I C   F I E L D S  ******** */    
-    
-    /** The X values defining the hand (like a clock) polygon. */
-    private final static int[] HAND_X = {0,-2,-1,0,1,2};
-    
-    
-    /** The Y values defining the hand (like a clock) polygon. */
-    private final static int[] HAND_Y = {0,2,37,40,37,2};
-    
-    /** The largest Y value defining the hand (like a clock) polygon. */
-    private final static int HAND_MAX_Y = 40;
-    
-    /** The paint for the hand. */
-    private final static Paint HAND_PAINT = Color.white;
-    
-    /** The paint for the button over the hands. */
-    //private final static Paint HAND_BUTTON_PAINT = Color.black.brighter().brighter();
-    
-    /** The hand (like a clock) polygon. */
-    private final static Polygon HAND = new Polygon(HAND_X,HAND_Y,HAND_X.length);
-    
-    
-    /** The border paint of the gauge. */
-    private final static Paint BORDER_PAINT = Color.black.brighter();
-        
-    /** The paint for tick marks. */
-    private final static Paint TICK_PAINT = new Color(250,250,250);
-
-
     
     
     
@@ -119,7 +130,7 @@ public class DefaultGauge extends JComponent {
     private float scale;
     private Stroke originalStroke;
     private Paint originalPaint;
-    
+
     public DefaultGauge(){
         initComponents();
     }
@@ -365,8 +376,8 @@ public class DefaultGauge extends JComponent {
     }
     
     /**
-     * Returns an array of degrees (, clockwise, starting at 12 o'clock "north") 
-     * where hands should be drawn.
+     * Returns an array of degrees (clockwise, starting at 12 o'clock "north") 
+     * where values should be drawn.
      * The first element in the array will be the longest hand,
      * the second will be shorter, and so forth. Eventually your gauge
      * will be illegible, so don't go crazy here.
@@ -374,24 +385,24 @@ public class DefaultGauge extends JComponent {
      * <code>super.propertyChange(evt)</code> if you override
      * this method.</p>
      *
-     * @return array of degrees where hands should be drawn
+     * @return array of degrees where values should be drawn
      */
-    public float[] getHands(){ 
-        return this.hands;
+    public float[] getValues(){
+        return this.values;
     }
     
     
     /**
      * After getting a new value, either by intercepting setValue()
      * or by listening for a property change event, compute the new
-     * positions of the hand or hands and set the value here.
+     * positions of the hand or values and set the value here.
      * This will automatically generate a repaint().
      * @param newVal
      */
-    public void setHands( float[] newVal ){
-        float[] oldVal = this.hands;
-        this.hands = newVal;
-        firePropertyChange( HANDS_PROP, oldVal, newVal );
+    public void setValues( float[] newVal ){
+        float[] oldVal = this.values;
+        this.values = newVal;
+        firePropertyChange( VALUES_PROP, oldVal, newVal );
         repaint();
     }
     
@@ -415,6 +426,59 @@ public class DefaultGauge extends JComponent {
         return this.handsImage;
     }
 
+
+    /**
+     * Sets the shape to draw for each hand (scaled down if
+     * using multiple values). The presence (not null) of
+     * an image set by {@link #setHandsImage(java.awt.Image)}
+     * will override this shape setting.
+     * 
+     * @param hand
+     */
+    public void setHand( Shape hand ){
+        Shape oldVal = this.hand;
+        this.hand = hand;
+        firePropertyChange( HAND_PROP, oldVal, hand );
+        repaint();
+    }
+
+    /**
+     * Returns the shape to draw for each hand (scaled down if
+     * using multiple values). The presence (not null) of
+     * an image set by {@link #setHandsImage(java.awt.Image)}
+     * will override this shape setting.
+     *
+     * @return hand
+     */
+    public Shape getHand(){
+        return this.hand;
+    }
+
+
+    /**
+     * Sets a scaling factor for drawing the hands when using a shape.
+     * The default value is 1.0 which works for the built-in hands.
+     * You will need to use trial and error to find the right value
+     * if you provide a custom hand shape.
+     * @param scale
+     */
+    public void setHandScale( float scale ){
+        float oldVal = this.handScale;
+        this.handScale = scale;
+        firePropertyChange( HAND_SCALE_PROP, oldVal, scale );
+        repaint();
+    }
+
+    /**
+     * Returns a scaling factor for drawing the hands when using a shape.
+     * The default value is 1.0 which works for the built-in hands.
+     * You will need to use trial and error to find the right value
+     * if you provide a custom hand shape.
+     * @return scale
+     */
+    public float getHandScale(){
+        return this.handScale;
+    }
 
 
     /**
@@ -486,7 +550,7 @@ public class DefaultGauge extends JComponent {
             float halfImgWidth = 0.5f * imgWidth;
             float halfImgHeight = 0.5f * imgHeight;
             float halfSquareSize = squareSize * 0.5f;
-            float scale = (squareSize-20)/imgWidth*0.7f;
+            float scale = (squareSize-20)/Math.max(imgWidth,imgHeight)*0.7f*this.handScale;
             AffineTransform at = g2d.getTransform(); // Record what user came in with
             g2d.setTransform(baseTransform);         // We want upper left referencing
             
@@ -725,8 +789,8 @@ public class DefaultGauge extends JComponent {
         
     protected void paintHands( Graphics2D g2d, int squareSize ){
         
-        // Draw hands
-        float[] hands = getHands();
+        // Draw values
+        float[] hands = getValues();
         if( hands != null ){
             for( int i = 0; i < hands.length; i++ ){
                 float deg = hands[i];
@@ -735,16 +799,17 @@ public class DefaultGauge extends JComponent {
                 if( i == 0 && this.handsImage != null ){
                     paintRotatedImage(g2d, handsImage, deg);
                 } else {
-                    float handScale = .88f * halfSquareSize / HAND_MAX_Y * (1-i*.3f);
+                    float handScale = (.88f * halfSquareSize / HAND_MAX_Y * (1-i*.3f)) * this.handScale;
                     g2d.translate(halfSquareSize,halfSquareSize);
                     g2d.rotate( deg * Math.PI / 180 + Math.PI);
                     g2d.scale(handScale,handScale);
                     g2d.setPaint(HAND_PAINT);
-                    g2d.fillPolygon( HAND );
+
+                    g2d.fill( this.hand );
                     g2d.setTransform(baseTransform);
                 }   // end else: just a hand
             }
-        }   // end if: hands not null
+        }   // end if: values not null
         
         // Draw button on hand if we're not painting an image
         if( this.handsImage == null ){

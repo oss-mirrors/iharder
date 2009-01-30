@@ -64,7 +64,7 @@ public class AltimeterGauge extends DefaultGauge {
         this.altitude = alt;
         hands[0] = (alt%1000)*.001f*360;   // Hundreds
         hands[1] = (alt%10000)*.0001f*360; // Thousands
-        setHands(hands);
+        setValues(hands);
         firePropertyChange( ALTITUDE_PROP, oldVal, alt );
     }
     

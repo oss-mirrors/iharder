@@ -57,7 +57,7 @@ public class TachometerGauge extends DefaultGauge {
         } else {
             hands[0] = 225f + 270f / this.maxRpmInThousands / 1000f * rpm;
         }
-        setHands(hands);
+        setValues(hands);
         
         firePropertyChange(RPM_PROP,oldVal,rpm);
     }

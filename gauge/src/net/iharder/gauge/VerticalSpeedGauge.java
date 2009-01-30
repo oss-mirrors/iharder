@@ -101,7 +101,7 @@ public class VerticalSpeedGauge extends DefaultGauge {
         
         // Reflect change
         hands[0] = -90 + Math.min(verticalVelocity / maxVVMarking,1) * (90+LAST_PEGGED_TICK);
-        setHands(hands);
+        setValues(hands);
     }
     
     

@@ -20,7 +20,7 @@ public class DecorativeExampleGauge extends DefaultGauge {
      * @return
      */
     public DecorativeExampleGauge(){
-        setHands( new float[]{225} );
+        setValues( new float[]{225} );
         setMajorTickDegrees(new float[] {0, 90, 270} );
         setMinorTickDegrees(new float[]{ 45, 135, 225, 315 });
         setMajorNumerals(  new int[][]{
@@ -49,7 +49,7 @@ public class DecorativeExampleGauge extends DefaultGauge {
     
     public void setValue( int val ){
         value[0] = val;
-        setHands(value);
+        setValues(value);
     }
     
     

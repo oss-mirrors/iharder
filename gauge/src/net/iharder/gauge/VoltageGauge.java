@@ -140,7 +140,7 @@ public class VoltageGauge extends DefaultGauge {
             float degPerVolt = (maxDegrees - minDegrees) / (maxVoltage - minVoltage);
             hands[0] = this.minDegrees + (voltage - this.minVoltage) * degPerVolt;
         }
-        setHands(hands);
+        setValues(hands);
         firePropertyChange( VOLTAGE_PROP, oldVal, voltage );
     }
     

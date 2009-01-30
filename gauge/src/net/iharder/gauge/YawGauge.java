@@ -45,7 +45,8 @@ public class YawGauge extends DefaultGauge {
     
     public YawGauge(){
         
-        java.net.URL imgURL = this.getClass().getResource("yaw.gif");
+        java.net.URL imgURL = this.getClass().getResource("sleek-yaw.png");
+        setHandScale(1f);
         //if (imgURL != null) image = new ImageIcon(imgURL).getImage();
         setHandsImage(new ImageIcon(imgURL).getImage());
         setYaw(0);
@@ -61,7 +62,7 @@ public class YawGauge extends DefaultGauge {
         if( Float.isNaN(deg) ) return;
         
         yaw[0] = deg;
-        setHands( yaw );
+        setValues( yaw );
     }
 
     

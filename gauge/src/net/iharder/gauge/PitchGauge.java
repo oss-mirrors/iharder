@@ -35,8 +35,10 @@ public class PitchGauge extends DefaultGauge {
     
     
     public PitchGauge(){
-        
-        java.net.URL imgURL = this.getClass().getResource("pitch.gif");
+
+        // "sleek" images from http://www.wingweb.co.uk/wingweb/img/500-Avro_CF-105_Arrow_silhouette.png
+        java.net.URL imgURL = this.getClass().getResource("sleek-pitch.png");
+        setHandScale(1.1f);
         //if (imgURL != null) image = new ImageIcon(imgURL).getImage();
         setHandsImage(new ImageIcon(imgURL).getImage());
         setMajorTickDegrees( MAJOR_TICKS );
@@ -51,7 +53,7 @@ public class PitchGauge extends DefaultGauge {
         if( Float.isNaN(deg) ) return;
         
         pitch[0] = -deg;
-        setHands( pitch );
+        setValues( pitch );
     }
 
     

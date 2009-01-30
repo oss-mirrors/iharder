@@ -117,7 +117,7 @@ public class AirspeedGauge extends DefaultGauge {
             float degPerSpeed = (maxDegrees - minDegrees) / (maxAirspeed - minAirspeed);
             hands[0] = this.minDegrees + (speed - this.minAirspeed) * degPerSpeed;
         }
-        setHands(hands);
+        setValues(hands);
         firePropertyChange( AIRSPEED_PROP, oldVal, speed );
     }
     
