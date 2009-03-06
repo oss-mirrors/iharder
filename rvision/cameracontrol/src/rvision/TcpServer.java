@@ -1,10 +1,16 @@
+package rvision;
 
-import java.util.concurrent.*;
-import java.util.logging.*;
-import java.beans.*;
-import java.util.*;
-import java.net.*;
-import java.io.*;
+
+import java.util.concurrent.ThreadFactory;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.ServerSocket;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.io.IOException;
+import java.net.Socket;
 
 
 
@@ -13,8 +19,8 @@ import java.io.*;
  * its listening port.
  * The {@link Event}s and property change events make
  * it an appropriate tool in a threaded, GUI application.
- * It is almost identical in design to the UdpServer class
- * which accompanies this one at <a href="http://iHarder.net">iHarder.net</a>.</p>
+ * It is almost identical in design to the UdpServer class that
+ * should have accompanied this class when you downloaded it.</p>
  * 
  * <p>To start a TCP server, create a new TcpServer and call start():</p>
  * 
@@ -24,18 +30,18 @@ import java.io.*;
  * <p>Of course it won't be much help unless you register as a listener
  * so you'll know when a <tt>java.net.Socket</tt> has come in:</p>
  * 
- * <pre> server.addTcpServerListener( new TcpServer.Listener(){
- *     public void socketReceived( TcpServer.Event evt ){
+ * <pre> server.addTcpServerListener( new TcpServer.Adapter(){
+ *     public void tcpServerSocketReceived( TcpServer.Event evt ){
  *         Socket socket = evt.getSocket();
  *         ...
  *     }   // end socket received
  * });</pre>
  * 
- * <p>The server runs on one thread, and all events may be fired on that thread
- * if desired by setting the executor to null <code>server.setExecutor(null)</code>.
- * By default a cached thread pool is used (<code>Executors.newCachedThreadPool()</code>)
- * so that when you handle a socketReceived event, you are already working
- * in a dedicated thread.</p>
+ * <p>The server runs on one thread, and all events are fired on that thread.
+ * Consider offloading heavy processing to another thread. Be aware that
+ * you can register multiple listeners to respond to an incoming socket,
+ * so be mindful of more than one listener being around to makes calls
+ * on the new Socket.</p>
  * 
  * <p>The public methods are all synchronized on <tt>this</tt>, and great
  * care has been taken to avoid deadlocks and race conditions. That being said,
@@ -46,25 +52,9 @@ import java.io.*;
  * making an instance field to hold a TcpServer where you'd have to
  * pass along all the setPort(...) methods and so forth.</p>
  * 
- * <p>The supporting {@link Event} and {@link Listener}
+ * <p>The supporting {@link Event}, {@link Listener}, and {@link Adapter}
  * classes are static inner classes in this file so that you have only one
  * file to copy to your project. You're welcome.</p>
- *
- * <p>Since the TcpServer.java, UdpServer.java, and NioServer.java are
- * so similar, and since lots of copying and pasting was going on among them,
- * you may find some comments that refer to TCP instead of UDP or vice versa.
- * Please feel free to let me know, so I can correct that.</p>
- *
- * <h2>Change Log</h2>
- *
- * <dl>
- *  <dt>v0.1.1</dt>
- *  <dd>Fixed race condition when using Executor to manage streams on
- *      other threads. Under high load, the wrong stream could be returned
- *      when new connections were being established.</dd>
- * </dl>
- *
- * <h2>Licensing</h2>
  * 
  * <p>This code is released into the Public Domain.
  * Since this is Public Domain, you don't need to worry about
@@ -79,12 +69,13 @@ import java.io.*;
  * @author rharder@users.sourceforge.net
  * @version 0.1
  * @see TcpServer
+ * @see Adapter
  * @see Event
  * @see Listener
  */
 public class TcpServer {
     
-    private final Logger LOGGER = Logger.getLogger(getClass().getName());
+    private final static Logger LOGGER = Logger.getLogger(TcpServer.class.getName());
     
     /**
      * The port property <tt>port</tt> used with
@@ -92,18 +83,11 @@ public class TcpServer {
      * if a preferences object is given.
      */
     public final static String PORT_PROP = "port";
-    private final static int PORT_DEFAULT = 1234;
+    private final static int PORT_DEFAULT = 8000;
     private int port = PORT_DEFAULT;
     
-    /**
-     * The Executor property <tt>executor</tt> used with
-     * the property change listeners and the preferences,
-     * if a preferences object is given.
-     */
-    public final static String EXECUTOR_PROP = "executor";
-    private final static Executor EXECUTOR_DEFAULT = Executors.newCachedThreadPool();
-    private Executor executor = EXECUTOR_DEFAULT;
     
+    public final static String THREAD_FACTORY_PROP = "thread_factory";
     
     /**
      * <p>One of four possible states for the server to be in:</p>
@@ -117,30 +101,26 @@ public class TcpServer {
      */
     public static enum State { STARTING, STARTED, STOPPING, STOPPED };
     private State currentState = State.STOPPED;
-    public final static String STATE_PROP = "state";
     
     
-    private Collection<TcpServer.Listener> listeners = new LinkedList<TcpServer.Listener>();    // Event listeners
+    private Collection<Listener> listeners = new LinkedList<Listener>();                // Event listeners
+    private Event event = new Event(this);                                              // Shared event
     private PropertyChangeSupport propSupport = new PropertyChangeSupport(this);        // Properties
     
     private TcpServer This = this;                                                      // To aid in synchronizing
     private ThreadFactory threadFactory;                                                // Optional thread factory
     private Thread ioThread;                                                            // Performs IO
-    private ServerSocket tcpServer;                                                     // The server
-    //private Socket socket;
-
-
-    public final static String LAST_EXCEPTION_PROP = "lastException";
-    private Throwable lastException;
+    private ServerSocket tcpServer;                                                  // The server
+    private Socket socket;
+    //private DatagramPacket packet = new DatagramPacket( new byte[64*1024], 64*1024 );   // Shared datagram
     
     
 /* ********  C O N S T R U C T O R S  ******** */
     
     
     /**
-     * Constructs a new TcpServer that will listen on the default port 1234
+     * Constructs a new TcpServer that will listen on the default port 8000
      * (but not until {@link #start} is called).
-     * The I/O thread will not be in daemon mode.
      */
     public TcpServer(){
     }
@@ -148,8 +128,6 @@ public class TcpServer {
     /**
      * Constructs a new TcpServer that will listen on the given port 
      * (but not until {@link #start} is called).
-     * The I/O thread will not be in daemon mode.
-     * @param port the port on which to listen
      */
     public TcpServer( int port ){
         this.port = port;
@@ -159,14 +137,34 @@ public class TcpServer {
      * Constructs a new TcpServer that will listen on the given port 
      * (but not until {@link #start} is called). The provided
      * ThreadFactory will be used when starting and running the server.
-     * @param port the port to listen to
-     * @param factory for creating the io thread
      */
     public TcpServer( int port, ThreadFactory factory ){
         this.port = port;
         this.threadFactory = factory;
     }
     
+    
+    
+    
+    /**
+     * Sets the Thread Factory to use when starting the server.
+     * @param tf The new thread factory
+     */
+    public synchronized void setThreadFactory( ThreadFactory tf ){
+        
+        ThreadFactory oldVal = this.threadFactory;
+        this.threadFactory = tf;
+
+        firePropertyChange( THREAD_FACTORY_PROP, oldVal, tf  );
+    }
+    
+    /**
+     * Returns the Thread Factory used to start the server.
+     * @return the thread factory
+     */
+    public synchronized ThreadFactory getThreadFactory(){
+        return this.threadFactory;
+    }
     
     
     
@@ -226,7 +224,6 @@ public class TcpServer {
                       "An error occurred while closing the TCP server. " +
                       "This may have left the server in an undefined state.",
                       exc );
-                    fireExceptionNotification(exc);
                 }
             }   // end if: not null
         }   // end if: already STARTED
@@ -249,12 +246,10 @@ public class TcpServer {
      * Sets the state and fires an event. This method
      * does not change what the server is doing, only
      * what is reflected by the currentState variable.
-     * @param state the new server state
      */
     protected synchronized void setState( State state ){
-        State oldVal = this.currentState;
         this.currentState = state;
-        firePropertyChange(STATE_PROP,oldVal,state);
+        fireTcpServerStateChanged();
     }
     
     
@@ -264,9 +259,9 @@ public class TcpServer {
      * handy to set yourself up as a listener and then fire an
      * event in order to initialize this or that.
      */
-    //public synchronized void fireState(){
-    //    fireTcpServerStateChanged();
-    //}
+    public synchronized void fireState(){
+        fireTcpServerStateChanged();
+    }
     
     
     /**
@@ -279,16 +274,16 @@ public class TcpServer {
     public synchronized void reset(){
         switch( this.currentState ){
             case STARTED:
-                this.addPropertyChangeListener(STATE_PROP, new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent evt) {
-                        State newState = (State)evt.getNewValue();
-                        if( newState == State.STOPPED ){
+                this.addTcpServerListener( new Adapter(){
+                    @Override
+                    public void tcpServerStateChanged( Event evt ){
+                        if( evt.getState() == State.STOPPED ){
                             TcpServer server = (TcpServer)evt.getSource();
-                            server.removePropertyChangeListener(STATE_PROP,this);
+                            server.removeTcpServerListener(this);
                             server.start();
                         }   // end if: stopped
-                    }   // end prop change
-                });
+                    }   // end state changed
+                }); // end adapter
                 stop();
                 break;
         }   // end switch
@@ -304,11 +299,13 @@ public class TcpServer {
     protected void runServer(){
         try{
             this.tcpServer = new ServerSocket( getPort() );                 // Create server
-            setState( State.STARTED );                                      // Mark as started
             LOGGER.info("TCP Server established on port " + getPort() );
             
+            setState( State.STARTED );                                      // Mark as started
+            LOGGER.info( "TCP Server listening..." );
+            
             while( !this.tcpServer.isClosed() ){
-                synchronized( this ){
+                synchronized( This ){
                     if( this.currentState == State.STOPPING ){
                         LOGGER.info( "Stopping TCP Server by request." );
                         this.tcpServer.close();
@@ -318,19 +315,19 @@ public class TcpServer {
                 if( !this.tcpServer.isClosed() ){
                     
                     ////////  B L O C K I N G
-                    Socket socket = this.tcpServer.accept();
+                    this.socket = this.tcpServer.accept();
                     ////////  B L O C K I N G
                     
                     if( LOGGER.isLoggable(Level.FINE) ){
                         LOGGER.fine( "TCP Server incoming socket: " + socket );
                     }
-                    fireTcpServerSocketReceived( socket );
+                    fireTcpServerSocketReceived();
                     
                 }   //end if: not closed
             }   // end while: keepGoing
             
         } catch( Exception exc ){
-            synchronized( this ){
+            synchronized( This ){
                 if( this.currentState == State.STOPPING ){  // User asked to stop
                     try{
                         this.tcpServer.close();
@@ -341,13 +338,11 @@ public class TcpServer {
                           "An error occurred while closing the TCP server. " +
                           "This may have left the server in an undefined state.",
                           exc2 );
-                        fireExceptionNotification(exc2);
                     }   // end catch IOException
                 } else {
                     LOGGER.log( Level.WARNING, "Server closed unexpectedly: " + exc.getMessage(), exc );
                 }   // end else
             }   // end sync
-            fireExceptionNotification(exc);
         } finally {
             setState( State.STOPPING );
             if( this.tcpServer != null ){
@@ -360,11 +355,19 @@ public class TcpServer {
                       "An error occurred while closing the TCP server. " +
                       "This may have left the server in an undefined state.",
                       exc2 );
-                    fireExceptionNotification(exc2);
                 }   // end catch IOException
             }   // end if: not null
             this.tcpServer = null;
         }
+    }
+    
+/* ********  S O C K E T  ******** */    
+    
+    /**
+     * Returns the last Socket received.
+     */
+    public synchronized Socket getSocket(){
+        return this.socket;
     }
     
     
@@ -383,8 +386,6 @@ public class TcpServer {
      * Sets the new port on which the server will attempt to listen.
      * If the server is already listening, then it will attempt to
      * restart on the new port, generating start and stop events.
-     * If the old port and new port are the same, events will be
-     * fired, but the server will not actually reset.
      * @param port the new port for listening
      * @throws IllegalArgumentException if port is outside 0..65535
      */
@@ -396,57 +397,11 @@ public class TcpServer {
             
         int oldVal = this.port;
         this.port = port;
-        if( getState() == State.STARTED && oldVal != port ){
+        if( getState() == State.STARTED ){
             reset();
         }   // end if: is running
 
         firePropertyChange( PORT_PROP, oldVal, port  );
-    }   
-    
-    
-/* ********  E X E C U T O R  ******** */
-    
-    
-    /**
-     * Returns the Executor (or null if none is set)
-     * that is used to execute the event firing.
-     * @return Executor used for event firing or null
-     */
-    public synchronized Executor getExecutor(){
-        return this.executor;
-    }
-    
-    /**
-     * <p>Sets (or clears, if null) the Executor used to 
-     * fire events. If an Executor is set, then for each
-     * event, all listeners of that event are called in
-     * seqentially on a thread generated by the Executor.</p>
-     * 
-     * <p>Take the following example:</p>
-     * 
-     * <code>import java.util.concurrent.*;
-     * ...
-     * server.setExecutor( Executors.newCachedThreadPool() );</code>
-     * 
-     * <p>Let's say three objects are registered to listen for
-     * events from the TcpServer. When the server state changes,
-     * the three objects will be called sequentially on the same
-     * thread, generated by the Cached Thread Pool. Say one of those
-     * objects takes a long time to respond, and a new incoming
-     * connection is established while waiting. Those three objects
-     * will sequentially be notified of the new connection on a
-     * different thread, generated by the Cached Thread Pool.</p>
-     *
-     * <p><strong>There is a race condition here! Recommend not using
-     * until this is resolved.</strong></p>
-     * 
-     * @param exec the new Executor or null if no executor is to be used
-     */
-    public synchronized void setExecutor( Executor exec ){
-        Executor oldVal = this.executor;
-        this.executor = exec;
-
-        firePropertyChange( EXECUTOR_PROP, oldVal, exec  );
     }   
     
     
@@ -456,61 +411,34 @@ public class TcpServer {
     
     
 
-    /** 
-     * Adds a {@link Listener}.
-     * @param l the listener
-     */
-    public synchronized void addTcpServerListener(TcpServer.Listener l) {
+    /** Adds a {@link Listener}. */    
+    public synchronized void addTcpServerListener(Listener l) {
         listeners.add(l);
     }
 
-    
-    /** 
-     * Removes a {@link Listener}.
-     * @param l the listener
-     */
-    public synchronized void removeTcpServerListener(TcpServer.Listener l) {
+    /** Removes a {@link Listener}. */
+    public synchronized void removeTcpServerListener(Listener l) {
         listeners.remove(l);
     }
     
     
-    /** Fires event when a socket is received */
-    protected synchronized void fireTcpServerSocketReceived( Socket sock ) {
-        
-        final TcpServer.Listener[] ll = listeners.toArray(new TcpServer.Listener[ listeners.size() ] );
-        final TcpServer.Event event = new TcpServer.Event( this, sock );
-        
-        // Make a Runnable object to execute the calls to listeners.
-        // In the event we don't have an Executor, this results in
-        // an unnecessary object instantiation, but it also makes
-        // the code more maintainable.
-        Runnable r = new Runnable(){
-            public void run(){
-            for( Listener l : ll ){
-                try{
-                    l.socketReceived(event);
-                } catch( Exception exc ){
-                    LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
-                    fireExceptionNotification(exc);
-                }   // end catch
-            }   // end for: each listener
-            }   // end run
-        };
-
-
-        // POTENTIAL RACE CONDITION. IF MANY INCOMING CONNECTIONS, THE
-        // EVENT'S getSocket() METHOD WILL NOT BE THREADSAFE.
-        if( this.executor == null ){
-            r.run();
-        } else {
-            try{
-                this.executor.execute( r ); 
-            } catch( Exception exc ){
-                LOGGER.warning("Supplied Executor " + this.executor + " threw an exception: " + exc.getMessage() );
-                fireExceptionNotification(exc);
-            }   // end catch
-        }   // end else: other thread
+    /** Fires event on calling thread. */
+    protected synchronized void fireTcpServerSocketReceived() {
+        Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
+        for( Listener l : ll ){
+            l.tcpServerSocketReceived(this.event);
+        }   // end for: each listener
      }  // end fireTcpServerPacketReceived
+    
+    
+    
+    /** Fires event on calling thread. */
+    protected synchronized void fireTcpServerStateChanged() {
+        Listener[] ll = listeners.toArray(new Listener[ listeners.size() ] );
+        for( Listener l : ll ){
+            l.tcpServerStateChanged(this.event);
+        }   // end for: each listener
+     }  // end fireTcpServerStateChanged
     
     
     
@@ -524,13 +452,12 @@ public class TcpServer {
      */
     public synchronized void fireProperties(){
         firePropertyChange( PORT_PROP, null, getPort()  );      // Port
-        firePropertyChange( STATE_PROP, null, getState()  );      // State
     }
     
-
+    
     /**
      * Fire a property change event on the current thread.
-     *
+     * 
      * @param prop      name of property
      * @param oldVal    old value
      * @param newVal    new value
@@ -542,96 +469,57 @@ public class TcpServer {
             LOGGER.log(Level.WARNING,
                     "A property change listener threw an exception: " + exc.getMessage()
                     ,exc);
-            fireExceptionNotification(exc);
         }   // end catch
     }   // end fire
-
-
-
-    /**
-     * Add a property listener.
-     * @param listener the property change listener
-     */
+    
+    
+    
+    /** Add a property listener. */
     public synchronized void addPropertyChangeListener( PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(listener);
     }
 
-
-    /**
-     * Add a property listener for the named property.
-     * @param property the sole property name for which to register
-     * @param listener the property change listener
-     */
+    
+    /** Add a property listener for the named property. */
     public synchronized void addPropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(property,listener);
     }
-
-
-    /**
-     * Remove a property listener.
-     * @param listener the property change listener
-     */
+    
+    
+    /** Remove a property listener. */
     public synchronized void removePropertyChangeListener( PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(listener);
     }
 
-
-    /**
-     * Remove a property listener for the named property.
-     * @param property the sole property name for which to stop receiving events
-     * @param listener the property change listener
-     */
+    
+    /** Remove a property listener for the named property. */
     public synchronized void removePropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(property,listener);
     }
-
     
-
-
-/* ********  E X C E P T I O N S  ******** */
-
-
-    /**
-     * Returns the last exception (Throwable, actually)
-     * that the server encountered.
-     * @return last exception
-     */
-    public synchronized Throwable getLastException(){
-        return this.lastException;
-    }
-
-    /**
-     * Fires a property change event with the new exception.
-     * @param t
-     */
-    protected void fireExceptionNotification( Throwable t ){
-        Throwable oldVal = this.lastException;
-        this.lastException = t;
-        firePropertyChange( LAST_EXCEPTION_PROP, oldVal, t );
-    }
-
+    
     
     
     
 /* ********  L O G G I N G  ******** */
     
     /**
-     * Sets the logging level using Java's
+     * Static method to set the logging level using Java's
      * <tt>java.util.logging</tt> package. Example:
-     * <code>server.setLoggingLevel(Level.OFF);</code>.
+     * <code>TcpServer.setLoggingLevel(Level.OFF);</code>.
      * 
      * @param level the new logging level
      */
-    public void setLoggingLevel( Level level ){
+    public static void setLoggingLevel( Level level ){
         LOGGER.setLevel(level);
     }
     
     /**
-     * Retrns the logging level using Java's
+     * Static method returning the logging level using Java's
      * <tt>java.util.logging</tt> package.
      * @return the logging level
      */
-    public Level getLoggingLevel(){
+    public static Level getLoggingLevel(){
         return LOGGER.getLevel();
     }
     
@@ -670,9 +558,18 @@ public class TcpServer {
      * @author rharder@users.sourceforge.net
      * @version 0.1
      * @see TcpServer
+     * @see Adapter
      * @see Event
      */
     public static interface Listener extends java.util.EventListener {
+
+        /**
+         * Called when the state of the server has changed, such as
+         * "starting" or "stopped."
+         * @param evt the event
+         * @see TcpServer.State
+         */
+        public abstract void tcpServerStateChanged( Event evt );
 
         /**
          * Called when a packet is received. This is called on the IO thread,
@@ -681,8 +578,9 @@ public class TcpServer {
          * since it will be clobbered the next time around.
          * 
          * @param evt the event
+         * @see Event#getPacket
          */
-        public abstract void socketReceived( Event evt );
+        public abstract void tcpServerSocketReceived( Event evt );
 
 
     }   // end inner static class Listener
@@ -719,22 +617,22 @@ public class TcpServer {
      * @see Listener
      * @see Event
      */
-//    public class Adapter implements Listener {
+    public class Adapter implements Listener {
 
         /**
          * Empty call for {@link TcpServer.Listener#tcpServerStateChanged}.
          * @param evt the event
          */
-      //  public void tcpServerStateChanged(Event evt) {}
+        public void tcpServerStateChanged(Event evt) {}
 
 
         /**
-         * Empty call for {@link TcpServer.Listener#socketReceived}.
+         * Empty call for {@link TcpServer.Listener#tcpServerSocketReceived}.
          * @param evt the event
          */
-//        public void socketReceived(Event evt) {}
+        public void tcpServerSocketReceived(Event evt) {}
 
-//    }   // end static inner class Adapter
+    }   // end static inner class Adapter
     
     
 /* ********                                                    ******** */
@@ -761,21 +659,18 @@ public class TcpServer {
      * @author rharder@users.sourceforge.net
      * @version 0.1
      * @see TcpServer
+     * @see Adapter
      * @see Listener
      */
     public static class Event extends java.util.EventObject {
 
-        private final static long serialVersionUID = 1;
 
-        private Socket socket;
-        
         /**
          * Creates a Event based on the given {@link TcpServer}.
          * @param src the source of the event
          */
-        public Event( TcpServer src, Socket sock ){
+        public Event( TcpServer src  ){
             super(src);
-            this.socket = sock;
         }
 
         /**
@@ -789,8 +684,6 @@ public class TcpServer {
 
         /**
          * Shorthand for <tt>getTcpServer().getState()</tt>.
-         * This is the state at the moment the method is called,
-         * not the state at the moment the event is created.
          * @return the state of the server
          * @see TcpServer.State
          */
@@ -800,11 +693,13 @@ public class TcpServer {
 
 
         /**
-         * Returns the new socket.
-         * @return the new socket.
+         * Returns the most recent datagram packet received
+         * by the {@link TcpServer}. Shorthand for
+         * <tt>getTcpServer().getPacket()</tt>.
+         * @return the most recent datagram
          */
         public Socket getSocket(){
-            return this.socket;
+            return getTcpServer().getSocket();
         }
 
 

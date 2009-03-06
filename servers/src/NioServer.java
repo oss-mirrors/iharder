@@ -855,6 +855,7 @@ public class NioServer {
         else if( sc instanceof DatagramChannel ){
             DatagramChannel dc = (DatagramChannel)sc;                           // Cast to datagram channel
             SocketAddress remote = null;
+            inBuff.clear(); // Fixed in v0.1.1
             while( (remote = dc.receive(inBuff)) != null ){                     // Loop over all pending datagrams
                 inBuff.flip();                                                  // Flip after reading in
                 outBuff.clear().flip();
@@ -864,6 +865,7 @@ public class NioServer {
                 if( outBuff.hasRemaining() ){                                   // User left data for response?
                     dc.send(outBuff, remote);                                   // Try sending it
                 }   // end if: something to write
+                inBuff.clear(); // Fixed in v0.1.1
             }   // end while: each pending datagram
         }   // end else: UDP
 

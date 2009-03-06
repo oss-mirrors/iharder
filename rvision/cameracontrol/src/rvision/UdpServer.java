@@ -1,41 +1,49 @@
+package rvision;
 
-import java.util.concurrent.*;
-import java.util.logging.*;
-import java.beans.*;
-import java.util.*;
-import java.net.*;
-import java.io.*;
+import java.util.concurrent.ThreadFactory;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.net.MulticastSocket;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.util.Collection;
+import java.util.LinkedList;
 
 
 
 /**
- * <p>A robust class for establishing a TCP server and manipulating
- * its listening port.
+ * <p>A robust class for establishing a UDP server and manipulating
+ * its listening port and optionally a multicast group to join.
  * The {@link Event}s and property change events make
  * it an appropriate tool in a threaded, GUI application.
- * It is almost identical in design to the UdpServer class
- * which accompanies this one at <a href="http://iHarder.net">iHarder.net</a>.</p>
+ * It is almost identical in design to the TcpServer class that
+ * should have accompanied this class when you downloaded it.</p>
  * 
- * <p>To start a TCP server, create a new TcpServer and call start():</p>
+ * <p>To start a UDP server, create a new UdpServer and call start():</p>
  * 
- * <pre> TcpServer server = new TcpServer();
+ * <pre> UdpServer server = new UdpServer();
  * server.start();</pre>
  * 
  * <p>Of course it won't be much help unless you register as a listener
- * so you'll know when a <tt>java.net.Socket</tt> has come in:</p>
+ * so you'll know when a <tt>java.net.DatagramPacket</tt> has come in:</p>
  * 
- * <pre> server.addTcpServerListener( new TcpServer.Listener(){
- *     public void socketReceived( TcpServer.Event evt ){
- *         Socket socket = evt.getSocket();
+ * <pre> server.addUdpServerListener( new UdpServer.Adapter(){
+ *     public void udpServerPacketReceived( UdpServer.Event evt ){
+ *         DatagramPacket packet = evt.getPacket();
  *         ...
- *     }   // end socket received
+ *     }   // end packet received
  * });</pre>
  * 
- * <p>The server runs on one thread, and all events may be fired on that thread
- * if desired by setting the executor to null <code>server.setExecutor(null)</code>.
- * By default a cached thread pool is used (<code>Executors.newCachedThreadPool()</code>)
- * so that when you handle a socketReceived event, you are already working
- * in a dedicated thread.</p>
+ * <p>The server runs on one thread, and all events are fired on that thread.
+ * If you have to offload heavy processing to another thread, be sure to
+ * make a copy of the datagram contents since it will be reused the next
+ * time around. You may use the {@link Event#getPacketAsBytes}
+ * command as a convenient way to make a copy of the byte array.</p>
+ * 
+ * <p>The full 64KB allowed by the UDP standard is set aside to receive
+ * the datagrams, but it's possible that your host platform may truncate that.</p>
  * 
  * <p>The public methods are all synchronized on <tt>this</tt>, and great
  * care has been taken to avoid deadlocks and race conditions. That being said,
@@ -43,48 +51,33 @@ import java.io.*;
  * you certainly still have the power to introduce these problems yourself.</p>
  * 
  * <p>It's often handy to have your own class extend this one rather than
- * making an instance field to hold a TcpServer where you'd have to
+ * making an instance field to hold a UdpServer where you'd have to
  * pass along all the setPort(...) methods and so forth.</p>
  * 
- * <p>The supporting {@link Event} and {@link Listener}
+ * <p>The supporting {@link Event}, {@link Listener}, and {@link Adapter}
  * classes are static inner classes in this file so that you have only one
  * file to copy to your project. You're welcome.</p>
- *
- * <p>Since the TcpServer.java, UdpServer.java, and NioServer.java are
- * so similar, and since lots of copying and pasting was going on among them,
- * you may find some comments that refer to TCP instead of UDP or vice versa.
- * Please feel free to let me know, so I can correct that.</p>
- *
- * <h2>Change Log</h2>
- *
- * <dl>
- *  <dt>v0.1.1</dt>
- *  <dd>Fixed race condition when using Executor to manage streams on
- *      other threads. Under high load, the wrong stream could be returned
- *      when new connections were being established.</dd>
- * </dl>
- *
- * <h2>Licensing</h2>
  * 
  * <p>This code is released into the Public Domain.
  * Since this is Public Domain, you don't need to worry about
- * licensing, and you can simply copy this TcpServer.java file
+ * licensing, and you can simply copy this UdpServer.java file
  * to your own package and use it as you like. Enjoy.
  * Please consider leaving the following statement here in this code:</p>
  * 
- * <p><em>This <tt>TcpServer</tt> class was copied to this project from its source as 
+ * <p><em>This <tt>UdpServer</tt> class was copied to this project from its source as 
  * found at <a href="http://iharder.net" target="_blank">iHarder.net</a>.</em></p>
  *
  * @author Robert Harder
  * @author rharder@users.sourceforge.net
  * @version 0.1
- * @see TcpServer
+ * @see UdpServer
+ * @see Adapter
  * @see Event
  * @see Listener
  */
-public class TcpServer {
+public class UdpServer {
     
-    private final Logger LOGGER = Logger.getLogger(getClass().getName());
+    private final static Logger LOGGER = Logger.getLogger(UdpServer.class.getName());
     
     /**
      * The port property <tt>port</tt> used with
@@ -92,17 +85,18 @@ public class TcpServer {
      * if a preferences object is given.
      */
     public final static String PORT_PROP = "port";
-    private final static int PORT_DEFAULT = 1234;
+    private final static int PORT_DEFAULT = 8000;
     private int port = PORT_DEFAULT;
     
     /**
-     * The Executor property <tt>executor</tt> used with
+     * The multicast group property <tt>group</tt> used with
      * the property change listeners and the preferences,
-     * if a preferences object is given.
+     * if a preferences object is given. If the multicast
+     * group is null, then no multicast group will be joined.
      */
-    public final static String EXECUTOR_PROP = "executor";
-    private final static Executor EXECUTOR_DEFAULT = Executors.newCachedThreadPool();
-    private Executor executor = EXECUTOR_DEFAULT;
+    public final static String GROUP_PROP = "group";
+    private final static String GROUP_DEFAULT = null;
+    private String group = GROUP_DEFAULT;
     
     
     /**
@@ -117,52 +111,45 @@ public class TcpServer {
      */
     public static enum State { STARTING, STARTED, STOPPING, STOPPED };
     private State currentState = State.STOPPED;
-    public final static String STATE_PROP = "state";
     
     
-    private Collection<TcpServer.Listener> listeners = new LinkedList<TcpServer.Listener>();    // Event listeners
+    private Collection<Listener> listeners = new LinkedList<Listener>();                // Event listeners
+    private Event event = new Event(this);                                              // Shared event
     private PropertyChangeSupport propSupport = new PropertyChangeSupport(this);        // Properties
     
-    private TcpServer This = this;                                                      // To aid in synchronizing
+    private UdpServer This = this;                                                      // To aid in synchronizing
     private ThreadFactory threadFactory;                                                // Optional thread factory
     private Thread ioThread;                                                            // Performs IO
-    private ServerSocket tcpServer;                                                     // The server
-    //private Socket socket;
-
-
-    public final static String LAST_EXCEPTION_PROP = "lastException";
-    private Throwable lastException;
+    private MulticastSocket udpServer;                                                  // The server
+    private DatagramPacket packet = new DatagramPacket( new byte[64*1024], 64*1024 );   // Shared datagram
     
     
 /* ********  C O N S T R U C T O R S  ******** */
     
     
     /**
-     * Constructs a new TcpServer that will listen on the default port 1234
+     * Constructs a new UdpServer that will listen on the default port 8000
      * (but not until {@link #start} is called).
-     * The I/O thread will not be in daemon mode.
+     * The I/O thread will be in daemon mode.
      */
-    public TcpServer(){
+    public UdpServer(){
     }
     
     /**
-     * Constructs a new TcpServer that will listen on the given port 
+     * Constructs a new UdpServer that will listen on the given port 
      * (but not until {@link #start} is called).
-     * The I/O thread will not be in daemon mode.
-     * @param port the port on which to listen
+     * The I/O thread will be in daemon mode.
      */
-    public TcpServer( int port ){
+    public UdpServer( int port ){
         this.port = port;
     }
     
     /**
-     * Constructs a new TcpServer that will listen on the given port 
+     * Constructs a new UdpServer that will listen on the given port 
      * (but not until {@link #start} is called). The provided
      * ThreadFactory will be used when starting and running the server.
-     * @param port the port to listen to
-     * @param factory for creating the io thread
      */
-    public TcpServer( int port, ThreadFactory factory ){
+    public UdpServer( int port, ThreadFactory factory ){
         this.port = port;
         this.threadFactory = factory;
     }
@@ -198,6 +185,7 @@ public class TcpServer {
                 
             } else {                                        // Our own threads
                 this.ioThread = new Thread( run, this.getClass().getName() );   // Named
+                this.ioThread.setDaemon(true);                                  // In daemon mode
             }
 
             setState( State.STARTING );                     // Update state
@@ -217,17 +205,8 @@ public class TcpServer {
     public synchronized void stop(){
         if( this.currentState == State.STARTED ){   // Only if already STARTED
             setState( State.STOPPING );             // Mark as STOPPING
-            if( this.tcpServer != null ){           // 
-                try{
-                    this.tcpServer.close();
-                } catch( IOException exc ){
-                    LOGGER.log( 
-                      Level.SEVERE,
-                      "An error occurred while closing the TCP server. " +
-                      "This may have left the server in an undefined state.",
-                      exc );
-                    fireExceptionNotification(exc);
-                }
+            if( this.udpServer != null ){           // 
+                this.udpServer.close();
             }   // end if: not null
         }   // end if: already STARTED
     }   // end stop
@@ -249,12 +228,10 @@ public class TcpServer {
      * Sets the state and fires an event. This method
      * does not change what the server is doing, only
      * what is reflected by the currentState variable.
-     * @param state the new server state
      */
     protected synchronized void setState( State state ){
-        State oldVal = this.currentState;
         this.currentState = state;
-        firePropertyChange(STATE_PROP,oldVal,state);
+        fireUdpServerStateChanged();
     }
     
     
@@ -264,9 +241,9 @@ public class TcpServer {
      * handy to set yourself up as a listener and then fire an
      * event in order to initialize this or that.
      */
-    //public synchronized void fireState(){
-    //    fireTcpServerStateChanged();
-    //}
+    public synchronized void fireState(){
+        fireUdpServerStateChanged();
+    }
     
     
     /**
@@ -279,16 +256,16 @@ public class TcpServer {
     public synchronized void reset(){
         switch( this.currentState ){
             case STARTED:
-                this.addPropertyChangeListener(STATE_PROP, new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent evt) {
-                        State newState = (State)evt.getNewValue();
-                        if( newState == State.STOPPED ){
-                            TcpServer server = (TcpServer)evt.getSource();
-                            server.removePropertyChangeListener(STATE_PROP,this);
+                this.addUdpServerListener( new Adapter(){
+                    @Override
+                    public void udpServerStateChanged( Event evt ){
+                        if( evt.getState() == State.STOPPED ){
+                            UdpServer server = (UdpServer)evt.getSource();
+                            server.removeUdpServerListener(this);
                             server.start();
                         }   // end if: stopped
-                    }   // end prop change
-                });
+                    }   // end state changed
+                }); // end adapter
                 stop();
                 break;
         }   // end switch
@@ -297,74 +274,71 @@ public class TcpServer {
     
     /**
      * This method starts up and listens indefinitely
-     * for TCP packets. On entering this method,
+     * for UDP packets. On entering this method,
      * the state is assumed to be STARTING. Upon exiting
      * this method, the state will be STOPPING.
      */
     protected void runServer(){
         try{
-            this.tcpServer = new ServerSocket( getPort() );                 // Create server
-            setState( State.STARTED );                                      // Mark as started
-            LOGGER.info("TCP Server established on port " + getPort() );
+            this.udpServer = new MulticastSocket( getPort() );              // Create server
+            LOGGER.info("UDP Server established on port " + getPort() );
             
-            while( !this.tcpServer.isClosed() ){
-                synchronized( this ){
+            String group = getGroup();                                      // Get multicast group
+            if( group != null ){                                            // Not null?
+                this.udpServer.joinGroup( InetAddress.getByName(group) );   // Join group
+                LOGGER.info( "UDP Server joined multicast group " + group );
+            }   // end if: got group
+            
+            setState( State.STARTED );                                      // Mark as started
+            LOGGER.info( "UDP Server listening..." );
+            
+            while( !this.udpServer.isClosed() ){
+                synchronized( This ){
                     if( this.currentState == State.STOPPING ){
-                        LOGGER.info( "Stopping TCP Server by request." );
-                        this.tcpServer.close();
+                        LOGGER.info( "Stopping UDP Server by request." );
+                        this.udpServer.close();
                     }   // end if: stopping
                 }   // end sync
                 
-                if( !this.tcpServer.isClosed() ){
+                if( !this.udpServer.isClosed() ){
                     
                     ////////  B L O C K I N G
-                    Socket socket = this.tcpServer.accept();
+                    this.udpServer.receive(packet);
                     ////////  B L O C K I N G
                     
                     if( LOGGER.isLoggable(Level.FINE) ){
-                        LOGGER.fine( "TCP Server incoming socket: " + socket );
+                        LOGGER.fine( "UDP Server received datagram: " + packet );
                     }
-                    fireTcpServerSocketReceived( socket );
+                    fireUdpServerPacketReceived();
                     
                 }   //end if: not closed
             }   // end while: keepGoing
             
         } catch( Exception exc ){
-            synchronized( this ){
+            synchronized( This ){
                 if( this.currentState == State.STOPPING ){  // User asked to stop
-                    try{
-                        this.tcpServer.close();
-                        LOGGER.info( "TCP Server closed normally." );
-                    } catch( IOException exc2 ){
-                        LOGGER.log( 
-                          Level.SEVERE,
-                          "An error occurred while closing the TCP server. " +
-                          "This may have left the server in an undefined state.",
-                          exc2 );
-                        fireExceptionNotification(exc2);
-                    }   // end catch IOException
+                    this.udpServer.close();
+                    LOGGER.info( "Udp Server closed normally." );
                 } else {
                     LOGGER.log( Level.WARNING, "Server closed unexpectedly: " + exc.getMessage(), exc );
                 }   // end else
             }   // end sync
-            fireExceptionNotification(exc);
         } finally {
             setState( State.STOPPING );
-            if( this.tcpServer != null ){
-                try{
-                    this.tcpServer.close();
-                    LOGGER.info( "TCP Server closed normally." );
-                } catch( IOException exc2 ){
-                    LOGGER.log( 
-                      Level.SEVERE,
-                      "An error occurred while closing the TCP server. " +
-                      "This may have left the server in an undefined state.",
-                      exc2 );
-                    fireExceptionNotification(exc2);
-                }   // end catch IOException
+            if( this.udpServer != null ){
+                this.udpServer.close();
             }   // end if: not null
-            this.tcpServer = null;
+            this.udpServer = null;
         }
+    }
+    
+/* ********  P A C K E T  ******** */    
+    
+    /**
+     * Returns the last DatagramPacket received.
+     */
+    public synchronized DatagramPacket getPacket(){
+        return this.packet;
     }
     
     
@@ -383,8 +357,6 @@ public class TcpServer {
      * Sets the new port on which the server will attempt to listen.
      * If the server is already listening, then it will attempt to
      * restart on the new port, generating start and stop events.
-     * If the old port and new port are the same, events will be
-     * fired, but the server will not actually reset.
      * @param port the new port for listening
      * @throws IllegalArgumentException if port is outside 0..65535
      */
@@ -396,7 +368,7 @@ public class TcpServer {
             
         int oldVal = this.port;
         this.port = port;
-        if( getState() == State.STARTED && oldVal != port ){
+        if( getState() == State.STARTED ){
             reset();
         }   // end if: is running
 
@@ -404,113 +376,71 @@ public class TcpServer {
     }   
     
     
-/* ********  E X E C U T O R  ******** */
     
+/* ********  M U L T I C A S T   G R O U P  ******** */
     
     /**
-     * Returns the Executor (or null if none is set)
-     * that is used to execute the event firing.
-     * @return Executor used for event firing or null
+     * Returns the multicast group to which the server has joined.
+     * May be null.
+     * @return The multicast group
      */
-    public synchronized Executor getExecutor(){
-        return this.executor;
+    public synchronized String getGroup(){
+        return this.group;
     }
     
     /**
-     * <p>Sets (or clears, if null) the Executor used to 
-     * fire events. If an Executor is set, then for each
-     * event, all listeners of that event are called in
-     * seqentially on a thread generated by the Executor.</p>
+     * Sets the new multicast group to which the server will join.
+     * If the server is already listening, then it will attempt to
+     * restart, generating start and stop events.
+     * May be null.
      * 
-     * <p>Take the following example:</p>
-     * 
-     * <code>import java.util.concurrent.*;
-     * ...
-     * server.setExecutor( Executors.newCachedThreadPool() );</code>
-     * 
-     * <p>Let's say three objects are registered to listen for
-     * events from the TcpServer. When the server state changes,
-     * the three objects will be called sequentially on the same
-     * thread, generated by the Cached Thread Pool. Say one of those
-     * objects takes a long time to respond, and a new incoming
-     * connection is established while waiting. Those three objects
-     * will sequentially be notified of the new connection on a
-     * different thread, generated by the Cached Thread Pool.</p>
-     *
-     * <p><strong>There is a race condition here! Recommend not using
-     * until this is resolved.</strong></p>
-     * 
-     * @param exec the new Executor or null if no executor is to be used
+     * @param group the new group to join
      */
-    public synchronized void setExecutor( Executor exec ){
-        Executor oldVal = this.executor;
-        this.executor = exec;
+    public synchronized void setGroup( String group ){
+        if( "".equals(group) ){
+            group = null;
+        }
+        
+        String oldVal = this.group;
+        this.group = group;
+        if( getState() == State.STARTED ){
+            reset();
+        }   // end if: is running
 
-        firePropertyChange( EXECUTOR_PROP, oldVal, exec  );
+        firePropertyChange( GROUP_PROP, oldVal, group  );
     }   
-    
-    
     
     
 /* ********  E V E N T S  ******** */
     
     
 
-    /** 
-     * Adds a {@link Listener}.
-     * @param l the listener
-     */
-    public synchronized void addTcpServerListener(TcpServer.Listener l) {
+    /** Adds a {@link Listener}. */    
+    public synchronized void addUdpServerListener(Listener l) {
         listeners.add(l);
     }
 
-    
-    /** 
-     * Removes a {@link Listener}.
-     * @param l the listener
-     */
-    public synchronized void removeTcpServerListener(TcpServer.Listener l) {
+    /** Removes a {@link Listener}. */
+    public synchronized void removeUdpServerListener(Listener l) {
         listeners.remove(l);
     }
     
     
-    /** Fires event when a socket is received */
-    protected synchronized void fireTcpServerSocketReceived( Socket sock ) {
-        
-        final TcpServer.Listener[] ll = listeners.toArray(new TcpServer.Listener[ listeners.size() ] );
-        final TcpServer.Event event = new TcpServer.Event( this, sock );
-        
-        // Make a Runnable object to execute the calls to listeners.
-        // In the event we don't have an Executor, this results in
-        // an unnecessary object instantiation, but it also makes
-        // the code more maintainable.
-        Runnable r = new Runnable(){
-            public void run(){
-            for( Listener l : ll ){
-                try{
-                    l.socketReceived(event);
-                } catch( Exception exc ){
-                    LOGGER.warning("TcpServer.Listener " + l + " threw an exception: " + exc.getMessage() );
-                    fireExceptionNotification(exc);
-                }   // end catch
-            }   // end for: each listener
-            }   // end run
-        };
-
-
-        // POTENTIAL RACE CONDITION. IF MANY INCOMING CONNECTIONS, THE
-        // EVENT'S getSocket() METHOD WILL NOT BE THREADSAFE.
-        if( this.executor == null ){
-            r.run();
-        } else {
-            try{
-                this.executor.execute( r ); 
-            } catch( Exception exc ){
-                LOGGER.warning("Supplied Executor " + this.executor + " threw an exception: " + exc.getMessage() );
-                fireExceptionNotification(exc);
-            }   // end catch
-        }   // end else: other thread
-     }  // end fireTcpServerPacketReceived
+    /** Fires event on calling thread. */
+    protected synchronized void fireUdpServerPacketReceived() {
+        for( Listener l : listeners ){
+            l.udpServerPacketReceived(this.event);
+        }   // end for: each listener
+     }  // end fireUdpServerPacketReceived
+    
+    
+    
+    /** Fires event on calling thread. */
+    protected synchronized void fireUdpServerStateChanged() {
+        for( Listener l : listeners ){
+            l.udpServerStateChanged(this.event);
+        }   // end for: each listener
+     }  // end fireUdpServerStateChanged
     
     
     
@@ -524,13 +454,13 @@ public class TcpServer {
      */
     public synchronized void fireProperties(){
         firePropertyChange( PORT_PROP, null, getPort()  );      // Port
-        firePropertyChange( STATE_PROP, null, getState()  );      // State
+        firePropertyChange( GROUP_PROP, null, getGroup()  );    // Multicast group
     }
     
-
+    
     /**
      * Fire a property change event on the current thread.
-     *
+     * 
      * @param prop      name of property
      * @param oldVal    old value
      * @param newVal    new value
@@ -542,96 +472,57 @@ public class TcpServer {
             LOGGER.log(Level.WARNING,
                     "A property change listener threw an exception: " + exc.getMessage()
                     ,exc);
-            fireExceptionNotification(exc);
         }   // end catch
     }   // end fire
-
-
-
-    /**
-     * Add a property listener.
-     * @param listener the property change listener
-     */
+    
+    
+    
+    /** Add a property listener. */
     public synchronized void addPropertyChangeListener( PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(listener);
     }
 
-
-    /**
-     * Add a property listener for the named property.
-     * @param property the sole property name for which to register
-     * @param listener the property change listener
-     */
+    
+    /** Add a property listener for the named property. */
     public synchronized void addPropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.addPropertyChangeListener(property,listener);
     }
-
-
-    /**
-     * Remove a property listener.
-     * @param listener the property change listener
-     */
+    
+    
+    /** Remove a property listener. */
     public synchronized void removePropertyChangeListener( PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(listener);
     }
 
-
-    /**
-     * Remove a property listener for the named property.
-     * @param property the sole property name for which to stop receiving events
-     * @param listener the property change listener
-     */
+    
+    /** Remove a property listener for the named property. */
     public synchronized void removePropertyChangeListener( String property, PropertyChangeListener listener ){
         propSupport.removePropertyChangeListener(property,listener);
     }
-
     
-
-
-/* ********  E X C E P T I O N S  ******** */
-
-
-    /**
-     * Returns the last exception (Throwable, actually)
-     * that the server encountered.
-     * @return last exception
-     */
-    public synchronized Throwable getLastException(){
-        return this.lastException;
-    }
-
-    /**
-     * Fires a property change event with the new exception.
-     * @param t
-     */
-    protected void fireExceptionNotification( Throwable t ){
-        Throwable oldVal = this.lastException;
-        this.lastException = t;
-        firePropertyChange( LAST_EXCEPTION_PROP, oldVal, t );
-    }
-
+    
     
     
     
 /* ********  L O G G I N G  ******** */
     
     /**
-     * Sets the logging level using Java's
+     * Static method to set the logging level using Java's
      * <tt>java.util.logging</tt> package. Example:
-     * <code>server.setLoggingLevel(Level.OFF);</code>.
+     * <code>UdpServer.setLoggingLevel(Level.OFF);</code>.
      * 
      * @param level the new logging level
      */
-    public void setLoggingLevel( Level level ){
+    public static void setLoggingLevel( Level level ){
         LOGGER.setLevel(level);
     }
     
     /**
-     * Retrns the logging level using Java's
+     * Static method returning the logging level using Java's
      * <tt>java.util.logging</tt> package.
      * @return the logging level
      */
-    public Level getLoggingLevel(){
+    public static Level getLoggingLevel(){
         return LOGGER.getLevel();
     }
     
@@ -653,26 +544,35 @@ public class TcpServer {
     
     
     /**
-     * An interface for listening to events from a {@link TcpServer}.
+     * An interface for listening to events from a {@link UdpServer}.
      * A single {@link Event} is shared for all invocations
      * of these methods.
      * 
      * <p>This code is released into the Public Domain.
      * Since this is Public Domain, you don't need to worry about
-     * licensing, and you can simply copy this TcpServer.java file
+     * licensing, and you can simply copy this UdpServer.java file
      * to your own package and use it as you like. Enjoy.
      * Please consider leaving the following statement here in this code:</p>
      * 
-     * <p><em>This <tt>TcpServer</tt> class was copied to this project from its source as 
+     * <p><em>This <tt>UdpServer</tt> class was copied to this project from its source as 
      * found at <a href="http://iharder.net" target="_blank">iHarder.net</a>.</em></p>
      *
      * @author Robert Harder
      * @author rharder@users.sourceforge.net
      * @version 0.1
-     * @see TcpServer
+     * @see UdpServer
+     * @see Adapter
      * @see Event
      */
     public static interface Listener extends java.util.EventListener {
+
+        /**
+         * Called when the state of the server has changed, such as
+         * "starting" or "stopped."
+         * @param evt the event
+         * @see UdpServer.State
+         */
+        public abstract void udpServerStateChanged( Event evt );
 
         /**
          * Called when a packet is received. This is called on the IO thread,
@@ -681,8 +581,9 @@ public class TcpServer {
          * since it will be clobbered the next time around.
          * 
          * @param evt the event
+         * @see Event#getPacket
          */
-        public abstract void socketReceived( Event evt );
+        public abstract void udpServerPacketReceived( Event evt );
 
 
     }   // end inner static class Listener
@@ -701,40 +602,40 @@ public class TcpServer {
 
     /**
      * A helper class that implements all methods of the
-     * {@link TcpServer.Listener} interface with empty methods.
+     * {@link UdpServer.Listener} interface with empty methods.
      * 
      * <p>This code is released into the Public Domain.
      * Since this is Public Domain, you don't need to worry about
-     * licensing, and you can simply copy this TcpServer.java file
+     * licensing, and you can simply copy this UdpServer.java file
      * to your own package and use it as you like. Enjoy.
      * Please consider leaving the following statement here in this code:</p>
      * 
-     * <p><em>This <tt>TcpServer</tt> class was copied to this project from its source as 
+     * <p><em>This <tt>UdpServer</tt> class was copied to this project from its source as 
      * found at <a href="http://iharder.net" target="_blank">iHarder.net</a>.</em></p>
      *
      * @author Robert Harder
      * @author rharder@users.sourceforge.net
      * @version 0.1
-     * @see TcpServer
+     * @see UdpServer
      * @see Listener
      * @see Event
      */
-//    public class Adapter implements Listener {
+    public class Adapter implements Listener {
 
         /**
-         * Empty call for {@link TcpServer.Listener#tcpServerStateChanged}.
+         * Empty call for {@link UdpServer.Listener#udpServerStateChanged}.
          * @param evt the event
          */
-      //  public void tcpServerStateChanged(Event evt) {}
+        public void udpServerStateChanged(Event evt) {}
 
 
         /**
-         * Empty call for {@link TcpServer.Listener#socketReceived}.
+         * Empty call for {@link UdpServer.Listener#udpServerPacketReceived}.
          * @param evt the event
          */
-//        public void socketReceived(Event evt) {}
+        public void udpServerPacketReceived(Event evt) {}
 
-//    }   // end static inner class Adapter
+    }   // end static inner class Adapter
     
     
 /* ********                                                    ******** */
@@ -746,70 +647,104 @@ public class TcpServer {
     
 
     /**
-     * An event representing activity by a {@link TcpServer}.
+     * An event representing activity by a {@link UdpServer}.
      * 
      * <p>This code is released into the Public Domain.
      * Since this is Public Domain, you don't need to worry about
-     * licensing, and you can simply copy this TcpServer.java file
+     * licensing, and you can simply copy this UdpServer.java file
      * to your own package and use it as you like. Enjoy.
      * Please consider leaving the following statement here in this code:</p>
      * 
-     * <p><em>This <tt>TcpServer</tt> class was copied to this project from its source as 
+     * <p><em>This <tt>UdpServer</tt> class was copied to this project from its source as 
      * found at <a href="http://iharder.net" target="_blank">iHarder.net</a>.</em></p>
      *
      * @author Robert Harder
      * @author rharder@users.sourceforge.net
      * @version 0.1
-     * @see TcpServer
+     * @see UdpServer
+     * @see Adapter
      * @see Listener
      */
     public static class Event extends java.util.EventObject {
 
-        private final static long serialVersionUID = 1;
 
-        private Socket socket;
-        
         /**
-         * Creates a Event based on the given {@link TcpServer}.
+         * Creates a Event based on the given {@link UdpServer}.
          * @param src the source of the event
          */
-        public Event( TcpServer src, Socket sock ){
+        public Event( UdpServer src ){
             super(src);
-            this.socket = sock;
         }
 
         /**
-         * Returns the source of the event, a {@link TcpServer}.
-         * Shorthand for <tt>(TcpServer)getSource()</tt>.
+         * Returns the source of the event, a {@link UdpServer}.
+         * Shorthand for <tt>(UdpServer)getSource()</tt>.
          * @return the server
          */
-        public TcpServer getTcpServer(){
-            return (TcpServer)getSource();
+        public UdpServer getUdpServer(){
+            return (UdpServer)getSource();
         }
 
         /**
-         * Shorthand for <tt>getTcpServer().getState()</tt>.
-         * This is the state at the moment the method is called,
-         * not the state at the moment the event is created.
+         * Shorthand for <tt>getUdpServer().getState()</tt>.
          * @return the state of the server
-         * @see TcpServer.State
+         * @see UdpServer.State
          */
-        public TcpServer.State getState(){
-            return getTcpServer().getState();
+        public UdpServer.State getState(){
+            return getUdpServer().getState();
         }
 
 
         /**
-         * Returns the new socket.
-         * @return the new socket.
+         * Returns the most recent datagram packet received
+         * by the {@link UdpServer}. Shorthand for
+         * <tt>getUdpServer().getPacket()</tt>.
+         * @return the most recent datagram
          */
-        public Socket getSocket(){
-            return this.socket;
+        public DatagramPacket getPacket(){
+            return getUdpServer().getPacket();
         }
 
+        /**
+         * Copies and returns the bytes in the most recently
+         * received packet, or null if not available.
+         * @return a copy of the datagram's byte array
+         */
+        public byte[] getPacketAsBytes(){
+            DatagramPacket packet = getPacket();
+            if( packet == null ){
+                return null;
+            } else {
+                byte[] data = new byte[ packet.getLength() ];
+                System.arraycopy(
+                  packet.getData(), packet.getOffset(),
+                  data, 0, data.length );
+                return data;
+            }   // end else
+        }   // end getPacketAsBytes
+
+
+        /**
+         * Returns the data in the most recently-received
+         * packet as if it were a String
+         * or null if not available.
+         * @return The datagram as a string
+         */
+        public String getPacketAsString(){
+            DatagramPacket packet = getPacket();
+            if( packet == null ){
+                return null;
+            } else {
+                String s = new String(
+                  packet.getData(), 
+                  packet.getOffset(),
+                  packet.getLength() );
+                return s;
+            }   // end else
+        }
 
     }   // end static inner class Event
 
     
 
-}   // end class TcpServer
+}   // end class UdpServer

@@ -16,7 +16,7 @@
 					20,
 					443,
 					20,
-					48.1626,
+					48,
 					43,
 					43,
 					20,
@@ -31,12 +31,12 @@
 					PBXFileDataSource_Target_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 193804453;
-			PBXWorkspaceStateSaveDate = 193804453;
+			PBXPerProjectTemplateStateSaveDate = 257223128;
+			PBXWorkspaceStateSaveDate = 257223128;
 		};
 		perUserProjectItems = {
-			D48EE95A0B8D425700ACC122 /* PBXBookmark */ = D48EE95A0B8D425700ACC122 /* PBXBookmark */;
 			D48EE95B0B8D425700ACC122 /* PBXTextBookmark */ = D48EE95B0B8D425700ACC122 /* PBXTextBookmark */;
+			D4DB818C0F54EA1800AA25A3 /* PBXTextBookmark */ = D4DB818C0F54EA1800AA25A3 /* PBXTextBookmark */;
 		};
 		sourceControlManager = D48EE9580B8D38B200ACC122 /* Source Control */;
 		userBuildSettings = {
@@ -50,12 +50,12 @@
 	};
 	D48EE93F0B8D38A500ACC122 /* ThreadWorker */ = {
 		isa = PBXExecutable;
-		activeArgIndex = 2147483647;
 		activeArgIndices = (
 		);
 		argumentStrings = (
 		);
 		autoAttachOnCrash = 1;
+		breakpointsEnabled = 0;
 		configStateDict = {
 		};
 		customDataFormattersEnabled = 1;
@@ -84,10 +84,6 @@
 		isa = PBXCodeSenseManager;
 		indexTemplatePath = "";
 	};
-	D48EE95A0B8D425700ACC122 /* PBXBookmark */ = {
-		isa = PBXBookmark;
-		fRef = F55FE954020F745C01A80002 /* ThreadWorker.m */;
-	};
 	D48EE95B0B8D425700ACC122 /* PBXTextBookmark */ = {
 		isa = PBXTextBookmark;
 		fRef = F55FE954020F745C01A80002 /* ThreadWorker.m */;
@@ -98,10 +94,21 @@
 		vrLen = 1206;
 		vrLoc = 5811;
 	};
+	D4DB818C0F54EA1800AA25A3 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = F55FE954020F745C01A80002 /* ThreadWorker.m */;
+		name = "ThreadWorker.m: 242";
+		rLen = 0;
+		rLoc = 6445;
+		rType = 0;
+		vrLen = 1260;
+		vrLoc = 5757;
+	};
 	F55FE954020F745C01A80002 /* ThreadWorker.m */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {830, 3724}}";
+			sepNavIntBoundsRect = "{{0, 0}, {822, 3682}}";
 			sepNavSelRange = "{6445, 0}";
+			sepNavVisRange = "{5757, 1260}";
 			sepNavVisRect = "{{0, 3154}, {641, 570}}";
 		};
 	};
