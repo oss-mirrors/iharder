@@ -39,6 +39,8 @@ import java.nio.CharBuffer;
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.1 - Added {@link #encodeBytesToBytes(byte[], int, int, int)} to be
+ *   more efficient with memory by not returning a String but just a byte array.</li>
  *  <li>v2.3 - <strong>This is not a drop-in replacement!</strong> This is two years of comments
  *   and bug fixes queued up and finally executed. Thanks to everyone who sent
  *   me stuff, and I'm sorry I wasn't able to distribute your fixes to everyone else.
@@ -119,7 +121,7 @@ import java.nio.CharBuffer;
  *
  * @author Robert Harder
  * @author rob@iharder.net
- * @version 2.3 PENDING
+ * @version 2.3.1
  */
 public class Base64
 {
@@ -714,7 +716,7 @@ public class Base64
      * @param options Specified options
      * @return The Base64-encoded data as a String
      * @see Base64#GZIP
-     * @see Base64#DONT_BREAK_LINES
+     * @see Base64#DO_BREAK_LINES
      * @throws java.io.IOException if there is an error
      * @throws NullPointerException if source array is null
      * @since 2.0
@@ -784,13 +786,46 @@ public class Base64
      * @param options Specified options
      * @return The Base64-encoded data as a String
      * @see Base64#GZIP
-     * @see Base64#DONT_BREAK_LINES
+     * @see Base64#DO_BREAK_LINES
      * @throws java.io.IOException if there is an error
      * @throws NullPointerException if source array is null
      * @throws IllegalArgumentException if source array, offset, or length are invalid
      * @since 2.0
      */
     public static String encodeBytes( byte[] source, int off, int len, int options ) throws java.io.IOException {
+        byte[] encoded = encodeBytesToBytes( source, off, len, options );
+
+        // Return value according to relevant encoding.
+        try {
+            return new String( encoded, PREFERRED_ENCODING );
+        }   // end try
+        catch (java.io.UnsupportedEncodingException uue) {
+            return new String( encoded );
+        }   // end catch
+        
+    }   // end encodeBytes
+
+
+
+    /**
+     * Similar to {@link #encodeBytes(byte[], int, int, int)} but returns
+     * a byte array instead of instantiating a String. This is more efficient
+     * if you're working with I/O streams and have large data sets to encode.
+     *
+     *
+     * @param source The data to convert
+     * @param off Offset in array where conversion should begin
+     * @param len Length of data to convert
+     * @param options Specified options
+     * @return The Base64-encoded data as a String
+     * @see Base64#GZIP
+     * @see Base64#DO_BREAK_LINES
+     * @throws java.io.IOException if there is an error
+     * @throws NullPointerException if source array is null
+     * @throws IllegalArgumentException if source array, offset, or length are invalid
+     * @since 2.3.1
+     */
+    public static byte[] encodeBytesToBytes( byte[] source, int off, int len, int options ) throws java.io.IOException {
 
         if( source == null ){
             throw new NullPointerException( "Cannot serialize a null array." );
@@ -803,26 +838,26 @@ public class Base64
         if( len < 0 ){
             throw new IllegalArgumentException( "Cannot have length offset: " + len );
         }   // end if: len < 0
-        
+
         if( off + len > source.length  ){
             throw new IllegalArgumentException(
             String.format( "Cannot have offset of %d and length of %d with array of length %d", off,len,source.length));
         }   // end if: off < 0
-        
-        
-        
+
+
+
         // Compress?
         if( (options & GZIP) > 0 ) {
             java.io.ByteArrayOutputStream  baos  = null;
             java.util.zip.GZIPOutputStream gzos  = null;
             Base64.OutputStream            b64os = null;
-            
+
             try {
                 // GZip -> Base64 -> ByteArray
                 baos = new java.io.ByteArrayOutputStream();
                 b64os = new Base64.OutputStream( baos, ENCODE | options );
-                gzos  = new java.util.zip.GZIPOutputStream( b64os ); 
-            
+                gzos  = new java.util.zip.GZIPOutputStream( b64os );
+
                 gzos.write( source, off, len );
                 gzos.close();
             }   // end try
@@ -837,23 +872,17 @@ public class Base64
                 try{ baos.close();  } catch( Exception e ){}
             }   // end finally
 
-            // Return value according to relevant encoding.
-            try {
-                return new String( baos.toByteArray(), PREFERRED_ENCODING );
-            }   // end try
-            catch (java.io.UnsupportedEncodingException uue) {
-                return new String( baos.toByteArray() );
-            }   // end catch
+            return baos.toByteArray();
         }   // end if: compress
-        
+
         // Else, don't compress. Better not to use streams at all then.
         else {
             boolean breakLines = (options & DO_BREAK_LINES) > 0;
-            
+
             int    len43   = len * 4 / 3;
             byte[] outBuff = new byte[   ( len43 )                      // Main 4:3
                                        + ( (len % 3) > 0 ? 4 : 0 )      // Account for padding
-                                       + (breakLines ? ( len43 / MAX_LINE_LENGTH ) : 0) ]; // New lines      
+                                       + (breakLines ? ( len43 / MAX_LINE_LENGTH ) : 0) ]; // New lines
             int d = 0;
             int e = 0;
             int len2 = len - 2;
@@ -863,7 +892,7 @@ public class Base64
 
                 lineLength += 4;
                 if( breakLines && lineLength == MAX_LINE_LENGTH )
-                {   
+                {
                     outBuff[e+4] = NEW_LINE;
                     e++;
                     lineLength = 0;
@@ -875,18 +904,14 @@ public class Base64
                 e += 4;
             }   // end if: some padding needed
 
-            
-            // Return value according to relevant encoding.
-            try {
-                return new String( outBuff, 0, e, PREFERRED_ENCODING );
-            }   // end try
-            catch (java.io.UnsupportedEncodingException uue) {
-                return new String( outBuff, 0, e );
-            }   // end catch
-            
-        }   // end else: don't compress
+
+            byte[] finalOut = new byte[e];
+            System.arraycopy(outBuff,0, finalOut,0,e);
+            return finalOut;
         
-    }   // end encodeBytes
+        }   // end else: don't compress
+
+    }   // end encodeBytesToBytes
     
 
     
@@ -1504,7 +1529,7 @@ public class Base64
          * @param options Specified options
          * @see Base64#ENCODE
          * @see Base64#DECODE
-         * @see Base64#DONT_BREAK_LINES
+         * @see Base64#DO_BREAK_LINES
          * @since 2.0
          */
         public InputStream( java.io.InputStream in, int options ) {
@@ -1718,7 +1743,7 @@ public class Base64
          * @param options Specified options.
          * @see Base64#ENCODE
          * @see Base64#DECODE
-         * @see Base64#DONT_BREAK_LINES
+         * @see Base64#DO_BREAK_LINES
          * @since 1.3
          */
         public OutputStream( java.io.OutputStream out, int options ) {
