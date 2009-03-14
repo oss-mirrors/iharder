@@ -18,7 +18,11 @@ public class CLI {
         "\tU\tTilt up",
         "\tD\tTilt down",
         "\tL\tPan left",
-        "\tR\tPan right"
+        "\tR\tPan right",
+        "\tI\tZoom in",
+        "\tO\tZoom out",
+        "\tZ\tZoom to this amount (0..100), mostly wide ex: Z10",
+        "\tT\tTitle, ex: TFront Room"
     };
     private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
     private static Camera cam;
@@ -58,6 +62,30 @@ public class CLI {
                 case 'D': case 'd': cam.tiltDown(.5,howLong);   break;
                 case 'L': case 'l': cam.panLeft(.5,howLong);    break;
                 case 'R': case 'r': cam.panRight(.5,howLong);   break;
+                case 'I': case 'i': cam.zoomIn(.5, howLong);    break;
+                case 'O': case 'o': cam.zoomOut(.5, howLong);   break;
+                case 'Z': case 'z':
+                    if( i < in.length() -1 ){
+                        int amt = -1;
+                        try{ amt = Integer.parseInt( in.substring(i+1) ); }
+                        catch( Exception exc ){}
+                        if( amt < 0 || amt > 100 ){
+                            System.err.println("Invalid zoom command. Should be 0..100: " + in );
+                        } else {
+                            cam.setZoom(amt * 0.01);
+                        }
+                    }   // end if: text follows
+                    i = in.length();
+                    break;
+                case 'T': case 't':
+                    if( i < in.length() -1 ){
+                        cam.setTitle( in.substring(i+1) );
+                        cam.setShowTitle(true);
+                    } else {
+                        cam.setShowTitle(false);
+                    }
+                    i = in.length();
+                    break;
                 case '.': cam.delay(howLong);                   break;
                 case 'Q': case 'q': System.exit(0);             break;
                 default: printUsage();                          break;

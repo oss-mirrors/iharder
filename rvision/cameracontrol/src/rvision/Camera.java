@@ -934,20 +934,13 @@ public class Camera {
             byte[] reply = new byte[1];                             // Replies typically 6 bytes
             int read = -1;                                          // Count how many bytse were received
             final Thread t = Thread.currentThread();                // Current thread to interrupt
-            /*java.util.TimerTask task = new java.util.TimerTask(){   // Timer task
-                public void run(){
-                    t.interrupt();                                  // Interrupt
-                }   // end run
-            };  // end task
-            this.timer.schedule(task,100);                          // Timeout
-             */
             Thread inter = new Thread( new Runnable(){
                 public void run(){
                     try{ 
-                        Thread.sleep(100); 
+                        Thread.sleep(250);
                         //LOGGER.finer("Interrupting read thread...");
                         t.interrupt();
-                        //LOGGER.finer("Interrupted read thread.");
+                        LOGGER.finer("Interrupted read thread.");
                     }
                     catch( InterruptedException exc ){
                         //LOGGER.finer("Interrupting thread was interrupted - this is standard behavior.");
@@ -960,7 +953,7 @@ public class Camera {
                 read = this.inFromCamera.read(reply);               // Read response. 
                                                                     // We don't really care what it is.
                 //LOGGER.finer("Done reading from camera.");
-                //task.cancel();                                      // Cancel task
+                Thread.sleep(100);
                 inter.interrupt();
             } catch( Exception exc ){
                 LOGGER.warning("Timeout cancelled reading from camera after 100 ms.");
