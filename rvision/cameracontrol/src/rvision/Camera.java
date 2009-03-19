@@ -16,7 +16,7 @@ public class Camera {
         //for( String s : SerialStream.getPortNames() ){
         //    System.out.println(s);
         //}//System.exit(0);
-        Camera c = new Camera( "COM12" );
+        Camera c = new Camera( "COM1" );
         Thread.sleep(1000);
         
         //c.panRight(1).delay(250).panTiltStop();

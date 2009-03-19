@@ -26,17 +26,24 @@ public class CLI {
     };
     private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
     private static Camera cam;
-    private static int howLong = 100;
+    private static int howLong = 50;
     
     public static void main(String[] args) throws Exception{
-        args = new String[]{"/dev/cu.PL2303-0000103D"};
+
+
+        //args = new String[]{"/dev/cu.PL2303-0000103D"};
         if( args.length ==  0 ){
             String[] names = SerialStream.getPortNames();
             System.out.println("Serial ports:");
-            for( String n : names ){
-                System.out.println("\t" + n );
+            for( int i = 0; i < names.length; i++ ){
+                System.out.println(String.format("  %2d: " + names[i], (i+1) ) );
             }
-            System.exit(1);
+            System.out.print( String.format("Select a port (1-%d): ", (names.length)));
+            BufferedReader br = new BufferedReader( new InputStreamReader( System.in) );
+            String resp = br.readLine();
+            int respI = Integer.parseInt(resp);
+            args = new String[]{ names[respI-1] };
+
         }
         cam = new Camera(args[0]);
         //cam = new UdpCameraClient( "localhost", 8001 );
