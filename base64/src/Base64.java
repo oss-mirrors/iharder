@@ -1,4 +1,5 @@
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 
@@ -39,8 +40,9 @@ import java.nio.CharBuffer;
  * Change Log:
  * </p>
  * <ul>
- *  <li>v2.3.1 - Added {@link #encodeBytesToBytes(byte[], int, int, int)} to be
- *   more efficient with memory by not returning a String but just a byte array.</li>
+ *  <li>v2.3.1 - Added {@link #encodeBytesToBytes(byte[], int, int, int)} and some
+ *   similar helper methods to be more efficient with memory by not returning a
+ *   String but just a byte array.</li>
  *  <li>v2.3 - <strong>This is not a drop-in replacement!</strong> This is two years of comments
  *   and bug fixes queued up and finally executed. Thanks to everyone who sent
  *   me stuff, and I'm sorry I wasn't able to distribute your fixes to everyone else.
@@ -807,6 +809,29 @@ public class Base64
 
 
 
+
+    /**
+     * Similar to {@link #encodeBytes(byte[])} but returns
+     * a byte array instead of instantiating a String. This is more efficient
+     * if you're working with I/O streams and have large data sets to encode.
+     *
+     *
+     * @param source The data to convert
+     * @return The Base64-encoded data as a byte[] (of ASCII characters)
+     * @throws NullPointerException if source array is null
+     * @since 2.3.1
+     */
+    public static byte[] encodeBytesToBytes( byte[] source ) {
+        byte[] encoded = null;
+        try {
+            encoded = encodeBytesToBytes( source, 0, source.length, Base64.NO_OPTIONS );
+        } catch( IOException ex ) {
+            assert false : "IOExceptions only come from GZipping, which is turned off: " + ex.getMessage();
+        }
+        return encoded;
+    }
+
+
     /**
      * Similar to {@link #encodeBytes(byte[], int, int, int)} but returns
      * a byte array instead of instantiating a String. This is more efficient
@@ -1019,15 +1044,43 @@ public class Base64
         }
     }   // end decodeToBytes
     
-    
+
+
+
+
+    /**
+     * Low-level access to decoding ASCII characters in
+     * the form of a byte array. <strong>Ignores GUNZIP option, if
+     * it's set.</strong> This is not generally a recommended method,
+     * although it is used internally as part of the decoding process.
+     * Special case: if len = 0, an empty array is returned. Still,
+     * if you need more speed and reduced memory footprint (and aren't
+     * gzipping), consider this method.
+     *
+     * @param source The Base64 encoded data
+     * @return decoded data
+     * @since 2.3.1
+     */
+    public static byte[] decode( byte[] source ){
+        byte[] decoded = null;
+        try {
+            decoded = decode( source, 0, source.length, Base64.NO_OPTIONS );
+        } catch( IOException ex ) {
+            assert false : "IOExceptions only come from GZipping, which is turned off: " + ex.getMessage();
+        }
+        return decoded;
+    }
+
     
     
     /**
      * Low-level access to decoding ASCII characters in
-     * the form of a byte array. Ignores GUNZIP option, if
-     * it's set. This is not generally a recommended method,
+     * the form of a byte array. <strong>Ignores GUNZIP option, if
+     * it's set.</strong> This is not generally a recommended method,
      * although it is used internally as part of the decoding process.
-     * Special case: if len = 0, an empty array is returned.
+     * Special case: if len = 0, an empty array is returned. Still,
+     * if you need more speed and reduced memory footprint (and aren't
+     * gzipping), consider this method.
      *
      * @param source The Base64 encoded data
      * @param off    The offset of where to begin decoding
