@@ -31,15 +31,20 @@ import java.nio.CharBuffer;
  * <p>The constants defined in Base64 can be OR-ed together to combine options, so you 
  * might make a call like this:</p>
  *
- * <code>String encoded = Base64.encodeBytes( mybytes, Base64.GZIP | Base64.DONT_BREAK_LINES );</code>
+ * <code>String encoded = Base64.encodeBytes( mybytes, Base64.GZIP | Base64.DO_BREAK_LINES );</code>
  *
- * <p>to compress the data before encoding it and then making the output have no newline characters.</p>
+ * <p>to compress the data before encoding it and then making the output have newline characters.</p>
  *
  *
  * <p>
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.2 - Reduced memory footprint! Finally refined the "guessing" of how big the
+ *   final encoded data will be so that the code doesn't have to create two output
+ *   arrays: an oversized initial one and then a final, exact-sized one. Big win
+ *   when using the {@link #encodeBytesToBytes(byte[]) family of methods (and not
+ *   using the gzip options which uses a different mechanism with streams and stuff).</li>
  *  <li>v2.3.1 - Added {@link #encodeBytesToBytes(byte[], int, int, int)} and some
  *   similar helper methods to be more efficient with memory by not returning a
  *   String but just a byte array.</li>
@@ -123,7 +128,7 @@ import java.nio.CharBuffer;
  *
  * @author Robert Harder
  * @author rob@iharder.net
- * @version 2.3.1
+ * @version 2.3.2
  */
 public class Base64
 {
@@ -904,10 +909,20 @@ public class Base64
         else {
             boolean breakLines = (options & DO_BREAK_LINES) > 0;
 
-            int    len43   = len * 4 / 3;
-            byte[] outBuff = new byte[   ( len43 )                      // Main 4:3
-                                       + ( (len % 3) > 0 ? 4 : 0 )      // Account for padding
-                                       + (breakLines ? ( len43 / MAX_LINE_LENGTH ) : 0) ]; // New lines
+            //int    len43   = len * 4 / 3;
+            //byte[] outBuff = new byte[   ( len43 )                      // Main 4:3
+            //                           + ( (len % 3) > 0 ? 4 : 0 )      // Account for padding
+            //                           + (breakLines ? ( len43 / MAX_LINE_LENGTH ) : 0) ]; // New lines
+            // Try to determine more precisely how big the array needs to be.
+            // If we get it right, we don't have to do an array copy, and
+            // we save a bunch of memory.
+            int encLen = ( len / 3 ) * 4 + ( len % 3 > 0 ? 4 : 0 ); // Bytes needed for actual encoding
+            if( breakLines ){
+                encLen += encLen / MAX_LINE_LENGTH; // Plus extra newline characters
+            }
+            byte[] outBuff = new byte[ encLen ];
+
+
             int d = 0;
             int e = 0;
             int len2 = len - 2;
@@ -916,7 +931,7 @@ public class Base64
                 encode3to4( source, d+off, 3, outBuff, e, options );
 
                 lineLength += 4;
-                if( breakLines && lineLength == MAX_LINE_LENGTH )
+                if( breakLines && lineLength >= MAX_LINE_LENGTH )
                 {
                     outBuff[e+4] = NEW_LINE;
                     e++;
@@ -930,9 +945,16 @@ public class Base64
             }   // end if: some padding needed
 
 
-            byte[] finalOut = new byte[e];
-            System.arraycopy(outBuff,0, finalOut,0,e);
-            return finalOut;
+            // Only resize array if we didn't guess it right.
+            if( e < outBuff.length - 1 ){
+                byte[] finalOut = new byte[e];
+                System.arraycopy(outBuff,0, finalOut,0,e);
+                //System.err.println("Having to resize array from " + outBuff.length + " to " + e );
+                return finalOut;
+            } else {
+                //System.err.println("No need to resize array.");
+                return outBuff;
+            }
         
         }   // end else: don't compress
 
