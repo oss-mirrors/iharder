@@ -79,7 +79,28 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
             String serialPort = null;
             String group = null;
             String keyFile = null;
-            
+
+            if( args.length == 0 ){
+
+                String[] names = SerialStream.getPortNames();
+                System.out.println("Serial ports:");
+                for( int i = 0; i < names.length; i++ ){
+                    System.out.println(String.format("  %2d: " + names[i], (i+1) ) );
+                }
+                System.out.print( String.format("Select a port (1-%d): ", (names.length)));
+                BufferedReader br = new BufferedReader( new InputStreamReader( System.in) );
+                String resp = br.readLine();
+                int respI = Integer.parseInt(resp);
+                String portName = names[respI-1];
+
+                System.out.print("List on UDP port number: ");
+                resp = br.readLine();
+                int portResp = Integer.parseInt(resp);
+
+                args = new String[]{ "-s", portName, "-p", "" + portResp };
+
+            }
+
             if( args.length <= 1 ){
                 
                 if( "-h".equals(args[0]) ){

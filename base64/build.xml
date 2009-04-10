@@ -1,0 +1,44 @@
+<project name="base64" basedir="." default="main">
+    <property name="src.dir"      value="src" />
+    <property name="build.dir"    value="build" />
+    <property name="dist.dir"     value="dist" />
+    <property name="api.dir"      value="api" />
+    <property name="classes.dir"  value="${build.dir}/classes" />
+    
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+        <delete dir="${api.dir}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" />
+    </target>
+    
+    <target name="api">
+        <!--mkdir dir="${api.dir}" /-->
+        <javadoc 
+          sourcefiles="${src.dir}/Base64.java" 
+          destdir="${api.dir}"
+          Version="yes" 
+          Author="yes" 
+          Windowtitle="Base64 Public Domain Encoder/Decoder" >
+          
+        </javadoc>
+    </target>
+
+    <target name="dist" depends="compile,api">
+        <mkdir dir="${dist.dir}"/>
+        <copy todir="${dist.dir}">
+          <fileset dir="${src.dir}" includes="Base64.java" />
+        </copy>
+        <copy todir="${dist.dir}/${api.dir}">
+          <fileset dir="${api.dir}" />
+        </copy>
+    </target>
+    
+    <target name="clean-build" depends="clean,compile" />
+    
+    <target name="main" depends="dist" />
+</project>

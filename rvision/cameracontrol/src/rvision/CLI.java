@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package rvision;
 
@@ -30,11 +26,19 @@ public class CLI {
     
     public static void main(String[] args) throws Exception{
 
+        if( args.length == 3 ){
+            if( args[0].contains("-u") ){
+                String host = args[1];
+                int port = Integer.parseInt(args[2]);
+                cam = new UdpCameraClient( host, port );
+            }
+        }
 
         //args = new String[]{"/dev/cu.PL2303-0000103D"};
         if( args.length ==  0 ){
             String[] names = SerialStream.getPortNames();
             System.out.println("Serial ports:");
+            System.out.println(String.format("  %2d: " + "Connect to UDP camera server", 0 ) );
             for( int i = 0; i < names.length; i++ ){
                 System.out.println(String.format("  %2d: " + names[i], (i+1) ) );
             }
@@ -42,10 +46,21 @@ public class CLI {
             BufferedReader br = new BufferedReader( new InputStreamReader( System.in) );
             String resp = br.readLine();
             int respI = Integer.parseInt(resp);
-            args = new String[]{ names[respI-1] };
 
+            if( respI == 0 ){
+                System.out.print("Connect to host and port (ex, localhost 4000): ");
+                String[] hp = br.readLine().split(" ");
+                cam = new UdpCameraClient( hp[0], Integer.parseInt(hp[1]));
+            } else {
+                args = new String[]{ names[respI-1] };
+                cam = new Camera(args[0]);
+            }
         }
-        cam = new Camera(args[0]);
+
+        if( cam == null ){
+            System.err.println("No camera is set up." );
+            System.exit(1);
+        }
         //cam = new UdpCameraClient( "localhost", 8001 );
         //System.out.println("Serial port: " + cam.serialPort);
         while( true ){

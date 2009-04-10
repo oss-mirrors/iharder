@@ -254,7 +254,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testEncodeBytes_4args() throws Exception {
-        System.out.println("TODO encodeBytes");
+        fail("TODO encodeBytes");
 //        String result = Base64.encodeBytes(source, off, len, options);
     }
 
@@ -263,7 +263,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testDecode_4args() throws Exception {
-        System.out.println("TODO decode");
+        fail("TODO decode");
         byte[] source = null;
         int off = 0;
         int len = 0;
@@ -439,7 +439,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testEncodeToFile() throws Exception {
-        System.out.println("TODO encodeToFile");
+        fail("TODO encodeToFile");
         byte[] dataToEncode = null;
         String filename = "";
         //Base64.encodeToFile(dataToEncode, filename);
@@ -452,7 +452,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testDecodeToFile() throws Exception {
-        System.out.println("TODO decodeToFile");
+        fail("TODO decodeToFile");
         String dataToDecode = "";
         String filename = "";
         //Base64.decodeToFile(dataToDecode, filename);
@@ -465,7 +465,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testDecodeFromFile() throws Exception {
-        System.out.println("TODO decodeFromFile");
+        fail("TODO decodeFromFile");
         String filename = "";
         byte[] expResult = null;
         //byte[] result = Base64.decodeFromFile(filename);
@@ -479,7 +479,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testEncodeFromFile() throws Exception {
-        System.out.println("TODO encodeFromFile");
+        fail("TODO encodeFromFile");
         String filename = "";
         String expResult = "";
         //String result = Base64.encodeFromFile(filename);
@@ -493,7 +493,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testEncodeFileToFile() throws Exception {
-        System.out.println("TODO encodeFileToFile");
+        fail("TODO encodeFileToFile");
         String infile = "";
         String outfile = "";
         //Base64.encodeFileToFile(infile, outfile);
@@ -506,7 +506,7 @@ public class Base64Test extends TestCase {
      */
 
     public void testDecodeFileToFile() throws Exception {
-        System.out.println("TODO decodeFileToFile");
+        fail("TODO decodeFileToFile");
         String infile = "";
         String outfile = "";
         //Base64.decodeFileToFile(infile, outfile);
@@ -518,20 +518,20 @@ public class Base64Test extends TestCase {
      * Test of encodeBytesToBytes method, of class Base64.
      */
     public void testEncodeBytesToBytes_byteArr() {
-        System.out.println("encodeBytesToBytes");
+        fail("TODO encodeBytesToBytes");
         byte[] source = null;
         byte[] expResult = null;
         byte[] result = Base64.encodeBytesToBytes(source);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        //fail("The test case is a prototype.");
     }
 
     /**
      * Test of encodeBytesToBytes method, of class Base64.
      */
     public void testEncodeBytesToBytes_4args() throws Exception {
-        System.out.println("encodeBytesToBytes");
+        fail("TODO encodeBytesToBytes");
         byte[] source = null;
         int off = 0;
         int len = 0;
@@ -540,33 +540,33 @@ public class Base64Test extends TestCase {
         byte[] result = Base64.encodeBytesToBytes(source, off, len, options);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        //fail("The test case is a prototype.");
     }
 
     /**
      * Test of decode method, of class Base64.
      */
     public void testDecode_byteArr() {
-        System.out.println("decode");
+        fail("TODO decode");
         byte[] source = null;
         byte[] expResult = null;
         byte[] result = Base64.decode(source);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        //fail("The test case is a prototype.");
     }
 
     /**
      * Test of decodeToObject method, of class Base64.
      */
     public void testDecodeToObject() throws Exception {
-        System.out.println("decodeToObject");
+        fail("TODO decodeToObject");
         String encodedObject = "";
         Object expResult = null;
         Object result = Base64.decodeToObject(encodedObject);
         assertEquals(expResult, result);
         // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        //fail("The test case is a prototype.");
     }
 
 

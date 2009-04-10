@@ -13,7 +13,7 @@ import java.nio.CharBuffer;
  * <p>Example:</p>
  * 
  * <code>String encoded = Base64.encode( myByteArray );</code>
- * 
+ * <br />
  * <code>byte[] myByteArray = Base64.decode( encoded );</code>
  *
  * <p>The <tt>options</tt> parameter, which appears in a few places, is used to pass 
@@ -24,9 +24,8 @@ import java.nio.CharBuffer;
  *
  * <p>Note, according to <a href="http://www.faqs.org/rfcs/rfc3548.html">RFC3548</a>,
  * Section 2.1, implementations should not add line feeds unless explicitly told
- * to do so. I've got Base64 set the opposite way so that you tell it _not_ to
- * add line feeds since I always thought line feeds were required -- I was wrong,
- * but I'm reluctant to change the default behavior now. Sorry.</p>
+ * to do so. I've got Base64 set to this behavior now, although earlier versions
+ * broke lines by default.</p>
  *
  * <p>The constants defined in Base64 can be OR-ed together to combine options, so you 
  * might make a call like this:</p>
@@ -43,7 +42,7 @@ import java.nio.CharBuffer;
  *  <li>v2.3.2 - Reduced memory footprint! Finally refined the "guessing" of how big the
  *   final encoded data will be so that the code doesn't have to create two output
  *   arrays: an oversized initial one and then a final, exact-sized one. Big win
- *   when using the {@link #encodeBytesToBytes(byte[]) family of methods (and not
+ *   when using the {@link #encodeBytesToBytes(byte[])} family of methods (and not
  *   using the gzip options which uses a different mechanism with streams and stuff).</li>
  *  <li>v2.3.1 - Added {@link #encodeBytesToBytes(byte[], int, int, int)} and some
  *   similar helper methods to be more efficient with memory by not returning a

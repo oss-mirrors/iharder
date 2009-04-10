@@ -50,6 +50,11 @@ public class SerialCameraSource implements CameraSource{
         }
     }
 
+
+    @Override
+    public String toString(){ return getName(); }
+    
+
     public String getName() {
         return "Serial";
     }

@@ -31,6 +31,11 @@ public class UdpCameraSource implements CameraSource {
         return this.camera;
     }
 
+
+
+    @Override
+    public String toString(){ return getName(); }
+
     public String getName() {
         return "UDP Camera";
     }

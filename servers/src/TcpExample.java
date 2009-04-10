@@ -53,7 +53,7 @@ public class TcpExample extends javax.swing.JFrame implements TcpServer.Listener
     
     private void myInitComponents(){
         
-        TcpServer.setLoggingLevel(Level.OFF);
+        //TcpServer.setLoggingLevel(Level.OFF);
         
         this.tcpServer.setExecutor( Executors.newCachedThreadPool() );
         

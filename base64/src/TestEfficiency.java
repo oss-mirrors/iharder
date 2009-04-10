@@ -19,8 +19,8 @@ public class TestEfficiency {
 
         testWithBytes(  40<<20 );
         testWithBytes(  40<<20 );
-        testWithBytes( 100<<20 );
-        testWithString( 40<<20 );
+        testWithBytes( 140<<20 );
+        testWithString( 90<<20 );
 
 
 
@@ -53,7 +53,7 @@ public class TestEfficiency {
         long start = System.currentTimeMillis();
         byte[] enc = null;
         //try {
-            enc = Base64.encodeBytesToBytes( raw, 0, raw.length, 0 );
+            enc = Base64.encodeBytesToBytes( raw, 0, raw.length, Base64.DO_BREAK_LINES );
         //} catch( IOException ex ) {
         //    ex.printStackTrace();
         //}
