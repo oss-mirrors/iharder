@@ -49,9 +49,14 @@
  
         // Scrub Addresses
         ABMultiValue *addresses = [person valueForProperty:kABAddressProperty];
+        ABMultiValue *changedAddresses = nil;
         NS_DURING
-        if( addresses = [CDYNE doCDYNEWithAddress:addresses license:license] ){
-            [person setValue:addresses forProperty:kABAddressProperty];
+        if( (changedAddresses = [CDYNE doCDYNEWithAddress:addresses license:license]) &&!changeMade){
+            NSLog(@"Change made");
+            NSLog(@"Address d: %d", changedAddresses);
+            NSLog(@"Returned addresses: %@", [changedAddresses description] );
+            [person setValue:changedAddresses forProperty:kABAddressProperty];
+            NSLog(@"Person set with new addresses");
             changeMade = YES;
         }	// end if: change was made
         NS_HANDLER
@@ -105,7 +110,7 @@
     unsigned int mvCount;
     unsigned int i;
     Boolean hasUnsavedChanges = NO;
-    XMLTree *tree;
+    //XMLTree *tree;
 
     // Make sure what we have is changeable (mutable)
     mutableAddresses = [addresses mutableCopy];
@@ -134,12 +139,16 @@
                     break;
         }	// end if: countryCode not nil
 
+        // Don't bother if the address hasn't changed
+        if( [[address objectForKey:@"CDYNE.address-used"] isEqualToString:[address objectForKey:kABAddressStreetKey]] ){
+            break;
+        }	// end if: hasn't change
+
 
         // SOAP Call
-        NSDictionary *result = [self wsResultForAddress:address license:@"0"];
-        NSLog(@"Result: %@", [result descriptionInStringsFileFormat] );
+        NSDictionary *wsResult = [self wsResultForAddress:address license:@"0"];
         // Error?
-        if ( WSMethodResultIsFault ((CFDictionaryRef) result) ){
+        if ( WSMethodResultIsFault ((CFDictionaryRef) wsResult) ){
             NSLog(@"Error");
 
             [[NSException exceptionWithName:@"CDYNE Error"
@@ -150,6 +159,39 @@
         // Else no error
         else{
             NSLog(@"OK");
+
+            NSDictionary *result = [CFDictionaryGetValue( (CFDictionaryRef) wsResult,
+                                                         kWSMethodInvocationResult)
+                objectForKey:@"CheckAddressResult"];
+
+            // Get stuff from CDYNE
+            NSString *cLat = [[result objectForKey:@"AvgLatitude"]  description];
+            NSString *cLon = [[result objectForKey:@"AvgLongitude"] description];
+            NSString *cZip = [[result objectForKey:@"ZipCode"] description];
+            NSString *cTimeZone = [[result objectForKey:@"TimeZone"] description];
+            NSString *cAreaCode = [[result objectForKey:@"AreaCode"] description];
+
+            // Save data to address
+            [address setObject:[address objectForKey:kABAddressStreetKey]
+                        forKey:@"CDYNE.address-used"];
+            if( cLat )
+                [address setObject:cLat forKey:@"Latitude"];
+            if( cLon )
+                [address setObject:cLon forKey:@"Longitude"];
+            NSLog(@"Street: %@", [[address objectForKey:kABAddressStreetKey] description]);
+            NSLog(@"Time Zone: %@", [cTimeZone description]);
+            if( cTimeZone )
+                [address setObject:cTimeZone forKey:@"Time Zone"];
+            if( cAreaCode )
+                [address setObject:cAreaCode forKey:@"Area Code"];
+            if( cZip )
+                [address setObject:cZip forKey:kABAddressZIPKey];
+
+            NSLog(@"Address after changes: %@", [address description] );
+            
+            [mutableAddresses replaceValueAtIndex:i withValue:address];
+
+            hasUnsavedChanges = YES;
         }	// end else
 
         
@@ -198,6 +240,7 @@
 
     // 'mutableAddresses' does not need to be released
 
+    
     return hasUnsavedChanges ? mutableAddresses : nil;
 }	// end :
 

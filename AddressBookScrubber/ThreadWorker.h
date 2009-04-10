@@ -36,7 +36,7 @@
  * I'm releasing this code into the Public Domain.
  * Do with it as you will. Enjoy!
  *
- * Original author: Robert Harder, rharder@usa.net
+ * Original author: Robert Harder, rob@iharder.net
  *
  *
  * Change History

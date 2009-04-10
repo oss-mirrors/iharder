@@ -1,0 +1,434 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 44;
+	objects = {
+
+/* Begin PBXApplicationTarget section */
+		29B97326FDCFA39411CA2CEA /* Address Book Scrubber */ = {
+			isa = PBXApplicationTarget;
+			buildConfigurationList = D42D5A040CD6D5B50003369B /* Build configuration list for PBXApplicationTarget "Address Book Scrubber" */;
+			buildPhases = (
+				29B97327FDCFA39411CA2CEA /* Headers */,
+				29B97328FDCFA39411CA2CEA /* Resources */,
+				29B9732BFDCFA39411CA2CEA /* Sources */,
+				29B9732DFDCFA39411CA2CEA /* Frameworks */,
+				D42D5CC00CDE78BD0003369B /* CopyFiles */,
+			);
+			dependencies = (
+			);
+			name = "Address Book Scrubber";
+			productInstallPath = "$(HOME)/Applications";
+			productName = "Address Book Scrubber";
+			productReference = 17587328FF379C6511CA2CBB /* Address Book Scrubber.app */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>Address Book Scrubber</string>
+	<key>CFBundleGetInfoString</key>
+	<string>Fixes common Address Book maladies</string>
+	<key>CFBundleIconFile</key>
+	<string>AddressBookScrubber</string>
+	<key>CFBundleIdentifier</key>
+	<string>net.iharder.addressbookscrubber</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Address Book Scrubber</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>v0.2.1-Todd</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.2.1-Todd</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
+</plist>
+";
+		};
+/* End PBXApplicationTarget section */
+
+/* Begin PBXBuildFile section */
+		080E96DCFE201CFB7F000001 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
+		089C165EFE840E0CC02AAC07 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
+		1058C7A3FEA54F0111CA2CBB /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
+		29B9732CFDCFA39411CA2CEA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
+		D401DD070CE819B9002F0521 /* StandardPlugins.absplugin in CopyFiles */ = {isa = PBXBuildFile; fileRef = D401DCF90CE819B9002F0521 /* StandardPlugins.absplugin */; };
+		D42D5BF70CDC28B00003369B /* ABSPlugin.h in Headers */ = {isa = PBXBuildFile; fileRef = D42D5BF60CDC28B00003369B /* ABSPlugin.h */; };
+		F504EF660383330B01A80082 /* AddressBookScrubber.icns in Resources */ = {isa = PBXBuildFile; fileRef = F504EF650383330B01A80082 /* AddressBookScrubber.icns */; };
+		F5709FE0037A8D0F01A80082 /* ABSController.h in Headers */ = {isa = PBXBuildFile; fileRef = F5709FDC037A8D0F01A80082 /* ABSController.h */; };
+		F5709FE1037A8D0F01A80082 /* ABSController.m in Sources */ = {isa = PBXBuildFile; fileRef = F5709FDD037A8D0F01A80082 /* ABSController.m */; };
+		F5709FE2037A8D0F01A80082 /* Utility.h in Headers */ = {isa = PBXBuildFile; fileRef = F5709FDE037A8D0F01A80082 /* Utility.h */; };
+		F5709FE3037A8D0F01A80082 /* Utility.m in Sources */ = {isa = PBXBuildFile; fileRef = F5709FDF037A8D0F01A80082 /* Utility.m */; };
+		F570A363037A8D3001A80082 /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F570A353037A8D3001A80082 /* AddressBook.framework */; };
+		F59E01AB037C018501A80082 /* PhoneNumber.h in Headers */ = {isa = PBXBuildFile; fileRef = F59E01A9037C018501A80082 /* PhoneNumber.h */; };
+		F59E01AC037C018501A80082 /* PhoneNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = F59E01AA037C018501A80082 /* PhoneNumber.m */; };
+		F5CE0F78037EF53E01A80082 /* ThreadWorker.h in Headers */ = {isa = PBXBuildFile; fileRef = F5CE0F76037EF53E01A80082 /* ThreadWorker.h */; };
+		F5CE0F79037EF53E01A80082 /* ThreadWorker.m in Sources */ = {isa = PBXBuildFile; fileRef = F5CE0F77037EF53E01A80082 /* ThreadWorker.m */; };
+		F5DC0A6003A6DD7601A80082 /* CDYNEConfigSheetController.h in Headers */ = {isa = PBXBuildFile; fileRef = F5DC0A5E03A6DD7601A80082 /* CDYNEConfigSheetController.h */; };
+		F5DC0A6103A6DD7601A80082 /* CDYNEConfigSheetController.m in Sources */ = {isa = PBXBuildFile; fileRef = F5DC0A5F03A6DD7601A80082 /* CDYNEConfigSheetController.m */; };
+		F5EA271D03A02DFA01A80082 /* XMLTree.h in Headers */ = {isa = PBXBuildFile; fileRef = F5EA271B03A02DFA01A80082 /* XMLTree.h */; };
+		F5EA271E03A02DFA01A80082 /* XMLTree.m in Sources */ = {isa = PBXBuildFile; fileRef = F5EA271C03A02DFA01A80082 /* XMLTree.m */; };
+		F5EA272103A02E2201A80082 /* CDYNE.h in Headers */ = {isa = PBXBuildFile; fileRef = F5EA271F03A02E2201A80082 /* CDYNE.h */; };
+		F5EA272203A02E2201A80082 /* CDYNE.m in Sources */ = {isa = PBXBuildFile; fileRef = F5EA272003A02E2201A80082 /* CDYNE.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D42D5CC00CDE78BD0003369B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D401DD070CE819B9002F0521 /* StandardPlugins.absplugin in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
+		17587328FF379C6511CA2CBB /* Address Book Scrubber.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = "Address Book Scrubber.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		29B97319FDCFA39411CA2CEA /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/MainMenu.nib; sourceTree = "<group>"; };
+		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
+		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		D401DCF90CE819B9002F0521 /* StandardPlugins.absplugin */ = {isa = PBXFileReference; lastKnownFileType = folder; name = StandardPlugins.absplugin; path = Plugins/StandardPlugins/build/Release/StandardPlugins.absplugin; sourceTree = "<group>"; };
+		D42D5BF60CDC28B00003369B /* ABSPlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABSPlugin.h; sourceTree = "<group>"; };
+		F504EF650383330B01A80082 /* AddressBookScrubber.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AddressBookScrubber.icns; sourceTree = "<group>"; };
+		F5709FDC037A8D0F01A80082 /* ABSController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABSController.h; sourceTree = "<group>"; };
+		F5709FDD037A8D0F01A80082 /* ABSController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ABSController.m; sourceTree = "<group>"; };
+		F5709FDE037A8D0F01A80082 /* Utility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Utility.h; sourceTree = "<group>"; };
+		F5709FDF037A8D0F01A80082 /* Utility.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Utility.m; sourceTree = "<group>"; };
+		F570A353037A8D3001A80082 /* AddressBook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AddressBook.framework; path = /System/Library/Frameworks/AddressBook.framework; sourceTree = "<absolute>"; };
+		F59E01A9037C018501A80082 /* PhoneNumber.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PhoneNumber.h; sourceTree = "<group>"; };
+		F59E01AA037C018501A80082 /* PhoneNumber.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PhoneNumber.m; sourceTree = "<group>"; };
+		F5CE0F76037EF53E01A80082 /* ThreadWorker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ThreadWorker.h; sourceTree = "<group>"; };
+		F5CE0F77037EF53E01A80082 /* ThreadWorker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ThreadWorker.m; sourceTree = "<group>"; };
+		F5DC0A5E03A6DD7601A80082 /* CDYNEConfigSheetController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDYNEConfigSheetController.h; sourceTree = "<group>"; };
+		F5DC0A5F03A6DD7601A80082 /* CDYNEConfigSheetController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDYNEConfigSheetController.m; sourceTree = "<group>"; };
+		F5EA271B03A02DFA01A80082 /* XMLTree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XMLTree.h; sourceTree = "<group>"; };
+		F5EA271C03A02DFA01A80082 /* XMLTree.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XMLTree.m; sourceTree = "<group>"; };
+		F5EA271F03A02E2201A80082 /* CDYNE.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CDYNE.h; sourceTree = "<group>"; };
+		F5EA272003A02E2201A80082 /* CDYNE.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CDYNE.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		29B9732DFDCFA39411CA2CEA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1058C7A3FEA54F0111CA2CBB /* Cocoa.framework in Frameworks */,
+				F570A363037A8D3001A80082 /* AddressBook.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		080E96DDFE201D6D7F000001 /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				F5709FDC037A8D0F01A80082 /* ABSController.h */,
+				F5709FDD037A8D0F01A80082 /* ABSController.m */,
+				F5709FDE037A8D0F01A80082 /* Utility.h */,
+				F5709FDF037A8D0F01A80082 /* Utility.m */,
+				F59E01A9037C018501A80082 /* PhoneNumber.h */,
+				F59E01AA037C018501A80082 /* PhoneNumber.m */,
+				F5CE0F76037EF53E01A80082 /* ThreadWorker.h */,
+				F5CE0F77037EF53E01A80082 /* ThreadWorker.m */,
+				F5EA271B03A02DFA01A80082 /* XMLTree.h */,
+				F5EA271C03A02DFA01A80082 /* XMLTree.m */,
+				F5EA271F03A02E2201A80082 /* CDYNE.h */,
+				F5EA272003A02E2201A80082 /* CDYNE.m */,
+				F5DC0A5E03A6DD7601A80082 /* CDYNEConfigSheetController.h */,
+				F5DC0A5F03A6DD7601A80082 /* CDYNEConfigSheetController.m */,
+				D42D5BF60CDC28B00003369B /* ABSPlugin.h */,
+			);
+			name = Classes;
+			sourceTree = "<group>";
+		};
+		1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
+			);
+			name = "Linked Frameworks";
+			sourceTree = "<group>";
+		};
+		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
+				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
+				F570A353037A8D3001A80082 /* AddressBook.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		19C28FACFE9D520D11CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				17587328FF379C6511CA2CBB /* Address Book Scrubber.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		29B97314FDCFA39411CA2CEA /* Address Book Scrubber */ = {
+			isa = PBXGroup;
+			children = (
+				080E96DDFE201D6D7F000001 /* Classes */,
+				29B97315FDCFA39411CA2CEA /* Other Sources */,
+				29B97317FDCFA39411CA2CEA /* Resources */,
+				29B97323FDCFA39411CA2CEA /* Frameworks */,
+				19C28FACFE9D520D11CA2CBB /* Products */,
+			);
+			name = "Address Book Scrubber";
+			sourceTree = "<group>";
+		};
+		29B97315FDCFA39411CA2CEA /* Other Sources */ = {
+			isa = PBXGroup;
+			children = (
+				29B97316FDCFA39411CA2CEA /* main.m */,
+			);
+			name = "Other Sources";
+			sourceTree = "<group>";
+		};
+		29B97317FDCFA39411CA2CEA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D401DCF90CE819B9002F0521 /* StandardPlugins.absplugin */,
+				29B97318FDCFA39411CA2CEA /* MainMenu.nib */,
+				089C165CFE840E0CC02AAC07 /* InfoPlist.strings */,
+				F504EF650383330B01A80082 /* AddressBookScrubber.icns */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1058C7A0FEA54F0111CA2CBB /* Linked Frameworks */,
+				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		29B97327FDCFA39411CA2CEA /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F5709FE0037A8D0F01A80082 /* ABSController.h in Headers */,
+				F5709FE2037A8D0F01A80082 /* Utility.h in Headers */,
+				F59E01AB037C018501A80082 /* PhoneNumber.h in Headers */,
+				F5CE0F78037EF53E01A80082 /* ThreadWorker.h in Headers */,
+				F5EA271D03A02DFA01A80082 /* XMLTree.h in Headers */,
+				F5EA272103A02E2201A80082 /* CDYNE.h in Headers */,
+				F5DC0A6003A6DD7601A80082 /* CDYNEConfigSheetController.h in Headers */,
+				D42D5BF70CDC28B00003369B /* ABSPlugin.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXProject section */
+		29B97313FDCFA39411CA2CEA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+			};
+			buildConfigurationList = D42D5A030CD6D5B50003369B /* Build configuration list for PBXProject "Address Book Scrubber" */;
+			compatibilityVersion = "Xcode 3.0";
+			hasScannedForEncodings = 1;
+			mainGroup = 29B97314FDCFA39411CA2CEA /* Address Book Scrubber */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				29B97326FDCFA39411CA2CEA /* Address Book Scrubber */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		29B97328FDCFA39411CA2CEA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				080E96DCFE201CFB7F000001 /* MainMenu.nib in Resources */,
+				089C165EFE840E0CC02AAC07 /* InfoPlist.strings in Resources */,
+				F504EF660383330B01A80082 /* AddressBookScrubber.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		29B9732BFDCFA39411CA2CEA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				29B9732CFDCFA39411CA2CEA /* main.m in Sources */,
+				F5709FE1037A8D0F01A80082 /* ABSController.m in Sources */,
+				F5709FE3037A8D0F01A80082 /* Utility.m in Sources */,
+				F59E01AC037C018501A80082 /* PhoneNumber.m in Sources */,
+				F5CE0F79037EF53E01A80082 /* ThreadWorker.m in Sources */,
+				F5EA271E03A02DFA01A80082 /* XMLTree.m in Sources */,
+				F5EA272203A02E2201A80082 /* CDYNE.m in Sources */,
+				F5DC0A6103A6DD7601A80082 /* CDYNEConfigSheetController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		089C165CFE840E0CC02AAC07 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				089C165DFE840E0CC02AAC07 /* English */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		29B97318FDCFA39411CA2CEA /* MainMenu.nib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				29B97319FDCFA39411CA2CEA /* English */,
+			);
+			name = MainMenu.nib;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		D42D59FD0CD6D5B40003369B /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk";
+			};
+			name = Development;
+		};
+		D42D59FE0CD6D5B40003369B /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk";
+			};
+			name = Deployment;
+		};
+		D42D59FF0CD6D5B40003369B /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = "$(DEVELOPER_SDK_DIR)/MacOSX10.4u.sdk";
+			};
+			name = Default;
+		};
+		D42D5A000CD6D5B40003369B /* Development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				FRAMEWORK_SEARCH_PATHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "Address Book Scrubber";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = app;
+				ZERO_LINK = YES;
+			};
+			name = Development;
+		};
+		D42D5A010CD6D5B40003369B /* Deployment */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				FRAMEWORK_SEARCH_PATHS = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				HEADER_SEARCH_PATHS = "";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "Address Book Scrubber";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = app;
+				ZERO_LINK = NO;
+			};
+			name = Deployment;
+		};
+		D42D5A020CD6D5B40003369B /* Default */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = "";
+				HEADER_SEARCH_PATHS = "";
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "Address Book Scrubber";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = (
+					"-Wmost",
+					"-Wno-four-char-constants",
+					"-Wno-unknown-pragmas",
+				);
+				WRAPPER_EXTENSION = app;
+			};
+			name = Default;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D42D5A030CD6D5B50003369B /* Build configuration list for PBXProject "Address Book Scrubber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D42D59FD0CD6D5B40003369B /* Development */,
+				D42D59FE0CD6D5B40003369B /* Deployment */,
+				D42D59FF0CD6D5B40003369B /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+		D42D5A040CD6D5B50003369B /* Build configuration list for PBXApplicationTarget "Address Book Scrubber" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D42D5A000CD6D5B40003369B /* Development */,
+				D42D5A010CD6D5B40003369B /* Deployment */,
+				D42D5A020CD6D5B40003369B /* Default */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Default;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 29B97313FDCFA39411CA2CEA /* Project object */;
+}

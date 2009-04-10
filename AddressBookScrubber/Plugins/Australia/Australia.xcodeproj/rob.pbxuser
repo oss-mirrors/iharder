@@ -1,0 +1,208 @@
+// !$*UTF8*$!
+{
+	089C1669FE841209C02AAC07 /* Project object */ = {
+		activeArchitecture = i386;
+		activeBuildConfigurationName = Release;
+		activeTarget = 8D5B49AC048680CD000E48DA /* Australia */;
+		addToTargets = (
+			8D5B49AC048680CD000E48DA /* Australia */,
+		);
+		codeSenseManager = D42D5AAC0CDABFD50003369B /* Code sense */;
+		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					513,
+					20,
+					48,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
+			PBXConfiguration.PBXTargetDataSource.PBXTargetDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					383,
+					60,
+					20,
+					48,
+					43,
+					43,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXTargetDataSource_PrimaryAttribute,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+				);
+			};
+			PBXPerProjectTemplateStateSaveDate = 216538331;
+			PBXWorkspaceStateSaveDate = 216538331;
+		};
+		perUserProjectItems = {
+			D401DCEB0CE81965002F0521 /* PBXTextBookmark */ = D401DCEB0CE81965002F0521 /* PBXTextBookmark */;
+			D401DCEE0CE81965002F0521 /* PBXTextBookmark */ = D401DCEE0CE81965002F0521 /* PBXTextBookmark */;
+			D401DD210CE81CE8002F0521 /* PBXTextBookmark */ = D401DD210CE81CE8002F0521 /* PBXTextBookmark */;
+			D42D5AB60CDAC0B40003369B /* PBXTextBookmark */ = D42D5AB60CDAC0B40003369B /* PBXTextBookmark */;
+			D42D5AB70CDAC0B40003369B /* PBXTextBookmark */ = D42D5AB70CDAC0B40003369B /* PBXTextBookmark */;
+			D42D5AC20CDAC0D80003369B /* PBXTextBookmark */ = D42D5AC20CDAC0D80003369B /* PBXTextBookmark */;
+			D42D5C040CDC29540003369B /* PBXTextBookmark */ = D42D5C040CDC29540003369B /* PBXTextBookmark */;
+			D42D5D2B0CE0240B0003369B /* PBXTextBookmark */ = D42D5D2B0CE0240B0003369B /* PBXTextBookmark */;
+			D42D5D4C0CE0261D0003369B /* PBXTextBookmark */ = D42D5D4C0CE0261D0003369B /* PBXTextBookmark */;
+		};
+		sourceControlManager = D42D5AAB0CDABFD50003369B /* Source Control */;
+		userBuildSettings = {
+		};
+	};
+	089C167EFE841241C02AAC07 /* English */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {601, 339}}";
+			sepNavSelRange = "{95, 0}";
+			sepNavVisRange = "{0, 95}";
+			sepNavWindowFrame = "{{15, 186}, {1009, 987}}";
+		};
+	};
+	8D5B49AC048680CD000E48DA /* Australia */ = {
+		activeExec = 0;
+	};
+	8D5B49B7048680CD000E48DA /* Info.plist */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {620, 378}}";
+			sepNavSelRange = "{735, 0}";
+			sepNavVisRange = "{142, 639}";
+		};
+	};
+	D401DCEB0CE81965002F0521 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = D42D5ABD0CDAC0CD0003369B /* Australia.m */;
+		name = "Australia.m: 15";
+		rLen = 37;
+		rLoc = 502;
+		rType = 0;
+		vrLen = 1030;
+		vrLoc = 139;
+	};
+	D401DCEE0CE81965002F0521 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = D42D5ABC0CDAC0CD0003369B /* Australia.h */;
+		name = "Australia.h: 12";
+		rLen = 0;
+		rLoc = 187;
+		rType = 0;
+		vrLen = 419;
+		vrLoc = 0;
+	};
+	D401DD210CE81CE8002F0521 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = D42D5ABC0CDAC0CD0003369B /* Australia.h */;
+		name = "Australia.h: 12";
+		rLen = 0;
+		rLoc = 187;
+		rType = 0;
+		vrLen = 419;
+		vrLoc = 0;
+	};
+	D42D5AAB0CDABFD50003369B /* Source Control */ = {
+		isa = PBXSourceControlManager;
+		fallbackIsa = XCSourceControlManager;
+		isSCMEnabled = 0;
+		scmConfiguration = {
+		};
+	};
+	D42D5AAC0CDABFD50003369B /* Code sense */ = {
+		isa = PBXCodeSenseManager;
+		indexTemplatePath = "";
+	};
+	D42D5AB60CDAC0B40003369B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 8D5B49B7048680CD000E48DA /* Info.plist */;
+		name = "Info.plist: 14";
+		rLen = 0;
+		rLoc = 475;
+		rType = 0;
+		vrLen = 763;
+		vrLoc = 0;
+	};
+	D42D5AB70CDAC0B40003369B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 089C167EFE841241C02AAC07 /* English */;
+		name = "InfoPlist.strings: 1";
+		rLen = 0;
+		rLoc = 18;
+		rType = 0;
+		vrLen = 101;
+		vrLoc = 0;
+	};
+	D42D5ABC0CDAC0CD0003369B /* Australia.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {691, 480}}";
+			sepNavSelRange = "{187, 0}";
+			sepNavVisRange = "{0, 419}";
+		};
+	};
+	D42D5ABD0CDAC0CD0003369B /* Australia.m */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {691, 1134}}";
+			sepNavSelRange = "{502, 37}";
+			sepNavVisRange = "{139, 1030}";
+			sepNavWindowFrame = "{{15, 186}, {1009, 987}}";
+		};
+	};
+	D42D5AC20CDAC0D80003369B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = D42D5ABC0CDAC0CD0003369B /* Australia.h */;
+		name = "Australia.h: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 209;
+		vrLoc = 0;
+	};
+	D42D5C040CDC29540003369B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = D42D5ABD0CDAC0CD0003369B /* Australia.m */;
+		name = "Australia.m: 1";
+		rLen = 0;
+		rLoc = 0;
+		rType = 0;
+		vrLen = 196;
+		vrLoc = 0;
+	};
+	D42D5D2B0CE0240B0003369B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 089C167EFE841241C02AAC07 /* English */;
+		name = "InfoPlist.strings: 4";
+		rLen = 0;
+		rLoc = 95;
+		rType = 0;
+		vrLen = 95;
+		vrLoc = 0;
+	};
+	D42D5D4C0CE0261D0003369B /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 8D5B49B7048680CD000E48DA /* Info.plist */;
+		name = "Info.plist: 23";
+		rLen = 0;
+		rLoc = 735;
+		rType = 0;
+		vrLen = 639;
+		vrLoc = 142;
+	};
+}

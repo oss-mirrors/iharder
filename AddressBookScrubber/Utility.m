@@ -399,7 +399,7 @@
         }	// end if: cancelled
 
         // Scrub Addresses
-        ABMultiValue *addresses = [person valueForProperty:kABAddressProperty];
+        ABMultiValue *addresses = [person valueForProperty:kABAddressProperty]; 
         if( addresses = [Utility fixZipCodesInAddresses:addresses] ){
             [person setValue:addresses forProperty:kABAddressProperty];
             changeMade = YES;
