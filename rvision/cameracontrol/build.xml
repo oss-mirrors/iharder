@@ -1,17 +1,18 @@
 <project name="RVision" basedir="." default="main">
     <property name="src.dir"      value="src" />
     <property name="build.dir"    value="build" />
-    <property name="dist.dir"    value="dist" />
+    <property name="dist.dir"     value="dist" />
     <property name="classes.dir"  value="${build.dir}/classes" />
     <property name="jar.dir"      value="${build.dir}/jar" />
     <property name="lib.dir"      value="lib"/>
     <property name="main-class"   value="rvision.CLI" />
+    <property name="cli-class"    value="rvision.CLI" />
+    <property name="gui-class"    value="rvision.ControlPanelStandalone" />
     <property name="jarfile"      value="${jar.dir}/${ant.project.name}.jar" />
-    
+
     <path id="classpath">
         <fileset dir="${lib.dir}" includes="**/*.jar"/>
     </path>
-    
     
     <target name="clean">
         <delete dir="${build.dir}"/>
@@ -56,6 +57,30 @@
         </java>
     </target>
     
+<!-- =================================
+      target: Runs the command line interactive RVision code
+     ================================= -->
+    <target name="cli" depends="jar">
+        <java classname="${cli-class}" fork="true">
+          <classpath>
+            <path refid="classpath" />
+            <path location="${jarfile}" />
+          </classpath>
+        </java>
+    </target>
+    
+<!-- =================================
+      target: Runs the GUI RVision code
+     ================================= -->
+    <target name="gui" depends="jar">
+        <java classname="${gui-class}" fork="true">
+          <classpath>
+            <path refid="classpath" />
+            <path location="${jarfile}" />
+          </classpath>
+        </java>
+    </target>
+    
     <target name="dist" depends="jar">
         <mkdir dir="${dist.dir}"/>
         <copy todir="${dist.dir}">
@@ -64,6 +89,6 @@
     </target>
     
     <target name="clean-build" depends="clean,jar" />
-    <target name="main" depends="clean,run" />
+    <target name="main" depends="run" />
 
 </project>

@@ -2,6 +2,10 @@
 package rvision;
 
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -18,10 +22,14 @@ public class CLI {
         "\tI\tZoom in",
         "\tO\tZoom out",
         "\tZ\tZoom to this amount (0..100), mostly wide ex: Z10",
-        "\tT\tTitle, ex: TFront Room"
+        "\tT\tTitle, ex: TFront Room",
+        "\t[..]\tExtended commands:",
+        "\t\tudp=port|off\t Turns on/off a UDP server to receive commands on 'port'"
     };
+    private final static Pattern THIS_EQUALS_THAT = Pattern.compile("(.+)=(.*)");
     private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
     private static Camera cam;
+    private static UdpCameraServer udp;
     private static int howLong = 50;
     
     public static void main(String[] args) throws Exception{
@@ -48,8 +56,10 @@ public class CLI {
             int respI = Integer.parseInt(resp);
 
             if( respI == 0 ){
-                System.out.print("Connect to host and port (ex, localhost 4000): ");
-                String[] hp = br.readLine().split(" ");
+                System.out.print("Connect to host and port (default: localhost 4000): ");
+                String in = br.readLine();
+                in = in.equals("") ? "localhost 4000" : in;
+                String[] hp = in.split(" ");
                 cam = new UdpCameraClient( hp[0], Integer.parseInt(hp[1]));
             } else {
                 args = new String[]{ names[respI-1] };
@@ -109,6 +119,27 @@ public class CLI {
                     i = in.length();
                     break;
                 case '.': cam.delay(howLong);                   break;
+                case '[':
+                    int end = in.indexOf("]",i);
+                    String extended = in.substring(i+1, end);
+                    Matcher m = THIS_EQUALS_THAT.matcher(extended);
+                    if( m.matches() ){
+                        String key = m.group(1);
+                        String val = m.group(2);
+                        if( key.equalsIgnoreCase("udp") ){
+                            if( val.equalsIgnoreCase("off") ){
+                                stopUdp();
+                            } else {
+                                try{
+                                    startUdp( Integer.parseInt(val) );
+                                } catch( Exception exc ){
+                                    System.err.println(exc.getMessage());
+                                }
+                            }
+                        }   // end if: udp
+                    }   // end if: key=val
+                    i = end;
+                    break;
                 case 'Q': case 'q': System.exit(0);             break;
                 default: printUsage();                          break;
             }   // end switch
@@ -121,6 +152,27 @@ public class CLI {
             System.out.println(s);
         }
     }
+
+
+    private static synchronized void startUdp(int port){
+        if( udp != null ){
+            udp.setPort(port);
+        } else {
+            try {
+                udp = new UdpCameraServer(cam, port);
+                udp.start();
+            } catch (IOException ex) {
+                Logger.getLogger(CLI.class.getName()).log(Level.SEVERE, null, ex);
+                udp = null;
+            }
+        }
+    }
+
+    private static synchronized void stopUdp(){
+        udp.stop();
+        udp = null;
+    }
+
     
 
 }
