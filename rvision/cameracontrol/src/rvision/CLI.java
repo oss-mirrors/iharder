@@ -23,8 +23,9 @@ public class CLI {
         "\tO\tZoom out",
         "\tZ\tZoom to this amount (0..100), mostly wide ex: Z10",
         "\tT\tTitle, ex: TFront Room",
-        "\t[..]\tExtended commands:",
-        "\t\tudp=port|off\t Turns on/off a UDP server to receive commands on 'port'"
+        "\t[..]Extended commands:",
+        "\t\tudp=port|off\t Turns on/off a UDP server to receive commands on 'port'",
+        "\t\ttitle=The Title\t Sets the on-video title"
     };
     private final static Pattern THIS_EQUALS_THAT = Pattern.compile("(.+)=(.*)");
     private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -56,7 +57,7 @@ public class CLI {
             int respI = Integer.parseInt(resp);
 
             if( respI == 0 ){
-                System.out.print("Connect to host and port (default: localhost 4000): ");
+                System.out.println("Connect to host and port (default: localhost 4000): ");
                 String in = br.readLine();
                 in = in.equals("") ? "localhost 4000" : in;
                 String[] hp = in.split(" ");
@@ -137,6 +138,15 @@ public class CLI {
                                 }
                             }
                         }   // end if: udp
+
+                        else if( key.equalsIgnoreCase("title") ){
+                            if( val.equals("") ){
+                                cam.setShowTitle(false);
+                            } else {
+                                cam.setTitle(val);
+                                cam.setShowTitle(true);
+                            }
+                        }
                     }   // end if: key=val
                     i = end;
                     break;

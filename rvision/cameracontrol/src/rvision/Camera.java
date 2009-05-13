@@ -914,7 +914,7 @@ public class Camera {
      * Final step for outgoing data to camera.
      * @param hex
      */
-    protected boolean sendBytes( byte[] outgoing, int offset, int length ){
+    protected synchronized boolean sendBytes( byte[] outgoing, int offset, int length ){
         LOGGER.info("sendBytes called on thread " + Thread.currentThread() );
         try{
             // Write
