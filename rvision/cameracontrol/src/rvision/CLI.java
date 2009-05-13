@@ -15,17 +15,17 @@ public class CLI {
 
     private static String[] USAGE = {
         "Camera commands",
-        "\tU\tTilt up",
-        "\tD\tTilt down",
-        "\tL\tPan left",
-        "\tR\tPan right",
-        "\tI\tZoom in",
-        "\tO\tZoom out",
-        "\tZ\tZoom to this amount (0..100), mostly wide ex: Z10",
-        "\tT\tTitle, ex: TFront Room",
-        "\t[..]Extended commands:",
-        "\t\tudp=port|off\t Turns on/off a UDP server to receive commands on 'port'",
-        "\t\ttitle=The Title\t Sets the on-video title"
+        "  U    Tilt up",
+        "  D    Tilt down",
+        "  L    Pan left",
+        "  R    Pan right",
+        "  I    Zoom in",
+        "  O    Zoom out",
+        "  Z    Zoom to this amount (0..100), mostly wide ex: Z10",
+        "  T    Title, ex: TFront Room",
+        "  [..] Extended commands:",
+        "       udp=port|off      Turns on/off a UDP server to receive commands on 'port'",
+        "       title=The Title   Sets the on-video title"
     };
     private final static Pattern THIS_EQUALS_THAT = Pattern.compile("(.+)=(.*)");
     private static BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
