@@ -6,6 +6,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
 
 /**
  *
@@ -57,9 +59,22 @@ public class CLI {
             int respI = Integer.parseInt(resp);
 
             if( respI == 0 ){
-                System.out.println("Connect to host and port (default: localhost 4000): ");
+
+                //JmDNS jmdns = JmDNS.create();
+                //String type = "_rvision._udp.local.";
+                //ServiceInfo sis[] = jmdns.list(type);
+                String defHost = "localhost";
+                int defPort = 4000;
+                //System.out.println("Number of " + type + ": " + sis.length);
+                //if( sis.length > 0 ){
+                //    defPort = sis[0].getPort();
+                //    defHost = sis[0].getHostAddress();
+                //}
+                //jmdns.close();
+
+                System.out.println("Connect to host and port (default: " + defHost + " " + defPort + "): ");
                 String in = br.readLine();
-                in = in.equals("") ? "localhost 4000" : in;
+                in = in.equals("") ? defHost + " " + defPort : in;
                 String[] hp = in.split(" ");
                 cam = new UdpCameraClient( hp[0], Integer.parseInt(hp[1]));
             } else {
@@ -171,6 +186,7 @@ public class CLI {
             try {
                 udp = new UdpCameraServer(cam, port);
                 udp.start();
+                udp.setReceiveBufferSize(512);
             } catch (IOException ex) {
                 Logger.getLogger(CLI.class.getName()).log(Level.SEVERE, null, ex);
                 udp = null;

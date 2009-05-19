@@ -1,5 +1,7 @@
 package rvision;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +42,7 @@ import rvision.TcpServer.Event;
  * 
  * @author robert.harder
  */
-public class ManagedCameraServer implements TcpServer.Listener, UdpServer.Listener {
+public class ManagedCameraServer implements TcpServer.Listener, UdpServer.Listener, PropertyChangeListener {
     
     private final static Logger LOGGER = Logger.getLogger( ManagedCameraServer.class.getName() );
     
@@ -91,6 +93,7 @@ public class ManagedCameraServer implements TcpServer.Listener, UdpServer.Listen
         
         udpServer.addUdpServerListener(this);
         tcpServer.addTcpServerListener(this);
+        udpServer.addPropertyChangeListener(this);
     }
     
     
@@ -110,7 +113,7 @@ public class ManagedCameraServer implements TcpServer.Listener, UdpServer.Listen
     
     
     public void setMulticastGroup( String group ){
-        this.udpServer.setGroup(group);
+        this.udpServer.setGroups(group);
     }
 
 
@@ -177,17 +180,37 @@ public class ManagedCameraServer implements TcpServer.Listener, UdpServer.Listen
         }   // end finally
     }
 
-    
-    public void udpServerStateChanged(rvision.UdpServer.Event evt) {
-        switch( evt.getState() ){
-            case STOPPED:
-                stop();
-                break;
-        }   // end switch
-    }
+
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        Object src = evt.getSource();
+        String prop = evt.getPropertyName();
+        Object oldVal = evt.getOldValue();
+        Object newVal = evt.getNewValue();
+
+        if( src == this.udpServer && UdpServer.STATE_PROP.equals( prop ) && newVal instanceof UdpServer.State ){
+
+            switch( (UdpServer.State)newVal ){
+                case STARTED:
+                    break;
+
+                case STOPPED:
+                    stop();
+                    break;
+
+                case STARTING:
+                case STOPPING:
+                default:
+                    break;
+            }   // end switch
+
+        }   // end if: state changed
+
+
+    }   //end property change
 
     
-    public void udpServerPacketReceived(rvision.UdpServer.Event evt) {
+    public void packetReceived(rvision.UdpServer.Event evt) {
         String msg = evt.getPacketAsString();
         if( msg == null ){
             if( LOGGER.isLoggable(Level.FINE) ){
@@ -426,6 +449,7 @@ public class ManagedCameraServer implements TcpServer.Listener, UdpServer.Listen
         
         
     }   // end main
+
     
     
 

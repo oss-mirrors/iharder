@@ -1,17 +1,21 @@
 package rvision;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
 import java.util.logging.*;
+import javax.jmdns.JmDNS;
+import javax.jmdns.ServiceInfo;
 
 /**
  * A subclass of {@link Camera}, UdpCameraServer 
  * @author robert.harder
  */
-public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
+public class UdpCameraServer extends UdpServer implements UdpServer.Listener, PropertyChangeListener {
 
     private final static Logger LOGGER = Logger.getLogger(UdpCameraServer.class.getName());
     
@@ -39,6 +43,8 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
      * to the {@link Camera}. 
      */
     public final static int CAMERA_RAW_COMMAND_KLV_KEY = 1;
+
+    public final static String MDNS_UDP_RVISION_TYPE = "_rvision._udp.local.";
     
     /**
      * <p>This key (0xFF) is the key indicating a KLV set
@@ -64,7 +70,10 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
     private boolean             dispose = false;
     private Camera              camera;
     
-    
+
+    private JmDNS jmdns;
+    private ServiceInfo jmdnsSI;
+
     /**
      * Simple command line server that listens on specified port and
      * sends data to camera on specified serial port, or default
@@ -228,14 +237,16 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
         this.camera = cam;
         setPort( port );            // In superclass
         addUdpServerListener(this); // In superclass
+        addPropertyChangeListener(this);
     }
     
     
     public UdpCameraServer( Camera cam, int port, String group ) throws IOException{
         this.camera = cam;
         setPort( port );            // In superclass
-        setGroup( group );          // In superclass
+        //setGroup( group );          // In superclass
         addUdpServerListener(this); // In superclass
+        addPropertyChangeListener(this);
     }
     
     
@@ -302,14 +313,46 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
      * @param evt
      */
     public void udpServerStateChanged(UdpServer.Event evt) {
-        // NOTHING DONE HERE
+        /*switch( evt.getState() ){
+            case STARTED:
+                if( this.jmdns == null ){
+                    try {
+                        this.jmdns = JmDNS.create();
+                    } catch (IOException ex) {
+                        LOGGER.log(Level.WARNING, null, ex);
+                    }
+                }   // end if: not yet created
+                if( this.jmdns != null ){
+                    this.jmdnsSI = ServiceInfo.create(MDNS_UDP_RVISION_TYPE, "rvision", getPort(), "RVision Camera Controller" );
+                    try {
+                        this.jmdns.registerService(this.jmdnsSI);
+                    } catch (IOException ex) {
+                        LOGGER.log(Level.WARNING, null, ex);
+                    }
+                        }
+                break;
+
+            case STOPPED:
+                if( this.jmdns != null ){
+                    this.jmdns.unregisterService( this.jmdnsSI );
+                }
+                this.jmdns = null;
+                this.jmdnsSI = null;
+                break;
+                
+            case STARTING:
+            case STOPPING:
+            default:
+                break;
+        }   // end switch
+        */
     }
 
     /**
      * Process incoming packets.
      * @param evt
      */
-    public void udpServerPacketReceived(UdpServer.Event evt) {
+    public void packetReceived(UdpServer.Event evt) {
         
         DatagramPacket udpPacket = evt.getPacket();
         if( udpPacket == null ){
@@ -330,6 +373,56 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener {
         }
                         
     }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        Object src = evt.getSource();
+        String prop = evt.getPropertyName();
+        Object oldVal = evt.getOldValue();
+        Object newVal = evt.getNewValue();
+
+        if( src == this && UdpServer.STATE_PROP.equals( prop ) && newVal instanceof UdpServer.State ){
+
+            switch( (UdpServer.State)newVal ){
+                case STARTED:
+                    if( this.jmdns == null ){
+                        try {
+                            this.jmdns = JmDNS.create();
+                        } catch (IOException ex) {
+                            LOGGER.log(Level.WARNING, null, ex);
+                        }
+                    }   // end if: not yet created
+                    if( this.jmdns != null ){
+                        this.jmdnsSI = ServiceInfo.create(
+                                MDNS_UDP_RVISION_TYPE,
+                                "rvision",
+                                getPort(), 
+                                "RVision Camera Controller" );
+                        try {
+                            this.jmdns.registerService(this.jmdnsSI);
+                        } catch (IOException ex) {
+                            LOGGER.log(Level.WARNING, null, ex);
+                        }
+                            }
+                    break;
+
+                case STOPPED:
+                    if( this.jmdns != null ){
+                        this.jmdns.unregisterService( this.jmdnsSI );
+                    }
+                    this.jmdns = null;
+                    this.jmdnsSI = null;
+                    break;
+
+                case STARTING:
+                case STOPPING:
+                default:
+                    break;
+            }   // end switch
+
+        }   // end if: state changed
+
+
+    }   //end property change
     
     
     
