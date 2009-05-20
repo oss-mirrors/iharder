@@ -34,6 +34,7 @@ public class CLI {
     private static Camera cam;
     private static UdpCameraServer udp;
     private static int howLong = 50;
+    private static boolean exit = false;
     
     public static void main(String[] args) throws Exception{
 
@@ -89,7 +90,7 @@ public class CLI {
         }
         //cam = new UdpCameraClient( "localhost", 8001 );
         //System.out.println("Serial port: " + cam.serialPort);
-        while( true ){
+        while( !exit ){
             System.out.print("Camera command: " );
             String cmd = in.readLine();
             process( cmd );
@@ -137,6 +138,10 @@ public class CLI {
                 case '.': cam.delay(howLong);                   break;
                 case '[':
                     int end = in.indexOf("]",i);
+                    if( end < 0 || end > in.length()-1){
+                        i = in.length();
+                        break;
+                    }
                     String extended = in.substring(i+1, end);
                     Matcher m = THIS_EQUALS_THAT.matcher(extended);
                     if( m.matches() ){
@@ -165,7 +170,13 @@ public class CLI {
                     }   // end if: key=val
                     i = end;
                     break;
-                case 'Q': case 'q': System.exit(0);             break;
+                case 'Q': case 'q': 
+                    if( CLI.udp != null ){
+                        CLI.udp.stop();
+                    }
+                    //System.exit(0);
+                    exit = true;
+                    break;
                 default: printUsage();                          break;
             }   // end switch
         }   // end for:
@@ -180,13 +191,15 @@ public class CLI {
 
 
     private static synchronized void startUdp(int port){
+        System.out.println("startUdp on port " + port);
         if( udp != null ){
             udp.setPort(port);
         } else {
             try {
                 udp = new UdpCameraServer(cam, port);
-                udp.start();
                 udp.setReceiveBufferSize(512);
+                udp.start();
+                System.out.println(udp);
             } catch (IOException ex) {
                 Logger.getLogger(CLI.class.getName()).log(Level.SEVERE, null, ex);
                 udp = null;
