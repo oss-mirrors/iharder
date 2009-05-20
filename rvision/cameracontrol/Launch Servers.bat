@@ -7,7 +7,7 @@ SET RTP_PORT=6970
 SET HTTP_PORT=6972
 SET SDP_MULTI_FILE=c:\wamp\www\camera\multicast.sdp
 SET VLC=C:\Program Files\VideoLAN\VLC\VLC.EXE
-SET BITRATE=1024
+SET BITRATE=256
 REM SET VDEV=ICatch (VI) PC Camera
 SET VDEV=USB 2820 Video
 
@@ -18,7 +18,7 @@ REM
 REM This one shows a preview window
 REM
 REM
- "%VLC%" dshow:// :dshow-vdev="%VDEV%" :dshow-adev="none" :dshow-size="%SIZE%" --sout #transcode{vcodec=mp4v,vb=%BITRATE%,scale=1,fps=10}:duplicate{dst=display,dst=std{access=http,mux=ts,dst=:%HTTP_PORT%},dst=rtp{dst=127.0.0.1,port=6974,sdp=file://c:\Movies\camera.sdp}}
+ "%VLC%" dshow:// :dshow-vdev="%VDEV%" :dshow-adev="none" :dshow-size="%SIZE%" --sout #transcode{vcodec=mp4v,vb=%BITRATE%,scale=1,fps=10,deinterlace-mode=bob,filter=deinterlace}:duplicate{dst=display,dst=std{access=http,mux=ts,dst=:%HTTP_PORT%},dst=rtp{dst=127.0.0.1,port=6974,sdp=file://c:\Movies\camera.sdp}}
 
 
 
