@@ -4,9 +4,8 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
 import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
 import java.util.*;
+import java.util.concurrent.ThreadFactory;
 import java.util.logging.*;
 import javax.jmdns.JmDNS;
 import javax.jmdns.ServiceInfo;
@@ -60,7 +59,6 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
         "   -s serialPort   The serial port for connecting to the camera",
         "   -p udpPort      The UDP port on which to listen for commands",
         "   -g group        The multicast group on which to listen",
-    //    "   -k publicKey    The public key file against which to verify signed packets",
         "   -l              List available serial ports",
         "   -h              This help message"
     };
@@ -234,6 +232,13 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
      * @throws java.io.IOException
      */
     public UdpCameraServer( Camera cam, int port ) throws IOException{
+        super( port, new ThreadFactory() {
+            public Thread newThread(final Runnable r) {
+                Thread t = new java.lang.Thread(r,"UdpCameraServer");
+                t.setDaemon(true);
+                return t;
+            }
+        });
         this.camera = cam;
         setPort( port );            // In superclass
         addUdpServerListener(this); // In superclass
@@ -242,11 +247,8 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
     
     
     public UdpCameraServer( Camera cam, int port, String group ) throws IOException{
-        this.camera = cam;
-        setPort( port );            // In superclass
-        //setGroup( group );          // In superclass
-        addUdpServerListener(this); // In superclass
-        addPropertyChangeListener(this);
+        this(cam,port);
+        setGroups( group );          // In superclass
     }
     
     
@@ -308,45 +310,6 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
     }
 
     
-    /**
-     * Nothing done in response to this event.
-     * @param evt
-     */
-    public void udpServerStateChanged(UdpServer.Event evt) {
-        /*switch( evt.getState() ){
-            case STARTED:
-                if( this.jmdns == null ){
-                    try {
-                        this.jmdns = JmDNS.create();
-                    } catch (IOException ex) {
-                        LOGGER.log(Level.WARNING, null, ex);
-                    }
-                }   // end if: not yet created
-                if( this.jmdns != null ){
-                    this.jmdnsSI = ServiceInfo.create(MDNS_UDP_RVISION_TYPE, "rvision", getPort(), "RVision Camera Controller" );
-                    try {
-                        this.jmdns.registerService(this.jmdnsSI);
-                    } catch (IOException ex) {
-                        LOGGER.log(Level.WARNING, null, ex);
-                    }
-                        }
-                break;
-
-            case STOPPED:
-                if( this.jmdns != null ){
-                    this.jmdns.unregisterService( this.jmdnsSI );
-                }
-                this.jmdns = null;
-                this.jmdnsSI = null;
-                break;
-                
-            case STARTING:
-            case STOPPING:
-            default:
-                break;
-        }   // end switch
-        */
-    }
 
     /**
      * Process incoming packets.
@@ -380,6 +343,8 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
         Object oldVal = evt.getOldValue();
         Object newVal = evt.getNewValue();
 
+        System.out.println("source="+src + ", prop="+prop + ", old="+oldVal + ", new="+newVal);
+
         if( src == this && UdpServer.STATE_PROP.equals( prop ) && newVal instanceof UdpServer.State ){
 
             switch( (UdpServer.State)newVal ){
@@ -405,16 +370,16 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
                             }
                     break;
 
-                case STOPPED:
+                case STOPPING:
                     if( this.jmdns != null ){
                         this.jmdns.unregisterService( this.jmdnsSI );
+                        this.jmdns.unregisterAllServices();
+                        this.jmdns.close();
                     }
                     this.jmdns = null;
                     this.jmdnsSI = null;
                     break;
 
-                case STARTING:
-                case STOPPING:
                 default:
                     break;
             }   // end switch
