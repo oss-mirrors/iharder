@@ -43,7 +43,7 @@ public class Base64Test extends TestCase {
     /**
      * Test of encode method, of class Base64.
      */
-    public void testEncode_ByteBuffer_CharBuffer() {
+     public void testEncode_ByteBuffer_CharBuffer() {
         System.out.println("encode");
         ByteBuffer raw = null;
         CharBuffer encoded = null;

@@ -1,11 +1,3 @@
-
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-
-
-
-
 /**
  * <p>Encodes and decodes to and from Base64 notation.</p>
  * <p>Homepage: <a href="http://iharder.net/base64">http://iharder.net/base64</a>.</p>
@@ -31,14 +23,20 @@ import java.nio.CharBuffer;
  * might make a call like this:</p>
  *
  * <code>String encoded = Base64.encodeBytes( mybytes, Base64.GZIP | Base64.DO_BREAK_LINES );</code>
- *
  * <p>to compress the data before encoding it and then making the output have newline characters.</p>
+ * <p>Also...</p>
+ * <code>String encoded = Base64.encodeBytes( crazyString.getBytes() );</code>
+ *
  *
  *
  * <p>
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.3 - Changed default char encoding to US-ASCII which reduces the internal Java
+ *   footprint with its CharEncoders and so forth. Fixed some javadocs that were
+ *   inconsistent. Removed imports and specified things like java.io.IOException
+ *   explicitly inline.</li>
  *  <li>v2.3.2 - Reduced memory footprint! Finally refined the "guessing" of how big the
  *   final encoded data will be so that the code doesn't have to create two output
  *   arrays: an oversized initial one and then a final, exact-sized one. Big win
@@ -127,7 +125,7 @@ import java.nio.CharBuffer;
  *
  * @author Robert Harder
  * @author rob@iharder.net
- * @version 2.3.2
+ * @version 2.3.3
  */
 public class Base64
 {
@@ -187,7 +185,7 @@ public class Base64
     
     
     /** Preferred encoding. */
-    private final static String PREFERRED_ENCODING = "UTF-8";
+    private final static String PREFERRED_ENCODING = "US-ASCII";
     
 	
     private final static byte WHITE_SPACE_ENC = -5; // Indicates white space in encoding
@@ -533,7 +531,7 @@ public class Base64
      * @param encoded output buffer
      * @since 2.3
      */
-    public static void encode( ByteBuffer raw, ByteBuffer encoded ){
+    public static void encode( java.nio.ByteBuffer raw, java.nio.ByteBuffer encoded ){
         byte[] raw3 = new byte[3];
         byte[] enc4 = new byte[4];
 
@@ -557,7 +555,7 @@ public class Base64
      * @param encoded output buffer
      * @since 2.3
      */
-    public static void encode( ByteBuffer raw, CharBuffer encoded ){
+    public static void encode( java.nio.ByteBuffer raw, java.nio.CharBuffer encoded ){
         byte[] raw3 = new byte[3];
         byte[] enc4 = new byte[4];
 
@@ -829,7 +827,7 @@ public class Base64
         byte[] encoded = null;
         try {
             encoded = encodeBytesToBytes( source, 0, source.length, Base64.NO_OPTIONS );
-        } catch( IOException ex ) {
+        } catch( java.io.IOException ex ) {
             assert false : "IOExceptions only come from GZipping, which is turned off: " + ex.getMessage();
         }
         return encoded;
@@ -1086,7 +1084,7 @@ public class Base64
         byte[] decoded = null;
         try {
             decoded = decode( source, 0, source.length, Base64.NO_OPTIONS );
-        } catch( IOException ex ) {
+        } catch( java.io.IOException ex ) {
             assert false : "IOExceptions only come from GZipping, which is turned off: " + ex.getMessage();
         }
         return decoded;
