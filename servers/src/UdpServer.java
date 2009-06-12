@@ -197,7 +197,6 @@ public class UdpServer {
             assert ioThread == null : ioThread;             // Shouldn't have a thread
 
             Runnable run = new Runnable() {
-                @Override
                 public void run() {
                     runServer();                            // This runs for a long time
                     ioThread = null;

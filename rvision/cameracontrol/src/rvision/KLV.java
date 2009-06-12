@@ -474,7 +474,22 @@ public class KLV {
             }
         }   // end else: value not null
     }   // end constructor
-    
+
+
+
+    /**
+     * Convenience method for matching constructor to help
+     * disambiguate which constructors wrap existing data arrays
+     * and which constructors create fresh KLV sets.
+     * @param theBytes
+     * @param offset
+     * @param keyLength
+     * @param lengthEncoding
+     * @return
+     */
+    public static KLV wrap( byte[] theBytes, int offset, KeyLength keyLength, LengthEncoding lengthEncoding ){
+        return new KLV( theBytes, offset, keyLength, lengthEncoding);
+    }
     
     
     /**
@@ -1318,6 +1333,12 @@ public class KLV {
                 throw new ArrayIndexOutOfBoundsException( String.format(
                         "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
             length = inTheseBytes[offset] & 0xFF;
+            int remaining1 = inTheseBytes.length - offset - 1;
+            if( inTheseBytes.length - offset - 1 - length < 0 ){
+                throw new IllegalArgumentException( String.format(
+                    "KLV: Not enough bytes left in array (%d) for declared length (%d).",
+                    remaining1,length));
+            }
             setLength( length, lengthEncoding );
             valueOffset = offset + 1;
             break;
@@ -1328,6 +1349,12 @@ public class KLV {
                         "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
             length  = (inTheseBytes[offset]   & 0xFF) << 8;
             length |=  inTheseBytes[offset+1] & 0xFF;
+            int remaining2 = inTheseBytes.length - offset - 2;
+            if( inTheseBytes.length - offset - 1 - length < 0 ){
+                throw new IllegalArgumentException( String.format(
+                    "KLV: Not enough bytes left in array (%d) for declared length (%d).",
+                    remaining2,length));
+            }
             setLength( length, lengthEncoding );
             valueOffset = offset + 2;
             break;
@@ -1340,6 +1367,12 @@ public class KLV {
             length |= (inTheseBytes[offset+1] & 0xFF) << 16;
             length |= (inTheseBytes[offset+2] & 0xFF) << 8;
             length |=  inTheseBytes[offset+3] & 0xFF;
+            int remaining4 = inTheseBytes.length - offset - 2;
+            if( inTheseBytes.length - offset - 1 - length < 0 ){
+                throw new IllegalArgumentException( String.format(
+                    "KLV: Not enough bytes left in array (%d) for declared length (%d).",
+                    remaining4,length));
+            }
             setLength( length, lengthEncoding );
             valueOffset = offset + 4;
             break;
@@ -1373,6 +1406,12 @@ public class KLV {
                             "KLV: Not enough bytes for %s length encoding.", lengthEncoding ) );
                 for( int i = 0; i < following; i++ ){
                     length |= (inTheseBytes[offset+1+i] & 0xFF) << (following-1-i)*8;
+                }
+                int remainingB = inTheseBytes.length - offset - 1 - following;
+                if( inTheseBytes.length - offset - 1 - length < 0 ){
+                    throw new IllegalArgumentException( String.format(
+                        "KLV: Not enough bytes left in array (%d) for declared length (%d).",
+                        remainingB,length));
                 }
                 setLength( length, lengthEncoding );
                 valueOffset = offset + 1 + following;

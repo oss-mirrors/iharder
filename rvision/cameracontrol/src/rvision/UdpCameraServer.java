@@ -324,7 +324,7 @@ public class UdpCameraServer extends UdpServer implements UdpServer.Listener, Pr
         
         KLV klv = null;
         try{ 
-            klv = new KLV(                              // Extract KLV
+            klv = KLV.wrap(                              // Extract KLV
               udpPacket.getData(), udpPacket.getOffset(),     // Data
               KLV.KeyLength.SixteenBytes,
               KLV.LengthEncoding.FourBytes );           // Outer wrapper is 16x4

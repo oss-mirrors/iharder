@@ -228,6 +228,8 @@
 			<key>Layout</key>
 			<array>
 				<dict>
+					<key>BecomeActive</key>
+					<true/>
 					<key>ContentConfiguration</key>
 					<dict>
 						<key>PBXBottomSmartGroupGIDs</key>
@@ -273,11 +275,6 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>6</integer>
-									<integer>1</integer>
-									<integer>0</integer>
-								</array>
-								<array>
 									<integer>7</integer>
 									<integer>1</integer>
 									<integer>0</integer>
@@ -314,8 +311,6 @@
 					<key>Dock</key>
 					<array>
 						<dict>
-							<key>BecomeActive</key>
-							<true/>
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXProjectModuleGUID</key>
@@ -333,7 +328,7 @@
 										<key>_historyCapacity</key>
 										<integer>0</integer>
 										<key>bookmark</key>
-										<string>D4BCF5D00F8F0F5200BAEF57</string>
+										<string>D4BCF5F90F8F124700BAEF57</string>
 										<key>history</key>
 										<array>
 											<string>D42D5A450CDABCB60003369B</string>
@@ -346,7 +341,7 @@
 											<string>D48F4F2E0CFE854A006091AD</string>
 											<string>D44A9D980D139F440099D022</string>
 											<string>D44A9D990D139F440099D022</string>
-											<string>D44A9D9D0D139F440099D022</string>
+											<string>D4BCF5DF0F8F115E00BAEF57</string>
 										</array>
 										<key>prevStack</key>
 										<array>
@@ -418,9 +413,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>D4BCF5C40F8F0F2400BAEF57</string>
+				<string>D4BCF5E10F8F115E00BAEF57</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>D4BCF5C50F8F0F2400BAEF57</string>
+				<string>D4BCF5E20F8F115E00BAEF57</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -554,9 +549,9 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
+		<string>1C78EAAD065D492600B07095</string>
 		<string>1CD10A99069EF8BA00B06720</string>
 		<string>D42D5A0C0CD6D6620003369B</string>
-		<string>1C78EAAD065D492600B07095</string>
 		<string>/Users/rob/Documents/iHarder_SVN_Checkout/AddressBookScrubber/Address Book Scrubber.xcodeproj</string>
 	</array>
 	<key>WindowString</key>
@@ -637,7 +632,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>D42D5A0C0CD6D6620003369B</string>
-				<string>D4BCF5C60F8F0F2400BAEF57</string>
+				<string>D4BCF5F10F8F123000BAEF57</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -757,13 +752,13 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1CD10A99069EF8BA00B06720</string>
-				<string>D4BCF5C70F8F0F2400BAEF57</string>
+				<string>D4BCF5F20F8F123000BAEF57</string>
 				<string>1C162984064C10D400B95A72</string>
-				<string>D4BCF5C80F8F0F2400BAEF57</string>
-				<string>D4BCF5C90F8F0F2400BAEF57</string>
-				<string>D4BCF5CA0F8F0F2400BAEF57</string>
-				<string>D4BCF5CB0F8F0F2400BAEF57</string>
-				<string>D4BCF5CC0F8F0F2400BAEF57</string>
+				<string>D4BCF5F30F8F123000BAEF57</string>
+				<string>D4BCF5F40F8F123000BAEF57</string>
+				<string>D4BCF5F50F8F123000BAEF57</string>
+				<string>D4BCF5F60F8F123000BAEF57</string>
+				<string>D4BCF5F70F8F123000BAEF57</string>
 			</array>
 			<key>ToolbarConfiguration</key>
 			<string>xcode.toolbar.config.debugV3</string>
@@ -927,7 +922,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C78EAAD065D492600B07095</string>
-				<string>D4BCF5CD0F8F0F2400BAEF57</string>
+				<string>D4BCF5F80F8F123000BAEF57</string>
 				<string>1C78EAAC065D492600B07095</string>
 			</array>
 			<key>ToolbarConfiguration</key>
@@ -937,7 +932,7 @@
 			<key>WindowToolGUID</key>
 			<string>1C78EAAD065D492600B07095</string>
 			<key>WindowToolIsVisible</key>
-			<true/>
+			<false/>
 		</dict>
 		<dict>
 			<key>Identifier</key>

@@ -8,9 +8,6 @@ import java.util.*;
 import java.nio.*;
 import java.net.*;
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 
 
 
@@ -96,7 +93,7 @@ public class NioServer {
 
     /**
      * Refers to the size of the input buffer.
-     * @see #setInputBufferSize(int) 
+     * @see #setInputBufferSize(int)
      * @see #getInputBufferSize()
      */
     public final static String INPUT_BUFFER_SIZE_PROP = "bufferSize";
@@ -107,7 +104,7 @@ public class NioServer {
      * @see #getOutputBufferSize()
      */
     public final static String OUTPUT_BUFFER_SIZE_PROP = "bufferSize";
-    
+
     private final static int BUFFER_SIZE_DEFAULT = 4096;
     private int inputBufferSize = BUFFER_SIZE_DEFAULT;
     private int outputBufferSize = BUFFER_SIZE_DEFAULT;
@@ -123,14 +120,14 @@ public class NioServer {
      *  <li>STOPPED</li>
      * </ul>
      *
-     * @see #getState() 
+     * @see #getState()
      */
     public static enum State { STARTING, STARTED, STOPPING, STOPPED };
     private State currentState = State.STOPPED;
 
     /**
      * Refers to the state of the server (STARTING, STARTED, STOPPING, STOPPED).
-     * @see #getState() 
+     * @see #getState()
      */
     public final static String STATE_PROP = "state";
 
@@ -138,7 +135,7 @@ public class NioServer {
     /**
      * Refers to the last exception encountered internally on the server thread.
      *
-     * @see #getLastException() 
+     * @see #getLastException()
      */
     public final static String LAST_EXCEPTION_PROP = "lastException";
     private Throwable lastException;
@@ -194,7 +191,7 @@ public class NioServer {
      * @see #getSingleUdpPort()
      */
     public final static String SINGLE_UDP_PORT_PROP = "singleUdpPort";
-    
+
 
     private final Map<SocketAddress,SelectionKey> tcpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested TCP bindings, e.g., "listen on port 80"
     private final Map<SocketAddress,SelectionKey> udpBindings = new HashMap<SocketAddress,SelectionKey>();// Requested UDP bindings
@@ -203,6 +200,7 @@ public class NioServer {
 
     private final Set<SocketAddress> pendingTcpAdds = new HashSet<SocketAddress>(); // TCP bindings to add to selector on next cycle
     private final Set<SocketAddress> pendingUdpAdds = new HashSet<SocketAddress>(); // UDP bindings to add to selector on next cycle
+    private final Collection<DatagramChannel> pendingUdpToRegister = new LinkedList<DatagramChannel>();
 
     private final Map<SocketAddress,SelectionKey> pendingTcpRemoves = new HashMap<SocketAddress,SelectionKey>(); // TCP bindings to remove from selector on next cycle
     private final Map<SocketAddress,SelectionKey> pendingUdpRemoves = new HashMap<SocketAddress,SelectionKey>(); // UDP bindings to remove from selector on next cycle
@@ -214,6 +212,8 @@ public class NioServer {
 
     private final Set<SelectionKey> closeAfterWriting = new HashSet<SelectionKey>();
 
+
+
 /* ********  C O N S T R U C T O R S  ******** */
 
 
@@ -224,11 +224,11 @@ public class NioServer {
     public NioServer(){
     }
 
-    
+
     /**
      * Constructs a new NioServer, listening to nothing, and not started.
      * The provided ThreadFactory will be used when starting and running the server.
-     * 
+     *
      * @param factory the ThreadFactory to use when starting the server
      */
     public NioServer( ThreadFactory factory ){
@@ -333,7 +333,6 @@ public class NioServer {
             assert ioThread == null : ioThread;             // Shouldn't have a thread
 
             Runnable run = new Runnable() {
-                @Override
                 public void run() {
                     runServer();                            // This runs for a long time
                     ioThread = null;
@@ -448,7 +447,7 @@ public class NioServer {
                     LOGGER.finer("selector.select() <= 0");                     // Possible false start
                     Thread.sleep(100);                                          // Let's not run away from ourselves
                 }///////  B L O C K S   H E R E
-                
+
 
 
                 synchronized( this ){
@@ -497,7 +496,7 @@ public class NioServer {
                     iter.remove();                                              // Remove from list
 
                     try{
-                            
+
                         // Accept connections
                         // This should only be from the TCP bindings
                         if(  key.isAcceptable()  ){                                 // New, incoming connection?
@@ -576,7 +575,7 @@ public class NioServer {
      * @throws java.io.IOException if something within throws it
      */
     private synchronized boolean runLoopCheck() throws IOException {
-        
+
         if( this.currentState == State.STOPPING ){
             LOGGER.finer( "Stopping server by request." );
             assert this.selector != null;
@@ -623,17 +622,17 @@ public class NioServer {
                     // UGLY UGLY HACK: multicast support for NIO
                     // create a temporary instanceof PlainDatagramSocket, set its fd and configure it
                     @SuppressWarnings(value = "unchecked")
-                    Constructor<? extends DatagramSocketImpl> c =
-                      (Constructor<? extends DatagramSocketImpl>)Class.forName("java.net.PlainDatagramSocketImpl").getDeclaredConstructor();
+                    java.lang.reflect.Constructor<? extends DatagramSocketImpl> c =
+                      (java.lang.reflect.Constructor<? extends DatagramSocketImpl>)Class.forName("java.net.PlainDatagramSocketImpl").getDeclaredConstructor();
                     c.setAccessible(true);
                     DatagramSocketImpl socketImpl = c.newInstance();
-                    Field channelFd = Class.forName("sun.nio.ch.DatagramChannelImpl").getDeclaredField("fd");
+                    java.lang.reflect.Field channelFd = Class.forName("sun.nio.ch.DatagramChannelImpl").getDeclaredField("fd");
                     channelFd.setAccessible(true);
-                    Field socketFd = DatagramSocketImpl.class.getDeclaredField("fd");
+                    java.lang.reflect.Field socketFd = DatagramSocketImpl.class.getDeclaredField("fd");
                     socketFd.setAccessible(true);
                     socketFd.set(socketImpl, channelFd.get(dc));
                     try {
-                        Method m = DatagramSocketImpl.class.getDeclaredMethod("joinGroup", SocketAddress.class, NetworkInterface.class);
+                        java.lang.reflect.Method m = DatagramSocketImpl.class.getDeclaredMethod("joinGroup", SocketAddress.class, NetworkInterface.class);
                         m.setAccessible(true);
                         m.invoke(socketImpl, groupAddr, null);
                     } catch (Exception e) {
@@ -650,6 +649,16 @@ public class NioServer {
             }   // end if: got group
         }   // end for: each address
         this.pendingUdpAdds.clear();
+
+
+        // Add UDP bindings that were added with the sendUdp method,
+        // probably on another thread (which is why this is necessary).
+        for( DatagramChannel dc : this.pendingUdpToRegister ){
+            SelectionKey acceptKey = dc.register(               // Register to listen for replies
+              this.selector, SelectionKey.OP_READ );            // Listen for READ events
+            this.udpBindings.put(dc.socket().getLocalSocketAddress(), acceptKey);   // Save key
+        }   // end for: each pending datagram channel to register
+        this.pendingUdpToRegister.clear();
 
         // Pending TCP Removes
         for( Map.Entry<SocketAddress,SelectionKey> e : this.pendingTcpRemoves.entrySet() ){
@@ -717,7 +726,7 @@ public class NioServer {
               SelectionKey.OP_READ | SelectionKey.OP_WRITE );                   // Want to READ and write data
 
             outBuff.clear().flip();                                             // Show outBuff as having nothing
-            
+
             ////////  FIRE EVENT  ////////
             fireNewConnection(incomingReadKey,outBuff);                         // Fire new connection event
             ////////  FIRE EVENT  ////////
@@ -929,8 +938,8 @@ public class NioServer {
             if( outBuff.hasRemaining() ){                                       // Did they give us something?
                 ch.write(outBuff);                                              // Write what we can of it
             } else {                                                            // They gave us nothing
-                this.setNotifyOnWritable(key, false);                           // Stop notifying 
-            } 
+                this.setNotifyOnWritable(key, false);                           // Stop notifying
+            }
 
             // If there are new leftovers, save them for next
             // time the channel is ready.
@@ -947,7 +956,7 @@ public class NioServer {
             this.leftoverForWriting.put(key,leftover);                          // Save leftovers for next time
         }   // end if: proceed with fresh buffer to user
 
-        
+
         // After all this writing, see if there's anything left.
         // If nothing is left, and "close after writing" has been set,
         // then close the channel.
@@ -1298,6 +1307,45 @@ public class NioServer {
         return bindings;
     }
 
+
+
+    /**
+     * Sends data via UDP datagram from the boundFrom address/port to the
+     * destination address/port. If the boundFrom address/port is already
+     * bound (presumably via {@link #addUdpBinding(java.net.SocketAddress)}),
+     * then that will be the channel from which the datagram is sent.
+     * If the boundFrom address/port is not
+     * bound (via {@link #addUdpBinding(java.net.SocketAddress)}), then
+     * a new binding will be established and maintained, essentially creating
+     * a means to listen for replies.
+     * If boundFrom is null, then
+     * the system will pick an arbitrary port from which to send the data.
+     *
+     * @param boundFrom Source of reply
+     * @param dest      Destination for reply
+     * @param out       Data to send
+     * @throws java.io.IOException
+     */
+    public synchronized SocketAddress sendUdp( SocketAddress boundFrom, SocketAddress dest, ByteBuffer out ) throws IOException{
+        SelectionKey key = this.udpBindings.get(boundFrom);     // Attempt to retrieve previous binding
+        DatagramChannel dc = null;
+        if( key == null ){                                      // If no binding found...
+            dc = DatagramChannel.open();                        // Create channel
+            dc.socket().bind(boundFrom);                        // Bind to specific "from" or any if null
+            dc.configureBlocking(false);                        // Make non-blocking i/o
+            this.pendingUdpToRegister.add(dc);
+            dc.send(out, dest);                                 // Send data
+        } else {
+            SelectableChannel sc = key.channel();               // Get existing channel
+            if( sc instanceof DatagramChannel ){                // Verify it is DatagramChannel (assert may work here)
+                dc = (DatagramChannel)sc;                       // Cast to DatagramChannel
+                dc.send(out, dest);                             // Send data
+            } else {
+                throw new IOException("Reply cannot be sent from non-Datagram channel: " + sc );
+            }
+        }   // end else: got channel
+        return dc.socket().getLocalSocketAddress();
+    }   // end sendUdpReply
 
 
     /**
@@ -1924,7 +1972,7 @@ public class NioServer {
          * then you risk writing your data out of sequence.</p>
          *
          * <p>Be aware of how large the output buffer is. You can change the
-         * output buffer size that the server uses with the 
+         * output buffer size that the server uses with the
          * {@link NioServer#setOutputBufferSize(int)}
          * method, but that will not take effect until the server has finished processing
          * the current set of selected SelectionKeys.</p>

@@ -474,6 +474,7 @@ public class KLV {
 
 
     /**
+     * Creates a KLV set by reading the provided data array.
      * Convenience method for matching constructor to help
      * disambiguate which constructors wrap existing data arrays
      * and which constructors create fresh KLV sets.
@@ -487,6 +488,38 @@ public class KLV {
         return new KLV( theBytes, offset, keyLength, lengthEncoding);
     }
 
+    /**
+     * Creates a fresh KLV set with no value (payload).
+     * Convenience method for matching constructor to help
+     * disambiguate which constructors wrap existing data arrays
+     * and which constructors create fresh KLV sets.
+     *
+     * @param shortKey
+     * @param keyLength
+     * @param lengthFieldEncoding
+     * @return
+     */
+    public static KLV create( int shortKey, KeyLength keyLength, LengthEncoding lengthFieldEncoding ){
+        return new KLV(shortKey,keyLength,lengthFieldEncoding);
+    }
+
+    /**
+     * Creates a fresh KLV set with the provided value (payload).
+     * Convenience method for matching constructor to help
+     * disambiguate which constructors wrap existing data arrays
+     * and which constructors create fresh KLV sets.
+     *
+     * @param shortKey
+     * @param keyLength
+     * @param lengthEncoding
+     * @param value
+     * @param offset
+     * @param length
+     * @return
+     */
+    public static KLV create( int shortKey, KeyLength keyLength, LengthEncoding lengthEncoding, byte[] value, int offset, int length ){
+        return new KLV(shortKey,keyLength,lengthEncoding,value,offset,length);
+    }
 
     /**
      * Reads a KLV set from the input stream, blocking until a proper KLV
