@@ -33,6 +33,10 @@
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.4 - Fixed bug when working with gzipped streams whereby flushing
+ *   the Base64.OutputStream closed the Base64 encoding (by padding with equals
+ *   signs) too soon. Also added an option to suppress the automatic decoding
+ *   of gzipped streams.</li>
  *  <li>v2.3.3 - Changed default char encoding to US-ASCII which reduces the internal Java
  *   footprint with its CharEncoders and so forth. Fixed some javadocs that were
  *   inconsistent. Removed imports and specified things like java.io.IOException
@@ -143,9 +147,12 @@ public class Base64
     /** Specify decoding in first bit. Value is zero. */
     public final static int DECODE = 0;
     
-    
+
     /** Specify that data should be gzip-compressed in second bit. Value is two. */
     public final static int GZIP = 2;
+
+    /** Specify that gzipped data should <em>not</em> be automatically gunzipped. */
+    public final static int DONT_GUNZIP = 4;
     
     
     /** Do break lines when encoding. Value is 8. */
@@ -635,16 +642,23 @@ public class Base64
         
         // Streams
         java.io.ByteArrayOutputStream  baos  = null; 
-        java.io.OutputStream           b64os = null; 
-        java.io.ObjectOutputStream     oos   = null; 
+        java.io.OutputStream           b64os = null;
+        java.util.zip.GZIPOutputStream gzos  = null;
+        java.io.ObjectOutputStream     oos   = null;
         
         
         try {
             // ObjectOutputStream -> (GZIP) -> Base64 -> ByteArrayOutputStream
-            // Note that the optional GZIPping is handled by Base64.OutputStream.
             baos  = new java.io.ByteArrayOutputStream();
             b64os = new Base64.OutputStream( baos, ENCODE | options );
-            oos   = new java.io.ObjectOutputStream( b64os );
+            if( (options & GZIP) != 0 ){
+                // Gzip
+                gzos = new java.util.zip.GZIPOutputStream(b64os);
+                oos = new java.io.ObjectOutputStream( gzos );
+            } else {
+                // Not gzipped
+                oos = new java.io.ObjectOutputStream( b64os );
+            }
             oos.writeObject( serializableObject );
         }   // end try
         catch( java.io.IOException e ) {
@@ -654,6 +668,7 @@ public class Base64
         }   // end catch
         finally {
             try{ oos.close();   } catch( Exception e ){}
+            try{ gzos.close();  } catch( Exception e ){}
             try{ b64os.close(); } catch( Exception e ){}
             try{ baos.close();  } catch( Exception e ){}
         }   // end finally
@@ -874,7 +889,7 @@ public class Base64
 
 
         // Compress?
-        if( (options & GZIP) > 0 ) {
+        if( (options & GZIP) != 0 ) {
             java.io.ByteArrayOutputStream  baos  = null;
             java.util.zip.GZIPOutputStream gzos  = null;
             Base64.OutputStream            b64os = null;
@@ -1221,12 +1236,12 @@ public class Base64
         // Decode
         bytes = decode( bytes, 0, bytes.length, options );
         
-        
         // Check to see if it's gzip-compressed
         // GZIP Magic Two-Byte Number: 0x8b1f (35615)
-        if( bytes != null && bytes.length >= 4 ) {
+        boolean dontGunzip = (options & DONT_GUNZIP) != 0;
+        if( (bytes != null) && (bytes.length >= 4) && (!dontGunzip) ) {
             
-            int head = ((int)bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);       
+            int head = ((int)bytes[0] & 0xff) | ((bytes[1] << 8) & 0xff00);
             if( java.util.zip.GZIPInputStream.GZIP_MAGIC == head )  {
                 java.io.ByteArrayInputStream  bais = null;
                 java.util.zip.GZIPInputStream gzis = null;
@@ -1248,6 +1263,7 @@ public class Base64
 
                 }   // end try
                 catch( java.io.IOException e ) {
+                    e.printStackTrace();
                     // Just return originally-decoded bytes
                 }   // end catch
                 finally {
@@ -1262,6 +1278,24 @@ public class Base64
         return bytes;
     }   // end decode
 
+
+
+    /**
+     * Attempts to decode Base64 data and deserialize a Java
+     * Object within. Returns <tt>null</tt> if there was an error.
+     *
+     * @param encodedObject The Base64 data to decode
+     * @return The decoded and deserialized object
+     * @throws NullPointerException if encodedObject is null
+     * @throws java.io.IOException if there is a general error
+     * @throws ClassNotFoundException if the decoded object is of a
+     *         class that cannot be found by the JVM
+     * @since 1.5
+     */
+    public static Object decodeToObject( String encodedObject )
+    throws java.io.IOException, java.lang.ClassNotFoundException {
+        return decodeToObject(encodedObject,NO_OPTIONS);
+    }
     
 
     /**
@@ -1274,13 +1308,13 @@ public class Base64
      * @throws java.io.IOException if there is a general error
      * @throws ClassNotFoundException if the decoded object is of a 
      *         class that cannot be found by the JVM
-     * @since 1.5
+     * @since 2.3.4
      */
-    public static Object decodeToObject( String encodedObject )
+    public static Object decodeToObject( String encodedObject, int options )
     throws java.io.IOException, java.lang.ClassNotFoundException {
         
         // Decode and gunzip if necessary
-        byte[] objBytes = decode( encodedObject );
+        byte[] objBytes = decode( encodedObject, options );
         
         java.io.ByteArrayInputStream  bais = null;
         java.io.ObjectInputStream     ois  = null;
@@ -1817,8 +1851,8 @@ public class Base64
          */
         public OutputStream( java.io.OutputStream out, int options ) {
             super( out );
-            this.breakLines   = (options & DO_BREAK_LINES) > 0;
-            this.encode       = (options & ENCODE) > 0;
+            this.breakLines   = (options & DO_BREAK_LINES) != 0;
+            this.encode       = (options & ENCODE) != 0;
             this.bufferLength = encode ? 3 : 4;
             this.buffer       = new byte[ bufferLength ];
             this.position     = 0;
@@ -1847,7 +1881,7 @@ public class Base64
         throws java.io.IOException {
             // Encoding suspended?
             if( suspendEncoding ) {
-                super.out.write( theByte );
+                this.out.write( theByte );
                 return;
             }   // end if: supsended
             
@@ -1856,11 +1890,11 @@ public class Base64
                 buffer[ position++ ] = (byte)theByte;
                 if( position >= bufferLength ) { // Enough to encode.
                 
-                    out.write( encode3to4( b4, buffer, bufferLength, options ) );
+                    this.out.write( encode3to4( b4, buffer, bufferLength, options ) );
 
                     lineLength += 4;
                     if( breakLines && lineLength >= MAX_LINE_LENGTH ) {
-                        out.write( NEW_LINE );
+                        this.out.write( NEW_LINE );
                         lineLength = 0;
                     }   // end if: end of line
 
@@ -1902,7 +1936,7 @@ public class Base64
         throws java.io.IOException {
             // Encoding suspended?
             if( suspendEncoding ) {
-                super.out.write( theBytes, off, len );
+                this.out.write( theBytes, off, len );
                 return;
             }   // end if: supsended
             
@@ -1932,16 +1966,6 @@ public class Base64
 
         }   // end flush
 
-        /**
-         * Flushes the stream (and the enclosing streams).
-         * @throws java.io.IOException
-         * @since 2.3
-         */
-        @Override
-        public void flush() throws java.io.IOException {
-            flushBase64();
-            super.flush();
-        }
         
         /** 
          * Flushes and closes (I think, in the superclass) the stream. 
@@ -1951,7 +1975,7 @@ public class Base64
         @Override
         public void close() throws java.io.IOException {
             // 1. Ensure that pending characters are written
-            flush();
+            flushBase64();
 
             // 2. Actually close the stream
             // Base class both flushes and closes.
