@@ -449,8 +449,8 @@ public class FileDrop
                     
                     java.io.File file = new java.io.File(new java.net.URI(line));
                     list.add(file);
-                } catch (java.net.URISyntaxException ex) {
-                    log(out, "FileDrop: URISyntaxException");
+                } catch (Exception ex) {
+                    log(out, "Error with " + line + ": " + ex.getMessage());
                 }
             }
 
@@ -614,7 +614,7 @@ public class FileDrop
      *      ...
      * </pre></code>
      *
-     * @since 1.2
+     * @since 1.1
      */
     public static interface Listener {
        
@@ -656,7 +656,7 @@ public class FileDrop
          *
          * @param files The array of files that were dropped
          * @source The event source
-         * @since 1.2
+         * @since 1.1
          */
         public Event( java.io.File[] files, Object source ) {
             super( source );
