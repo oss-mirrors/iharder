@@ -42,9 +42,12 @@ BOOL g_verbose = NO;
 +(QTCaptureDevice *)deviceNamed:(NSString *)name;
 
 + (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path;
++ (BOOL) saveImageBuffer:(CVImageBufferRef)image toPath: (NSString*)path;
 
 -(id)init;
 -(void)dealloc;
+
+-(CVImageBufferRef)currentImageBuffer;
 
 /**
  * Captures an image from the given device and saves it
