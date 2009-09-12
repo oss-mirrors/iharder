@@ -1,14 +1,14 @@
 //
-//  ImageCapture.m
-//  ImageCapture
+//  ImageSnap.m
+//  ImageSnap
 //
 //  Created by Robert Harder on 9/10/09.
 //
 
-#import "ImageCapture.h"
+#import "ImageSnap.h"
 
 
-@implementation ImageCapture
+@implementation ImageSnap
 
 
 
@@ -54,7 +54,7 @@
 +(QTCaptureDevice *)deviceNamed:(NSString *)name{
     QTCaptureDevice *result = nil;
     
-    NSArray *devices = [ImageCapture videoDevices];
+    NSArray *devices = [ImageSnap videoDevices];
 	for( QTCaptureDevice *device in devices ){
         if ( [name isEqualToString:[device description]] ){
             result = device;
@@ -66,11 +66,66 @@
 
 
 
++ (BOOL) saveImageBuffer:(CVImageBufferRef)buffer toPath: (NSString*)path{
+    NSCIImageRep *imageRep = [NSCIImageRep imageRepWithCIImage:[CIImage imageWithCVImageBuffer:buffer]];
+    NSImage *image = [[NSImage alloc] initWithSize:[imageRep size]];
+    [image addRepresentation:imageRep];
+    BOOL success = [ImageSnap saveImage:image toPath:path];
+    [image release];
+    return success;
+}
+
+
 // Saves the image to the file.
-// Currently only supports TIFF images.
 + (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path{
-    NSData *data = [image TIFFRepresentation];
-    return [data writeToFile:path atomically:YES];
+    
+    NSString *ext = [path pathExtension];
+    NSData *tiffData = [image TIFFRepresentation];
+    
+    NSBitmapImageFileType imageType = 0;
+    NSDictionary *imageProps = nil;
+    
+    // TIFF. Special case. Can save immediately.
+    if( [@"tiff" caseInsensitiveCompare:ext] == NSOrderedSame || 
+        [@"tif" caseInsensitiveCompare:ext] == NSOrderedSame ){
+        return [tiffData writeToFile:path atomically:YES];
+    }
+    
+    // JPEG
+    else if( [@"jpeg" caseInsensitiveCompare:ext] == NSOrderedSame || 
+             [@"jpg" caseInsensitiveCompare:ext] == NSOrderedSame ){
+        imageType = NSJPEGFileType;
+        imageProps = [NSDictionary dictionaryWithObject:[NSNumber numberWithFloat:0.9] forKey:NSImageCompressionFactor];
+
+    }
+    
+    // PNG
+    else if( [@"png" caseInsensitiveCompare:ext] == NSOrderedSame ){
+        imageType = NSPNGFileType;
+    }
+    
+    // BMP
+    else if( [@"bmp" caseInsensitiveCompare:ext] == NSOrderedSame ){
+        imageType = NSBMPFileType;
+    }
+    
+    // GIF
+    else if( [@"gif" caseInsensitiveCompare:ext] == NSOrderedSame ){
+        imageType = NSGIFFileType;
+    }
+    
+    
+    // Save if file type is supported.
+    if( imageType == 0 ){
+        fprintf(stderr, "Unsupported file type: %s\n", [ext UTF8String] );
+        return NO;
+    } else {
+        NSBitmapImageRep *imageRep = [NSBitmapImageRep imageRepWithData:tiffData];
+        NSData *photoData = [imageRep representationUsingType:imageType properties:imageProps];
+        return [photoData writeToFile:path atomically:NO];
+    }
+    
+    return NO;
 }
 
 
@@ -146,33 +201,46 @@
     }
     g_verbose ? printf("Frame received. "):0;
     
-    // Once we have a frame, tell session to stop.
-	[mCaptureSession stopRunning];
-    
-	
 	// If we already have one frame, ignore others
 	// until the stopRunning message is received.
 	if( mCurrentImageBuffer ){
         g_verbose ? printf("Ignoring.\n"):0;
 		return;
 	}
+    
+    
 	mCurrentImageBuffer = videoFrame;
 	CVBufferRetain(mCurrentImageBuffer);
+    printf("[X]");
+    fflush(stdout);
     
-    
+
     // Save image to a file
-    g_verbose ? printf("Saving..."):0;
-    NSCIImageRep *imageRep = [NSCIImageRep imageRepWithCIImage:[CIImage imageWithCVImageBuffer:videoFrame]];
-    NSImage *image = [[[NSImage alloc] initWithSize:[imageRep size]] autorelease];
-    [image addRepresentation:imageRep];
-    if( ![ImageCapture saveImage:image toPath:mSavePath] ){
-        fprintf(stderr, "Error saving image.\n" );
-    }   // end if: error
-    g_verbose ? printf("Done.\n"):0;
-    mSnapshotSaved = YES;
+    // For when we all have Grand Central Dispatch...
+    /*dispatch_async(dispatch_get_main_queue(), ^*/{
+        g_verbose ? printf("Saving..."):0;
+        NSCIImageRep *imageRep = [NSCIImageRep imageRepWithCIImage:[CIImage imageWithCVImageBuffer:videoFrame]];
+        NSImage *image = [[[NSImage alloc] initWithSize:[imageRep size]] autorelease];
+        [image addRepresentation:imageRep];
+        if( ![ImageSnap saveImage:image toPath:mSavePath] ){
+            fprintf(stderr, "Error saving image.\n" );
+        }   // end if: error
+        g_verbose ? printf("Done.\n"):0;
+        /*dispatch_async(dispatch_get_main_queue(), ^*/{
+            mSnapshotSaved = YES;
+            g_verbose ? printf("Stopping QTCaptureSession..."):0;
+            [mCaptureSession stopRunning];
+            g_verbose ? printf("Stopped.\n"):0;
+        }//);
+    }//);
+    
+
     
 }
 
+-(CVImageBufferRef)currentImageBuffer{
+    return mCurrentImageBuffer;
+}
 
 
 // Flag telling if snapshot is saved, though not exactly true.
@@ -259,7 +327,7 @@ int processArguments(int argc, const char * argv[], NSRunLoop *runLoop){
                 // Specify device
                 case 'd':
                     if( i+1 < argc ){
-                        device = [ImageCapture deviceNamed:[NSString stringWithUTF8String:argv[i+1]]];
+                        device = [ImageSnap deviceNamed:[NSString stringWithUTF8String:argv[i+1]]];
                         if( device == nil ){
                             fprintf( stderr, "Device \"%s\" not found.\n", argv[i+1] );
                             return 11;
@@ -304,18 +372,19 @@ int processArguments(int argc, const char * argv[], NSRunLoop *runLoop){
 	
     
     // Begin asynchronous image capture
-	ImageCapture *ic = [[ImageCapture alloc] init];
-    [ic saveSnapshotFromDevice:device toFile:filename];
+	ImageSnap *imgSnap = [[ImageSnap alloc] init];
+    [imgSnap saveSnapshotFromDevice:device toFile:filename];
     
     // Wait for async image capture to complete
-	while( ![ic snapshotSaved] ){
+	//while( ![ic snapshotSaved] ){
+    while( [imgSnap snapshotSaved] == NO ){
         printf(".");
         fflush(stdout);
         [runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 0.2]];
 	}
     printf( "%s\n", [filename UTF8String] );
     
-    [ic release];
+    [imgSnap release];
     return 0;
 }
 
@@ -325,8 +394,8 @@ void printUsage(int argc, const char * argv[]){
     printf( "USAGE: %s [options] [filename]\n", argv[0] );
     printf( "Captures an image from a video device and saves it in a file.\n" );
     printf( "If no device is specified, the system default will be used.\n" );
-    printf( "If no filename is specfied, snapshot.tiff will be used.\n" );
-    printf( "Currently only TIFF images are supported.\n" );
+    printf( "If no filename is specfied, snapshot.jpg will be used.\n" );
+    printf( "Supported image types: JPEG, TIFF, PNG, GIF, BMP\n" );
     printf( "  -h          This help message\n" );
     printf( "  -v          Verbose mode\n");
     printf( "  -l          List available video devices\n" );
@@ -341,14 +410,13 @@ void printUsage(int argc, const char * argv[]){
  * Prints a list of video capture devices to standard out.
  */
 int listDevices(){
-	NSArray *devices = [ImageCapture videoDevices];
+	NSArray *devices = [ImageSnap videoDevices];
     
     [devices count] > 0 ?
     printf("Video Devices:\n") :
     printf("No video devices found.\n");
     
 	for( QTCaptureDevice *device in devices ){
-		//CFShow( (CFStringRef)[device description] );
 		printf( "%s\n", [[device description] UTF8String] );
 	}	// end for: each device
     return [devices count];
@@ -360,18 +428,18 @@ int listDevices(){
  * Currently returns snapshot.tiff.
  */
 NSString *generateFilename(){
-	NSString *result = @"snapshot.tiff";
+	NSString *result = @"snapshot.jpg";
 	return result;
 }	// end
 
 
 /**
  * Gets a default video device, or nil if none is found.
- * For now, simply queries ImageCapture. May be fancier
+ * For now, simply queries ImageSnap. May be fancier
  * in the future.
  */
 QTCaptureDevice *getDefaultDevice(){
-	return [ImageCapture defaultVideoDevice];
+	return [ImageSnap defaultVideoDevice];
 }	// end
 
 
