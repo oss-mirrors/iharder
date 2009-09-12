@@ -1,15 +1,16 @@
 <?xml version="1.0"?>
 
 <project name="ImageSnap" default="xcodeBuild" basedir=".">
-  <property name="deploy.base.dir"      value="${ant.project.name}-v" />
+  <property name="cli.name"           value="imagesnap" />
+  <property name="deploy.base.dir"    value="${ant.project.name}-v" />
 
     <target name="xcodeBuild">
         <echo>Start Build.</echo>
         <exec executable="xCodeBuild">
             <arg value="-alltargets"/>
         </exec>
-        <copy file="build/Release/${ant.project.name}" tofile="${ant.project.name}"/>
-        <chmod file="${ant.project.name}" perm="+x" />
+        <copy file="build/Release/${cli.name}" tofile="${cli.name}"/>
+        <chmod file="${cli.name}" perm="+x" />
         <echo>End Build.</echo>
     </target>
     
@@ -17,14 +18,14 @@
       <input message="Enter version for this release (ex: 0.1): " addproperty="rel.ver" />
       <property name="deploy.dir" value="${deploy.base.dir}${rel.ver}" />
       <mkdir dir="${deploy.dir}" />
-      <copy file="${ant.project.name}"   todir="${deploy.dir}"/>
-      <chmod file="${deploy.dir}/${ant.project.name}" perm="+x" />
+      <copy file="${cli.name}"   todir="${deploy.dir}"/>
+      <chmod file="${deploy.dir}/${cli.name}" perm="+x" />
       <copy file="${ant.project.name}.h" todir="${deploy.dir}"/>
       <copy file="${ant.project.name}.m" todir="${deploy.dir}"/>
       <copy file="ReadMeOrDont.rtf" todir="${deploy.dir}"/>
       <copy todir="${deploy.dir}/ImageSnap.xcodeproj">
         <fileset dir="ImageSnap.xcodeproj">
-          <exclude name="**/.svn"/>
+          <exclude name="**/.svn **/rob.*"/>
         </fileset>
       </copy>
       <tar destfile="${deploy.dir}.tgz" basedir="." includes="${deploy.dir}/**" compression="gzip" />
