@@ -1,16 +1,16 @@
 //
-//  ImageCapture.h
-//  ImageCapture
+//  ImageSnap.h
+//  ImageSnap
 //
 //  Created by Robert Harder on 9/10/09.
 //
 #import <Cocoa/Cocoa.h>
 #import <QTKit/QTKit.h>
-#include "ImageCapture.h"
+#include "ImageSnap.h"
 
 BOOL g_verbose = NO;
 
-@interface ImageCapture : NSObject {
+@interface ImageSnap : NSObject {
     
     
     QTCaptureSession                    *mCaptureSession;
@@ -42,9 +42,12 @@ BOOL g_verbose = NO;
 +(QTCaptureDevice *)deviceNamed:(NSString *)name;
 
 + (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path;
++ (BOOL) saveImageBuffer:(CVImageBufferRef)image toPath: (NSString*)path;
 
 -(id)init;
 -(void)dealloc;
+
+-(CVImageBufferRef)currentImageBuffer;
 
 /**
  * Captures an image from the given device and saves it
