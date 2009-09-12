@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="ImageCapture" default="xcodeBuild" basedir=".">
+<project name="ImageSnap" default="xcodeBuild" basedir=".">
   <property name="deploy.base.dir"      value="${ant.project.name}-v" />
 
     <target name="xcodeBuild">
@@ -22,8 +22,8 @@
       <copy file="${ant.project.name}.h" todir="${deploy.dir}"/>
       <copy file="${ant.project.name}.m" todir="${deploy.dir}"/>
       <copy file="ReadMeOrDont.rtf" todir="${deploy.dir}"/>
-      <copy todir="${deploy.dir}/ImageCapture.xcodeproj">
-        <fileset dir="ImageCapture.xcodeproj">
+      <copy todir="${deploy.dir}/ImageSnap.xcodeproj">
+        <fileset dir="ImageSnap.xcodeproj">
           <exclude name="**/.svn"/>
         </fileset>
       </copy>
