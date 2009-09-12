@@ -28,7 +28,12 @@
           <exclude name="**/.svn **/rob.*"/>
         </fileset>
       </copy>
-      <tar destfile="${deploy.dir}.tgz" basedir="." includes="${deploy.dir}/**" compression="gzip" />
+      <!--tar destfile="${deploy.dir}.tgz" basedir="." includes="${deploy.dir}/**" compression="gzip" /-->
+      <exec executable="tar">
+        <arg value="czvf" />
+        <arg value="${deploy.dir}.tgz" />
+        <arg value="${deploy.dir}" />
+      </exec>
       <delete dir="${deploy.dir}" />
 
     </target>
