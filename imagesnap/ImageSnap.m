@@ -82,8 +82,9 @@
     NSString *ext = [path pathExtension];
     NSData *tiffData = [image TIFFRepresentation];
     
-    NSBitmapImageFileType imageType = 0;
+    NSBitmapImageFileType imageType = NSJPEGFileType;
     NSDictionary *imageProps = nil;
+    
     
     // TIFF. Special case. Can save immediately.
     if( [@"tiff" caseInsensitiveCompare:ext] == NSOrderedSame || 
@@ -122,7 +123,18 @@
     } else {
         NSBitmapImageRep *imageRep = [NSBitmapImageRep imageRepWithData:tiffData];
         NSData *photoData = [imageRep representationUsingType:imageType properties:imageProps];
-        return [photoData writeToFile:path atomically:NO];
+        
+        if( [@"-" isEqualToString:path] ){
+            NSUInteger length = [photoData length];
+            NSUInteger i;
+            char *start = [photoData bytes];
+            for( i = 0; i < length; ++i ){
+                putc( *(start + i), stdout );
+            }   // end for: write out
+            return YES;
+        } else {
+            return [photoData writeToFile:path atomically:NO];
+        }
     }
     
     return NO;
@@ -182,6 +194,14 @@
     g_verbose ? printf("Starting QTCaptureSession running...\n"):0;
 	[mCaptureSession startRunning];
     
+    
+    NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+    while( [self snapshotSaved] == NO ){
+        !g_quiet ? printf("."):0;
+        fflush(stdout);
+        [runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 0.2]];
+	}
+    
 	success = YES;
 	return success;
     
@@ -211,7 +231,7 @@
     
 	mCurrentImageBuffer = videoFrame;
 	CVBufferRetain(mCurrentImageBuffer);
-    printf("[X]");
+    !g_quiet ? printf("[X]"):0;
     fflush(stdout);
     
 
@@ -300,51 +320,54 @@ int processArguments(int argc, const char * argv[], NSRunLoop *runLoop){
 		
 		// Handle command line switches
 		if (argv[i][0] == '-') {
-			
-			// Which switch was given
-			switch (argv[i][1]) {
+            
+            // Dash only? Means write image to stdout
+            if( argv[i][1] == 0 ){
+                filename = @"-";
+                g_quiet = YES;
+            } else {
                 
-                // Help
-                case '?':
-                case 'h':
-                    printUsage( argc, argv );
-                    return 0;
-                    break;
-
+                // Which switch was given
+                switch (argv[i][1]) {
                     
-                // Verbose
-                case 'v':
-                    g_verbose = YES;
-                    break;
+                    // Help
+                    case '?':
+                    case 'h':
+                        printUsage( argc, argv );
+                        return 0;
+                        break;
 
-					
-				// List devices
-				case 'l': 
-					listDevices();
-                    return 0;
-					break;
-                    
-                // Specify device
-                case 'd':
-                    if( i+1 < argc ){
-                        device = [ImageSnap deviceNamed:[NSString stringWithUTF8String:argv[i+1]]];
-                        if( device == nil ){
-                            fprintf( stderr, "Device \"%s\" not found.\n", argv[i+1] );
-                            return 11;
-                        }   // end if: not found
-                        ++i;
-                    } else {
-                        fprintf( stderr, "Not enough arguments given.\n" );
-                        return 10;
-                    }
-					
-			}	// end switch: flag value
+                        
+                    // Verbose
+                    case 'v':
+                        g_verbose = YES;
+                        break;
+
+                        
+                    // List devices
+                    case 'l': 
+                        listDevices();
+                        return 0;
+                        break;
+                        
+                    // Specify device
+                    case 'd':
+                        if( i+1 < argc ){
+                            device = [ImageSnap deviceNamed:[NSString stringWithUTF8String:argv[i+1]]];
+                            if( device == nil ){
+                                fprintf( stderr, "Device \"%s\" not found.\n", argv[i+1] );
+                                return 11;
+                            }   // end if: not found
+                            ++i;
+                        } else {
+                            fprintf( stderr, "Not enough arguments given.\n" );
+                            return 10;
+                        }
+                        
+                }	// end switch: flag value
+            }   // end else: not dash only
 		}	// end if: '-'
 		
-		// Else assume it's a filename
-		else {
-			filename = [NSString stringWithUTF8String:argv[i]];
-		}
 
 	}	// end for: each command line argument
 	
@@ -367,22 +390,14 @@ int processArguments(int argc, const char * argv[], NSRunLoop *runLoop){
         fprintf( stderr, "No video devices found.\n" );
         return 2;
     } else {
-        printf( "Capturing image from device \"%s\"", [[device description] UTF8String] );
+        !g_quiet ? printf( "Capturing image from device \"%s\"", [[device description] UTF8String] ):0;
     }
 	
     
-    // Begin asynchronous image capture
+    // Image capture
 	ImageSnap *imgSnap = [[ImageSnap alloc] init];
     [imgSnap saveSnapshotFromDevice:device toFile:filename];
-    
-    // Wait for async image capture to complete
-	//while( ![ic snapshotSaved] ){
-    while( [imgSnap snapshotSaved] == NO ){
-        printf(".");
-        fflush(stdout);
-        [runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 0.2]];
-	}
-    printf( "%s\n", [filename UTF8String] );
+    !g_quiet ? printf( "%s\n", [filename UTF8String] ):0;
     
     [imgSnap release];
     return 0;

@@ -9,6 +9,8 @@
 #include "ImageSnap.h"
 
 BOOL g_verbose = NO;
+BOOL g_quiet = NO;
+
 
 @interface ImageSnap : NSObject {
     
