@@ -8,21 +8,19 @@
 #import <QTKit/QTKit.h>
 #include "ImageSnap.h"
 
+#define error(...) fprintf(stderr, __VA_ARGS__)
+#define console(...) (g_quiet ? 0 : printf(__VA_ARGS__))
+
 BOOL g_verbose = NO;
 BOOL g_quiet = NO;
 
 
 @interface ImageSnap : NSObject {
     
-    
     QTCaptureSession                    *mCaptureSession;
     QTCaptureDeviceInput                *mCaptureDeviceInput;
     QTCaptureDecompressedVideoOutput    *mCaptureDecompressedVideoOutput;
-	NSString							*mSavePath;
-    
     CVImageBufferRef                    mCurrentImageBuffer;
-	BOOL								mSnapshotSaved;
-
 }
 
 
@@ -41,27 +39,42 @@ BOOL g_quiet = NO;
  */
 +(QTCaptureDevice *)defaultVideoDevice;
 
+/**
+ * Returns the QTCaptureDevice with the given name
+ * or nil if the device cannot be found.
+ */
 +(QTCaptureDevice *)deviceNamed:(NSString *)name;
 
+/**
+ * Writes an NSImage to disk, formatting it according
+ * to the file extension. If path is "-" (a dash), then
+ * an jpeg representation is written to standard out.
+ */
 + (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path;
-+ (BOOL) saveImageBuffer:(CVImageBufferRef)image toPath: (NSString*)path;
+
+/**
+ * Converts an NSImage to raw NSData according to a given
+ * format. A simple string search is performed for such
+ * characters as jpeg, tiff, png, and so forth.
+ */
++(NSData *)dataFrom:(NSImage *)image asType:(NSString *)format;
+
+
+
+/**
+ * Primary one-stop-shopping message for capturing an image.
+ * Activates the video source, saves a frame, stops the source,
+ * and saves the file.
+ */
++(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path;
 
 -(id)init;
 -(void)dealloc;
 
--(CVImageBufferRef)currentImageBuffer;
 
-/**
- * Captures an image from the given device and saves it
- * to the specified file. Currently only TIFF images can be saved.
- */
--(int)saveSnapshotFromDevice:(QTCaptureDevice *)device toFile:(NSString *)path;
+-(BOOL)startSession:(QTCaptureDevice *)device;
+-(NSImage *)snapshot;
+-(void)stopSession;
 
--(BOOL)snapshotSaved;
-
-- (void)captureOutput:(QTCaptureOutput *)captureOutput 
-  didOutputVideoFrame:(CVImageBufferRef)videoFrame 
-     withSampleBuffer:(QTSampleBuffer *)sampleBuffer 
-       fromConnection:(QTCaptureConnection *)connection;
 
 @end
