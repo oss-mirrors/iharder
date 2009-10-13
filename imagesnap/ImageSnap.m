@@ -4,6 +4,8 @@
 //
 //  Created by Robert Harder on 9/10/09.
 //
+// CHANGELOG
+// 2009-10-13: Fixed bug whereby everything was saved as TIFF. Oops.
 
 #import "ImageSnap.h"
 
@@ -89,7 +91,7 @@
         NSUInteger i;
         char *start = (char *)[photoData bytes];
         for( i = 0; i < length; ++i ){
-            putc( *(start + i), stdout );
+            putc( start[i], stdout );
         }   // end for: write out
         return YES;
     } else {
@@ -114,30 +116,30 @@
     
     
     // TIFF. Special case. Can save immediately.
-    if( [@"tif" rangeOfString:format options:NSCaseInsensitiveSearch].location == NSNotFound ){
+    if( [@"tif" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         return tiffData;
     }
     
     // JPEG
-    else if( [@"jpeg" rangeOfString:format options:NSCaseInsensitiveSearch].location == NSNotFound || 
-             [@"jpg"  rangeOfString:format options:NSCaseInsensitiveSearch].location == NSNotFound ){
+    else if( [@"jpeg" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound || 
+             [@"jpg"  rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         imageType = NSJPEGFileType;
         imageProps = [NSDictionary dictionaryWithObject:[NSNumber numberWithFloat:0.9] forKey:NSImageCompressionFactor];
         
     }
     
     // PNG
-    else if( [@"png" rangeOfString:format options:NSCaseInsensitiveSearch].location == NSNotFound ){
+    else if( [@"png" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         imageType = NSPNGFileType;
     }
     
     // BMP
-    else if( [@"bmp" rangeOfString:format options:NSCaseInsensitiveSearch].location == NSNotFound ){
+    else if( [@"bmp" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         imageType = NSBMPFileType;
     }
     
     // GIF
-    else if( [@"gif" rangeOfString:format options:NSCaseInsensitiveSearch].location == NSNotFound ){
+    else if( [@"gif" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         imageType = NSGIFFileType;
     }
     
@@ -453,6 +455,7 @@ int processArguments(int argc, const char * argv[] ){
 
 void printUsage(int argc, const char * argv[]){
     printf( "USAGE: %s [options] [filename]\n", argv[0] );
+    printf( "Version: %s\n", [VERSION UTF8String] );
     printf( "Captures an image from a video device and saves it in a file.\n" );
     printf( "If no device is specified, the system default will be used.\n" );
     printf( "If no filename is specfied, snapshot.jpg will be used.\n" );
