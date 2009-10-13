@@ -33,6 +33,7 @@
 		D48D572810598E4000885DA8 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		D48D572A10598E4000885DA8 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
 		D48D572C10598E4000885DA8 /* Quartz.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quartz.framework; path = /System/Library/Frameworks/Quartz.framework; sourceTree = "<absolute>"; };
+		D49AA9851085011600FE189B /* ReadMeOrDont.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = ReadMeOrDont.rtf; sourceTree = "<group>"; };
 		D4C1B149105C049B00FCB6A2 /* imagesnap */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = imagesnap; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -93,6 +94,7 @@
 		C6859E96029091FE04C91782 /* Documentation */ = {
 			isa = PBXGroup;
 			children = (
+				D49AA9851085011600FE189B /* ReadMeOrDont.rtf */,
 			);
 			name = Documentation;
 			sourceTree = "<group>";
