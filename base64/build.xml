@@ -1,9 +1,10 @@
-<project name="base64" basedir="." default="main">
+<project name="Base64" basedir="." default="main">
     <property name="src.dir"      value="src" />
     <property name="build.dir"    value="build" />
-    <property name="dist.dir"     value="dist" />
+    <!--property name="dist.dir"     value="dist" /-->
     <property name="api.dir"      value="api" />
     <property name="classes.dir"  value="${build.dir}/classes" />
+    <property name="deploy.base.dir"    value="${ant.project.name}-v" />
     
     <target name="clean">
         <delete dir="${build.dir}"/>
@@ -28,17 +29,22 @@
         </javadoc>
     </target>
 
-    <target name="dist" depends="compile,api">
-        <mkdir dir="${dist.dir}"/>
-        <copy todir="${dist.dir}">
+    <target name="deploy" depends="compile,api">
+        <input message="Enter version for this release (ex: 0.1): " addproperty="rel.ver" />
+        <property name="deploy.dir" value="${deploy.base.dir}${rel.ver}" />
+        <mkdir dir="${deploy.dir}"/>
+        <copy todir="${deploy.dir}">
           <fileset dir="${src.dir}" includes="Base64.java" />
         </copy>
-        <copy todir="${dist.dir}/${api.dir}">
+        <copy todir="${deploy.dir}/${api.dir}">
           <fileset dir="${api.dir}" />
         </copy>
+        <zip destfile="${deploy.dir}.zip">
+          <zipfileset dir="${deploy.dir}" prefix="${deploy.dir}"/>
+        </zip>
     </target>
     
     <target name="clean-build" depends="clean,compile" />
     
-    <target name="main" depends="dist" />
+    <target name="main" depends="deploy" />
 </project>
