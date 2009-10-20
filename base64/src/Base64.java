@@ -33,6 +33,8 @@
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.5 - Fixed bug in {@link #encodeFromFile} where estimated buffer size
+ *   was wrong for files of size 31, 34, and 37 bytes.</li>
  *  <li>v2.3.4 - Fixed bug when working with gzipped streams whereby flushing
  *   the Base64.OutputStream closed the Base64 encoding (by padding with equals
  *   signs) too soon. Also added an option to suppress the automatic decoding
@@ -132,7 +134,7 @@
  *
  * @author Robert Harder
  * @author rob@iharder.net
- * @version 2.3.4
+ * @version 2.3.5
  */
 public class Base64
 {
@@ -1526,7 +1528,7 @@ public class Base64
         {
             // Set up some useful variables
             java.io.File file = new java.io.File( filename );
-            byte[] buffer = new byte[ Math.max((int)(file.length() * 1.4),40) ]; // Need max() for math on small files (v2.2.1)
+            byte[] buffer = new byte[ Math.max((int)(file.length() * 1.4+1),40) ]; // Need max() for math on small files (v2.2.1); Need +1 for a few corner cases (v2.3.5)
             int length   = 0;
             int numBytes = 0;
             
