@@ -1,0 +1,54 @@
+<project name="ThreadWorker" basedir="." default="main">
+    <property name="src.dir"      value="." />
+    <property name="example.dir"  value="ThreadWorker Example" />
+    <!--property name="build.dir"    value="build" /-->
+    <property name="api.dir"      value="api" />
+    <property name="deploy.base.dir"    value="${ant.project.name}-v" />
+    
+    <target name="api">
+      <delete dir="${api.dir}"/>
+      <exec executable="headerdoc2html">
+        <arg value="-o" />
+        <arg value="${api.dir}" />
+        <arg value="ThreadWorker.h" />
+      </exec>
+    </target>
+
+    <target name="deploy" depends="api">
+      
+        <!-- Prepare Directory -->
+        <input message="Enter version for this release (ex: 0.1): " addproperty="rel.ver" />
+        <property name="deploy.dir" value="${deploy.base.dir}${rel.ver}" />
+        <delete dir="${deploy.dir}"/>
+        <mkdir dir="${deploy.dir}"/>
+        
+        <!-- Copy ThreadWorker.h/m Source Files -->
+        <copy todir="${deploy.dir}">
+          <fileset dir="${src.dir}" includes="ThreadWorker.h ThreadWorker.m" />
+        </copy>
+        
+        <!-- Prepare Example Directory -->
+        <copy todir="${deploy.dir}/${example.dir}">
+          <fileset dir="${src.dir}" includes="*.h *.m *.plist" />
+        </copy>
+        <copy todir="${deploy.dir}/${example.dir}/ThreadWorker.xcodeproj">
+          <fileset dir="${src.dir}/ThreadWorker.xcodeProj" excludes="**/.svn/**" />
+        </copy>
+        <copy todir="${deploy.dir}/${example.dir}/English.lproj">
+          <fileset dir="${src.dir}/English.lproj" excludes="**/.svn/**" />
+        </copy>
+        
+        <!-- Copy API Directory -->
+        <copy todir="${deploy.dir}/api">
+          <fileset dir="${api.dir}/ThreadWorker_h" />
+        </copy>
+        
+        <!-- Zip Up Result -->
+        <zip destfile="${deploy.dir}.zip">
+          <zipfileset dir="${deploy.dir}" prefix="${deploy.dir}"/>
+        </zip>
+    </target>
+    
+    
+    <target name="main" depends="deploy" />
+</project>

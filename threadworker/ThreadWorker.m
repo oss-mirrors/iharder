@@ -256,7 +256,7 @@
  * the original author of this Public Domain software.
  */
 + (NSString *)description
-{   return @"ThreadWorker v0.7. Public Domain. Original author: Robert Harder, rob@iharder.net. Keep up-to-date at http://iHarder.net";
+{   return @"ThreadWorker v0.7.1. Public Domain. Original author: Robert Harder, rob@iharder.net. Keep up-to-date at http://iHarder.net";
 }   // end description
 
 
