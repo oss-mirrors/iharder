@@ -1,0 +1,132 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf110
+{\fonttbl\f0\fnil\fcharset0 Verdana;\f1\fswiss\fcharset0 ArialMT;\f2\fmodern\fcharset0 Courier;
+}
+{\colortbl;\red255\green255\blue255;\red0\green16\blue81;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\deftab720
+\pard\pardeftab720\ql\qnatural
+
+\f0\b\fs38 \cf0 \ul \ulc0 ABFind\
+
+\b0\fs20 \ulnone \
+by Robert Harder\
+rob@iHarder.net
+\b\fs38 \
+\
+\pard\pardeftab720\sa360\ql\qnatural
+
+\fs28 \cf0 Search Your Addres Book from the Command Line
+\f1\fs32 \
+\pard\pardeftab720\sa320\qc
+{\field{\*\fldinst{HYPERLINK "http://iharder.net/abfind"}}{\fldrslt 
+\f0\b0 \cf0 http://iharder.net/abfind}}
+\f0\b0 \
+\pard\pardeftab720\sa320\ql\qnatural
+\cf0 ABFind is a Public Domain command-line tool that lets you search your Address Book.\
+\pard\pardeftab720\sa300\ql\qnatural
+
+\f1\b\fs38 \cf2 Installation\
+\pard\pardeftab720\sa320\ql\qnatural
+
+\f0\b0\fs32 \cf0 Copy the 
+\f2\fs26 abfind
+\f0\fs32  file to someplace on your path like 
+\f2\fs26 /usr/local/bin
+\f0\fs32 , or leave it in a "current directory," and call it with 
+\f2\fs26 ./abfind
+\f0\fs32  instead.\
+The 
+\f2\fs26 abfind_10.4
+\f0\fs32  file is for Mac OS X 10.4 (surprise). You can rename it as you like.\
+Enjoy!\
+\pard\pardeftab720\sa300\ql\qnatural
+
+\f1\b\fs38 \cf2 Usage\
+\pard\pardeftab720\sa320\ql\qnatural
+
+\f0\b0\fs32 \cf0 To find people with a word anywhere in their record just call 
+\f2\fs26 abfind
+\f0\fs32  with the word following:\
+\pard\pardeftab720\ql\qnatural
+
+\f2\fs26 \cf0 $ abfind pat\
+Number of results: 12\
+******** id = 97A45DAA-322E-4895-8DBE-0AF07683E06C:ABPerson\
+ABPerson (0x10014b8b0) \{\
+	ABPersonFlags : 0\
+	Address       : \{\
+		*  home  \{\
+    City = "Springfield";\
+... \
+******** id = CE38FB5D-6C83-4D7C-A4A8-6B37FF7ABD91:ABPerson\
+ABPerson (0x100140f80) \{\
+...
+\f0\fs32 \
+\pard\pardeftab720\sa320\ql\qnatural
+\cf0 \
+To see your own info use the -me switch:\
+\pard\pardeftab720\ql\qnatural
+
+\f2\fs26 \cf0 $ abfind -me\
+Number of results: 1\
+******** id = F0160F03-116F-4111-85B0-42A40A3DB301:ABPerson\
+ABPerson (0x10013e5f0) \{\
+	ABPersonFlags : 0\
+	Address       : \{\
+		   work  \{\
+    City = ...\
+\pard\pardeftab720\sa320\ql\qnatural
+
+\f0\fs32 \cf0 \
+To find someone with "smith" in their name use the -name switch:\
+\pard\pardeftab720\ql\qnatural
+
+\f2\fs26 \cf0 $ abfind -name smith\
+Number of results: 4\
+******** id = 06DD372E-B591-40D8-890F-395969586FE0:ABPerson\
+ABPerson (0x10013f150) \{\
+	ABPersonFlags : 0\
+...\
+******** id = CE38FB5D-6C83-4D7C-A4A8-6B37FF7ABD91:ABPerson\
+ABPerson (0x100140f80) \{\
+...\
+\pard\pardeftab720\sa320\ql\qnatural
+
+\f0\fs32 \cf0 \
+Typing 
+\f2\fs26 abfind -?
+\f0\fs32  displays all the options:
+\f2\fs26 \
+\pard\pardeftab720\ql\qnatural
+\cf0 USAGE: abfind [options] search\
+  Finds people in your address book.\
+  Version 0.1\
+  http://iHarder.net/abfind\
+EXAMPLE: abfind -name smith\
+  -name    Searches first and last name, case insensitive\
+  -fname   Searches first name, case insensitive\
+  -lname   Searches last name, case insensitive\
+  -city    Searches city, case insensitive\
+  -zip     Searches zip, case insensitive\
+  -note    Searches the note field, case insensitive\
+  -id      Searches for the exact person ID\
+  -me      Returns the person marked as 'me'. No search terms required.\
+  -?       This help\
+  If no options are given, all fields are searched.\
+
+\f0\fs32 \
+\pard\pardeftab720\sa320\ql\qnatural
+\cf0 \
+\pard\pardeftab720\sa300\ql\qnatural
+
+\f1\b\fs38 \cf2 Changes
+\f0\b0\fs32 \cf0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa320\ql\qnatural
+\ls1\ilvl0\cf0 {\listtext	\'95	}v0.1 - This is the initial release.\
+\pard\pardeftab720\sa300\ql\qnatural
+
+\f1\b\fs38 \cf2 A Note About Public Domain\
+\pard\pardeftab720\sa320\ql\qnatural
+
+\f0\b0\fs32 \cf0 I have released this software into the Public Domain. That means you can do whatever you want with it. Really. You don't have to match it up with any other open source license \'97 just use it. You can rename the files, do whatever you want. If your lawyers say you have to have a license, contact me, and I'll make a special release to you under whatever reasonable license you desire: MIT, BSD, GPL, whatever.}

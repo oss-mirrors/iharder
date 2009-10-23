@@ -7,9 +7,8 @@
         <echo>Start Build.</echo>
         <exec executable="xCodeBuild">
             <arg value="-alltargets"/>
+            <env key="CC" value="" />
         </exec>
-        <copy file="build/Release/${cli.name}" tofile="${cli.name}"/>
-        <chmod file="${cli.name}" perm="+x" />
         <echo>End Build.</echo>
     </target>
     
@@ -17,11 +16,14 @@
       <input message="Enter version for this release (ex: 0.1): " addproperty="rel.ver" />
       <property name="deploy.dir" value="${deploy.base.dir}${rel.ver}" />
       <mkdir dir="${deploy.dir}" />
-      <copy file="${cli.name}"   todir="${deploy.dir}"/>
+      
+      <copy file="build/Release/${cli.name}" todir="${deploy.dir}"/>
       <chmod file="${deploy.dir}/${cli.name}" perm="+x" />
-      <copy file="${ant.project.name}.h" todir="${deploy.dir}"/>
-      <copy file="${ant.project.name}.m" todir="${deploy.dir}"/>
-      <!--copy file="ReadMeOrDont.rtf" todir="${deploy.dir}"/-->
+      <copy file="build/Release/${cli.name}_10.4" todir="${deploy.dir}"/>
+      <chmod file="${deploy.dir}/${cli.name}_10.4" perm="+x" />
+      
+      <copy file="abfind.m" todir="${deploy.dir}"/>
+      <copy file="ReadMeOrDont.rtf" todir="${deploy.dir}"/>
       <copy todir="${deploy.dir}/abfind.xcodeproj">
         <fileset dir="abfind.xcodeproj">
           <exclude name="**/.svn **/rob.*"/>

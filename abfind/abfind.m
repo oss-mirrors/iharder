@@ -353,6 +353,8 @@ int main (int argc, const char * argv[]) {
     } else {
         ABAddressBook   *ab = [ABAddressBook sharedAddressBook];
         NSArray *peopleFound = [ab recordsMatchingSearchElement:search];
+        printf("Number of results: %d\n", (unsigned int)[peopleFound count]);
+        
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_5
         // THE 10.5+ WAY
         for( ABPerson *person in peopleFound ){

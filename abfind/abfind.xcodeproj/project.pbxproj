@@ -6,49 +6,14 @@
 	objectVersion = 45;
 	objects = {
 
-/* Begin PBXAggregateTarget section */
-		D4AB74C710920DA200FB6451 /* Deploy */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = D4AB74D510920DE700FB6451 /* Build configuration list for PBXAggregateTarget "Deploy" */;
-			buildPhases = (
-				D4AB74C610920DA200FB6451 /* CopyFiles */,
-			);
-			dependencies = (
-				D4AB74CF10920DB600FB6451 /* PBXTargetDependency */,
-				D4AB74CD10920DB600FB6451 /* PBXTargetDependency */,
-			);
-			name = Deploy;
-			productName = Deploy;
-		};
-/* End PBXAggregateTarget section */
-
 /* Begin PBXBuildFile section */
 		8DD76F9A0486AA7600D96B5E /* abfind.m in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* abfind.m */; settings = {ATTRIBUTES = (); }; };
 		8DD76F9C0486AA7600D96B5E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB779EFE84155DC02AAC07 /* Foundation.framework */; };
-		8DD76F9F0486AA7600D96B5E /* abfind.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859EA3029092ED04C91782 /* abfind.1 */; };
 		D4AB743E1091260A00FB6451 /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D4AB743D1091260A00FB6451 /* AddressBook.framework */; };
 		D4AB747F1092093B00FB6451 /* abfind.m in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* abfind.m */; settings = {ATTRIBUTES = (); }; };
 		D4AB74811092093B00FB6451 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB779EFE84155DC02AAC07 /* Foundation.framework */; };
 		D4AB74821092093B00FB6451 /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D4AB743D1091260A00FB6451 /* AddressBook.framework */; };
-		D4AB74841092093B00FB6451 /* abfind.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859EA3029092ED04C91782 /* abfind.1 */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		D4AB74CC10920DB600FB6451 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D4AB747D1092093B00FB6451 /* abfind_10.4 */;
-			remoteInfo = abfind_10.4;
-		};
-		D4AB74CE10920DB600FB6451 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 8DD76F960486AA7600D96B5E /* abfind */;
-			remoteInfo = abfind;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		8DD76F9E0486AA7600D96B5E /* CopyFiles */ = {
@@ -57,7 +22,6 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				8DD76F9F0486AA7600D96B5E /* abfind.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -67,18 +31,8 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				D4AB74841092093B00FB6451 /* abfind.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
-		};
-		D4AB74C610920DA200FB6451 /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "ABFind-v";
-			dstSubfolderSpec = 16;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -87,9 +41,9 @@
 		08FB779EFE84155DC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32A70AAB03705E1F00C91783 /* abfind_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = abfind_Prefix.pch; sourceTree = "<group>"; };
 		8DD76FA10486AA7600D96B5E /* abfind */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = abfind; sourceTree = BUILT_PRODUCTS_DIR; };
-		C6859EA3029092ED04C91782 /* abfind.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = abfind.1; sourceTree = "<group>"; };
 		D4AB743D1091260A00FB6451 /* AddressBook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AddressBook.framework; path = System/Library/Frameworks/AddressBook.framework; sourceTree = SDKROOT; };
 		D4AB74881092093B00FB6451 /* abfind_10.4 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = abfind_10.4; sourceTree = BUILT_PRODUCTS_DIR; };
+		D4AB74E41092103800FB6451 /* ReadMeOrDont.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; path = ReadMeOrDont.rtf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,7 +109,7 @@
 		C6859EA2029092E104C91782 /* Documentation */ = {
 			isa = PBXGroup;
 			children = (
-				C6859EA3029092ED04C91782 /* abfind.1 */,
+				D4AB74E41092103800FB6451 /* ReadMeOrDont.rtf */,
 			);
 			name = Documentation;
 			sourceTree = "<group>";
@@ -213,7 +167,6 @@
 			targets = (
 				8DD76F960486AA7600D96B5E /* abfind */,
 				D4AB747D1092093B00FB6451 /* abfind_10.4 */,
-				D4AB74C710920DA200FB6451 /* Deploy */,
 			);
 		};
 /* End PBXProject section */
@@ -237,19 +190,6 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		D4AB74CD10920DB600FB6451 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D4AB747D1092093B00FB6451 /* abfind_10.4 */;
-			targetProxy = D4AB74CC10920DB600FB6451 /* PBXContainerItemProxy */;
-		};
-		D4AB74CF10920DB600FB6451 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 8DD76F960486AA7600D96B5E /* abfind */;
-			targetProxy = D4AB74CE10920DB600FB6451 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
 		1DEB927508733DD40010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -263,7 +203,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = abfind_Prefix.pch;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_VERSION = "";
 				INSTALL_PATH = /usr/local/bin;
 				PRODUCT_NAME = abfind;
 				SDKROOT = macosx10.5;
@@ -280,7 +220,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = abfind_Prefix.pch;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_VERSION = "";
 				INSTALL_PATH = /usr/local/bin;
 				PRODUCT_NAME = abfind;
 				SDKROOT = macosx10.5;
@@ -349,27 +289,6 @@
 			};
 			name = Release;
 		};
-		D4AB74C810920DA200FB6451 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				PRODUCT_NAME = Deploy;
-			};
-			name = Debug;
-		};
-		D4AB74C910920DA200FB6451 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				PRODUCT_NAME = Deploy;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -396,15 +315,6 @@
 			buildConfigurations = (
 				D4AB74861092093B00FB6451 /* Debug */,
 				D4AB74871092093B00FB6451 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D4AB74D510920DE700FB6451 /* Build configuration list for PBXAggregateTarget "Deploy" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D4AB74C810920DA200FB6451 /* Debug */,
-				D4AB74C910920DA200FB6451 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
