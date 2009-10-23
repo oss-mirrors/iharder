@@ -14,7 +14,6 @@
 
 /**
  * Class-level method to return a list of all plugins in our bundle of plugins.
- * In this case, we only have one kind of plugin: PrintPhonePlugin
  */
 + (NSArray*)allPlugins{
     return [USPhoneNumbersPlugin allPlugins]; // USPhoneNumbersPlugin is handler
@@ -36,7 +35,8 @@
 
 
 - (NSString *)fixPhone:(NSString *)phone withLabel:(NSString *)label fromPerson:(ABPerson *)person{
-    printf("%s\n", [phone UTF8String]);
+    NSString *name = [person valueForProperty: kABFirstNameProperty];
+    printf("%s: %s\n", [name UTF8String], [phone UTF8String]);
     return nil;
 }
 

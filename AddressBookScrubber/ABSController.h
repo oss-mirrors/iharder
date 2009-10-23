@@ -1,8 +1,9 @@
 /* ABSController */
 
 #import <Cocoa/Cocoa.h>
-#import "Utility.h"
-#import "CDYNE.h"
+#import <QuartzCore/QuartzCore.h>
+//#import "Utility.h"
+//#import "CDYNE.h"
 #import "ThreadWorker.h"
 #import "ABSPlugin.h"
 #define PREFS [NSUserDefaults standardUserDefaults]
@@ -14,6 +15,7 @@
     
     IBOutlet NSTableView            *_pluginTable;
     IBOutlet NSBox                  *_settingsBox;
+    IBOutlet NSView                 *_settingsView;
     IBOutlet NSObjectController     *_selectedPlugin;
     
     IBOutlet NSProgressIndicator    *overallProgress;

@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<project name="ABFind" default="xcodeBuild" basedir=".">
+  <property name="cli.name"           value="abfind" />
+  <property name="deploy.base.dir"    value="${ant.project.name}-v" />
+
+    <target name="xcodeBuild">
+        <echo>Start Build.</echo>
+        <exec executable="xCodeBuild">
+            <arg value="-alltargets"/>
+        </exec>
+        <copy file="build/Release/${cli.name}" tofile="${cli.name}"/>
+        <chmod file="${cli.name}" perm="+x" />
+        <echo>End Build.</echo>
+    </target>
+    
+    <target name="deploy" depends="xcodeBuild">
+      <input message="Enter version for this release (ex: 0.1): " addproperty="rel.ver" />
+      <property name="deploy.dir" value="${deploy.base.dir}${rel.ver}" />
+      <mkdir dir="${deploy.dir}" />
+      <copy file="${cli.name}"   todir="${deploy.dir}"/>
+      <chmod file="${deploy.dir}/${cli.name}" perm="+x" />
+      <copy file="${ant.project.name}.h" todir="${deploy.dir}"/>
+      <copy file="${ant.project.name}.m" todir="${deploy.dir}"/>
+      <!--copy file="ReadMeOrDont.rtf" todir="${deploy.dir}"/-->
+      <copy todir="${deploy.dir}/abfind.xcodeproj">
+        <fileset dir="abfind.xcodeproj">
+          <exclude name="**/.svn **/rob.*"/>
+        </fileset>
+      </copy>
+      <!--tar destfile="${deploy.dir}.tgz" basedir="." includes="${deploy.dir}/**" compression="gzip" /-->
+      <exec executable="tar">
+        <arg value="czvf" />
+        <arg value="${deploy.dir}.tgz" />
+        <arg value="${deploy.dir}" />
+      </exec>
+      <delete dir="${deploy.dir}" />
+
+    </target>
+    
+    
+</project>

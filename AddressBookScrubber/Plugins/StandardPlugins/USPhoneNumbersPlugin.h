@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import "ABSPlugin.h"
 #import "PrintPhonePlugin.h"
+#import "PhoneNumber.h"
 
 @interface USPhoneNumbersPlugin : NSObject<ABSPhonePlugin> {
     
@@ -17,7 +18,7 @@
     
     IBOutlet NSButton       *addAreaCodeCheckbox;
     IBOutlet NSTextField    *defaultAreaCode;
-    
+    IBOutlet NSString       *area;
     
     IBOutlet NSButton       *formatPhoneNumbersCheckbox;
     IBOutlet NSMatrix       *formatPhoneNumbersRadioMatrix;

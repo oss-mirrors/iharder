@@ -17,6 +17,7 @@
 		D44A9D8C0D139F0F0099D022 /* PhoneNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = D44A9D8B0D139F0F0099D022 /* PhoneNumber.m */; };
 		D48F4DF80CFBDD92006091AD /* OneIsTrueTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = D48F4DF70CFBDD92006091AD /* OneIsTrueTransformer.m */; };
 		D48F4E030CFBDF04006091AD /* TwoIsTrueTransformer.m in Sources */ = {isa = PBXBuildFile; fileRef = D48F4E020CFBDF04006091AD /* TwoIsTrueTransformer.m */; };
+		D49AAB82108591AF00FE189B /* AddressBook.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D49AAB81108591AF00FE189B /* AddressBook.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,7 +26,7 @@
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		32DBCF630370AF2F00C91783 /* StandardPlugins_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StandardPlugins_Prefix.pch; sourceTree = "<group>"; };
-		8D5B49B6048680CD000E48DA /* StandardPlugins.absplugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StandardPlugins.absplugin; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D5B49B6048680CD000E48DA /* StandardPlugins.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StandardPlugins.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D2F7E65807B2D6F200F64583 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
 		D401DCD00CE8165E002F0521 /* ABSPlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ABSPlugin.h; path = ../../ABSPlugin.h; sourceTree = SOURCE_ROOT; };
@@ -42,6 +43,7 @@
 		D48F4DF70CFBDD92006091AD /* OneIsTrueTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OneIsTrueTransformer.m; sourceTree = "<group>"; };
 		D48F4E010CFBDF04006091AD /* TwoIsTrueTransformer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TwoIsTrueTransformer.h; sourceTree = "<group>"; };
 		D48F4E020CFBDF04006091AD /* TwoIsTrueTransformer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TwoIsTrueTransformer.m; sourceTree = "<group>"; };
+		D49AAB81108591AF00FE189B /* AddressBook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AddressBook.framework; path = System/Library/Frameworks/AddressBook.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,6 +52,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
+				D49AAB82108591AF00FE189B /* AddressBook.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */,
+				D49AAB81108591AF00FE189B /* AddressBook.framework */,
 			);
 			name = "Linked Frameworks";
 			sourceTree = "<group>";
@@ -121,7 +125,7 @@
 		19C28FB8FE9D52D311CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8D5B49B6048680CD000E48DA /* StandardPlugins.absplugin */,
+				8D5B49B6048680CD000E48DA /* StandardPlugins.bundle */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -159,7 +163,7 @@
 			name = StandardPlugins;
 			productInstallPath = "$(HOME)/Library/Bundles";
 			productName = StandardPlugins;
-			productReference = 8D5B49B6048680CD000E48DA /* StandardPlugins.absplugin */;
+			productReference = 8D5B49B6048680CD000E48DA /* StandardPlugins.bundle */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */

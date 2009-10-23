@@ -9,8 +9,6 @@
 #import "USPhoneNumbersPlugin.h"
 
 
-
-
 @implementation USPhoneNumbersPlugin
 
 
@@ -46,10 +44,15 @@
 - (NSString *)fixPhone:(NSString *)phone withLabel:(NSString *)label fromPerson:(ABPerson *)person{
     bool noCountryEqualsUS = [noCountryEqualsUSCheckbox state] == NSOnState;
     bool addAreaCode = [addAreaCodeCheckbox state] == NSOnState;
+    NSString *areaCode = [defaultAreaCode value];
     bool formatPhoneNumbers = [formatPhoneNumbersCheckbox state] == NSOnState;
     int  formatPhoneSelectedRow = [formatPhoneNumbersRadioMatrix selectedRow];
     
     // TODO : LEFT OFF HERE. Start moving over phone-fixing code
+    PhoneNumber *pn = [[PhoneNumber alloc] initWithString:phone withLocale:@"us"];
+    
+    NSLog(@"From: %@, To: %@", phone, [pn format:@"%c+# %%a(#) %%p#%-%l#%%x x#%"]);
+    
     
     // Find the first country code attached to an address
     /*ABMultiValue *addresses = [person valueForProperty:kABAddressProperty]; 

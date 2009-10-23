@@ -101,6 +101,7 @@
  *  %l..#...% - Line
  *  %x..#...% - Extension
  *  %% - Percent sign
+ *  Example: (999) 555-1212  ->  %c+# %%a(#) %%p#%-%l#%%x x#%
  */
 - (NSString *)format:(NSString *)format
 {

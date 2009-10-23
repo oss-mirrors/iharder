@@ -7,6 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import <AddressBook/AddressBook.h>
 #import "ABSPlugin.h"
 #import "USPhoneNumbersPlugin.h"
 
