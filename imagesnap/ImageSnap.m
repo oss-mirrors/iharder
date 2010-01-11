@@ -338,13 +338,17 @@ QTCaptureDevice *getDefaultDevice();
 // Thanks to the example http://lists.apple.com/archives/cocoa-dev/2003/Apr/msg01638.html
 // for reminding me how to do it.
 int main (int argc, const char * argv[]) {
-	
+    
 	NSAutoreleasePool *pool;
 	pool = [[NSAutoreleasePool alloc] init];
-	[NSApplication sharedApplication];
-	int result = processArguments(argc, argv);
-
-	[pool release];
+    [NSApplication sharedApplication];
+	
+    int result = processArguments(argc, argv);
+    
+    //    [NSApp run];
+    
+    //	[pool release];
+    [pool drain];
     return result;
 }
 
