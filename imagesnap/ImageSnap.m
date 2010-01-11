@@ -341,7 +341,7 @@ int main (int argc, const char * argv[]) {
 	
 	NSAutoreleasePool *pool;
 	pool = [[NSAutoreleasePool alloc] init];
-	
+	[NSApplication sharedApplication];
 	int result = processArguments(argc, argv);
 
 	[pool release];
