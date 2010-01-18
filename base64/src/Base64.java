@@ -33,6 +33,9 @@
  * Change Log:
  * </p>
  * <ul>
+ *  <li>v2.3.6 - Fixed bug when breaking lines and the final byte of the encoded
+ *   string ended in the last column; the buffer was not properly shrunk and
+ *   contained an extra (null) byte that made it into the string.</li>
  *  <li>v2.3.5 - Fixed bug in {@link #encodeFromFile} where estimated buffer size
  *   was wrong for files of size 31, 34, and 37 bytes.</li>
  *  <li>v2.3.4 - Fixed bug when working with gzipped streams whereby flushing
@@ -134,7 +137,7 @@
  *
  * @author Robert Harder
  * @author rob@iharder.net
- * @version 2.3.5
+ * @version 2.3.6
  */
 public class Base64
 {
@@ -924,7 +927,7 @@ public class Base64
 
         // Else, don't compress. Better not to use streams at all then.
         else {
-            boolean breakLines = (options & DO_BREAK_LINES) > 0;
+            boolean breakLines = (options & DO_BREAK_LINES) != 0;
 
             //int    len43   = len * 4 / 3;
             //byte[] outBuff = new byte[   ( len43 )                      // Main 4:3
@@ -963,7 +966,11 @@ public class Base64
 
 
             // Only resize array if we didn't guess it right.
-            if( e < outBuff.length - 1 ){
+            if( e <= outBuff.length - 1 ){
+                // If breaking lines and the last byte falls right at
+                // the line length (76 bytes per line), there will be
+                // one extra byte, and the array will need to be resized.
+                // Not too bad of an estimate on array size, I'd say.
                 byte[] finalOut = new byte[e];
                 System.arraycopy(outBuff,0, finalOut,0,e);
                 //System.err.println("Having to resize array from " + outBuff.length + " to " + e );

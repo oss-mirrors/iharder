@@ -17,10 +17,15 @@ public class TestEfficiency {
 
     public static void main(String[] args) throws IOException{
 
-        testWithBytes(  40<<20 );
-        testWithBytes(  40<<20 );
-        testWithBytes( 140<<20 );
-        testWithString( 90<<20 );
+        for( int i = 55; i < 57; i++ ){
+            testWithBytes(i);
+        }
+
+
+        //testWithBytes(  40<<20 );
+        //testWithBytes(  40<<20 );
+        //testWithBytes( 140<<20 );
+        //testWithString( 90<<20 );
 
 
 
@@ -44,7 +49,7 @@ public class TestEfficiency {
 
     private static void testWithBytes( int numBytes ) throws IOException {
         System.gc();Thread.yield();
-        System.out.println("\nTesting using Base64.encodeBytesToBytes(..)" );
+        System.out.println("\nTesting using Base64.encodeBytesToBytes(" + numBytes + ")" );
         System.out.println( "Memory at start: " + ((Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) >> 20) + "MB" );
         byte[] raw = new byte[numBytes];
         System.out.println( "Memory in use from raw data: " + ((Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) >> 20) + "MB" );
