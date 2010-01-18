@@ -1,3 +1,4 @@
+
 import java.util.*;
 
 //TODO: Create tests for constructors
@@ -30,11 +31,18 @@ import java.util.*;
  * case {@link #getActualValueLength} bytes will be used. This is to make
  * the code more robust for reading corrupted data. </p>
  *
+ * <h3>Change Log</h3>
+ * <ul>
+ *  <li>v0.3.1 - Made method names for extracting value as 32 bit integers consistent.
+ *    Finally fixed the BER-encoding when using the InputStream parsing style
+ *    of reading KLVs.</li>
+ * </ul>
+ *
  * <p>This code is released into the Public Domain. Enjoy.</p>
  *
  * @author Robert Harder
  * @author rharder@users.sourceforge.net
- * @version 0.3
+ * @version 0.3.1
  */
 public class KLV {
 
@@ -561,7 +569,20 @@ public class KLV {
                 break;
 
             case BER:
-
+                int len0 = in.read();      // Read initial field
+                if( (len0 & 0x80) == 0 ){  // Simple case, no high bit
+                  length = len0;
+                } else {
+                  len0 &= 0x7F;            // Clear high bit
+                  if( len0 > 0 && len0 <= 4 ){
+                      for( int i = 0; i < len0; i++ ){
+                        length |= in.read() << 8*(len0-i-1);
+                      }   // end for: each byte in field
+                      length &= 0x7FffFFff; // Clear possibility of negative value
+                  } else {
+                    throw new java.io.IOException("KLV: BER-encoded length field indicates invalid number of bytes: " + len0);
+                  }
+                }
                 break;
         }   // end switch: length encoding
         if( length < 0 ){                           // Invalid length
@@ -837,10 +858,10 @@ public class KLV {
      */
     public int getValueAs8bitSignedInt(){
         byte[] bytes = getValue();
-        byte value = 0;
+        byte val = 0;
         if( bytes.length > 0 )
-            value = bytes[0];
-        return value;
+            val = bytes[0];
+        return val;
     }   // end getValueAs8bitSignedInt
 
 
@@ -851,10 +872,10 @@ public class KLV {
      */
     public int getValueAs8bitUnsignedInt(){
         byte[] bytes = getValue();
-        int value = 0;
+        int val = 0;
         if( bytes.length > 0 )
-            value = bytes[0] & 0xFF;
-        return value;
+            val = bytes[0] & 0xFF;
+        return val;
     }   // end getValueAs8bitSignedInt
 
 
@@ -866,12 +887,12 @@ public class KLV {
      */
     public int getValueAs16bitSignedInt(){
         byte[] bytes = getValue();
-        short value = 0;
+        short val = 0;
         int length = bytes.length;
         int shortLen = length < 2 ? length : 2;
         for( int i = 0; i < shortLen; i++ )
-            value |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
-        return value;
+            val |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return val;
     }   // end getValueAs16bitSignedInt
 
 
@@ -882,12 +903,12 @@ public class KLV {
      */
     public int getValueAs16bitUnsignedInt(){
         byte[] bytes = getValue();
-        int value = 0;
+        int val = 0;
         int length = bytes.length;
         int shortLen = length < 2 ? length : 2;
         for( int i = 0; i < shortLen; i++ )
-            value |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
-        return value;
+            val |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return val;
     }   // end getValueAs16bitUnsignedInt
 
 
@@ -899,14 +920,19 @@ public class KLV {
      *
      * @return the value as an int
      */
-    public int getValueAs32bitInt(){
+    public int getValueAs32bitSignedInt(){
         byte[] bytes = getValue();
-        int value = 0;
+        int val = 0;
         int length = bytes.length;
         int shortLen = length < 4 ? length : 4;
         for( int i = 0; i < shortLen; i++ )
-            value |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
-        return value;
+            val |= (bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return val;
+    }   // end getValueAs32bitSignedInt
+
+
+    public long getValueAs32bitUnsignedInt(){
+        return ((long)this.getValueAs32bitSignedInt()) & 0xFFFFFFFF;
     }   // end getValueAs32bitSignedInt
 
 
@@ -920,12 +946,12 @@ public class KLV {
      */
     public long getValueAs64bitLong(){
         byte[] bytes = getValue();
-        long value = 0;
+        long val = 0;
         int length = bytes.length;
         int shortLen = length < 8 ? length : 8;
         for( int i = 0; i < shortLen; i++ )
-            value |= (long)(bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
-        return value;
+            val |= (long)(bytes[i] & 0xFF) << (shortLen*8 - i*8 - 8);
+        return val;
     }   // end getValueAs64bitLong
 
 
@@ -943,7 +969,7 @@ public class KLV {
     public float getValueAsFloat(){
         return this.getValue().length < 4
                 ? Float.NaN
-                : Float.intBitsToFloat(getValueAs32bitInt());
+                : Float.intBitsToFloat(getValueAs32bitSignedInt());
     }   // end getValueAsFloat
 
 
