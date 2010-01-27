@@ -25,11 +25,7 @@ import java.util.*;
  *
  * <p>Everything in KLV is Big Endian.</p>
  *
- * <p>All <tt>getValue...</tt> methods will return up to the number
- * of bytes specified in the length fields ({@link #getDeclaredValueLength}) unless
- * there are fewer bytes actually given than are intended in which
- * case {@link #getActualValueLength} bytes will be used. This is to make
- * the code more robust for reading corrupted data. </p>
+ * <!--img src="doc-files/klv.png" /-->
  *
  * <h3>Change Log</h3>
  * <ul>
@@ -490,7 +486,7 @@ public class KLV {
      * @param offset
      * @param keyLength
      * @param lengthEncoding
-     * @return
+     * @return a KLV object
      */
     public static KLV wrap( byte[] theBytes, int offset, KeyLength keyLength, LengthEncoding lengthEncoding ){
         return new KLV( theBytes, offset, keyLength, lengthEncoding);
@@ -505,7 +501,7 @@ public class KLV {
      * @param shortKey
      * @param keyLength
      * @param lengthFieldEncoding
-     * @return
+     * @return a KLV object
      */
     public static KLV create( int shortKey, KeyLength keyLength, LengthEncoding lengthFieldEncoding ){
         return new KLV(shortKey,keyLength,lengthFieldEncoding);
@@ -523,7 +519,7 @@ public class KLV {
      * @param value
      * @param offset
      * @param length
-     * @return
+     * @return a KLV object
      */
     public static KLV create( int shortKey, KeyLength keyLength, LengthEncoding lengthEncoding, byte[] value, int offset, int length ){
         return new KLV(shortKey,keyLength,lengthEncoding,value,offset,length);
@@ -533,7 +529,7 @@ public class KLV {
      * Reads a KLV set from the input stream, blocking until a proper KLV
      * set can be read.
      * @param in
-     * @return
+     * @return a KLV object
      */
     public static KLV readKLV( java.io.InputStream in, KeyLength keyLength, LengthEncoding lengthEncoding )
     throws java.io.IOException{
@@ -797,8 +793,8 @@ public class KLV {
      * corresponding byte in this KLV set's key.
      * Throws no exceptions. Will always return either
      * true or false.
-     * @param bytes
-     * @return
+     * @param otherKey the key to compare
+     * @return whether or not the two keys match
      */
     public boolean isFullKey( byte[] otherKey ){
         if( otherKey == null ) return false;                // Nothing can equal null
@@ -960,7 +956,7 @@ public class KLV {
      * Returns the first four bytes of the value as a float according
      * to IEEE 754 byte packing. See Java's Float class for details.
      * This method calls <code>Float.intBitsToFloat</code> with
-     * {@link #getValueAs32bitInt} as the argument. However it does check
+     * {@link #getValueAs32bitSignedInt} as the argument. However it does check
      * to see that the value has at least four bytes. If it does not,
      * then <tt>Float.NaN</tt> is returned.
      *
@@ -1025,7 +1021,7 @@ public class KLV {
 
     /**
      * Returns the value of the KLV as an array of four byte integers.
-     * @return
+     * @return an array of ints
      */
     public int[] getValueAsIntArray(){
         byte[] val = getValue();
@@ -1100,8 +1096,8 @@ public class KLV {
      * @param data
      * @param offset
      * @param length
-     * @return
-     * @throw IllegalArgumentException if length is not 1, 2, or 4.
+     * @return ant integer read as Big Endian from the array
+     * @throws IllegalArgumentException if length is not 1, 2, or 4.
      */
     public static int getInt( byte[] data, int offset, int length ){
         int value = 0;
@@ -1816,10 +1812,10 @@ public class KLV {
      * as would result from adding <tt>extraBytes</tt>,
      * then an IllegalArgumentException is thrown.
      *
-     * @param extraBytes    new bytes to add
-     * @param extraOffset   offset within <code>extraBytes</code>
-     * @param extraLength   length of <code>extraBytes</code> to use
-     * @return              <tt>this</tt>, to aid in stringing commands together.
+     * @param bytes    new bytes to add
+     * @param offset   offset within <code>bytes</code>
+     * @param length   length of <code>bytes</code> to use
+     * @return         <tt>this</tt>, to aid in stringing commands together.
      */
     public KLV addPayload( byte[] bytes, int offset, int length ){
 

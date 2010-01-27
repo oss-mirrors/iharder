@@ -18,13 +18,14 @@
     
     <target name="api">
         <!--mkdir dir="${api.dir}" /-->
+        
+        <!-- gooes into javadoc when 1.8 is out docfilessubdirs="yes"-->
         <javadoc 
           sourcefiles="${src.dir}/KLV.java" 
           destdir="${api.dir}"
           Version="yes" 
           Author="yes" 
           Windowtitle="Key Length Value (KLV) Public Domain Code" >
-          
         </javadoc>
     </target>
 

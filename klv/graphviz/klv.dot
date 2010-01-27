@@ -1,0 +1,17 @@
+digraph g {
+ranksep=1;
+node [shape = record,height=.1];
+node0[label = "{telemetry packet|{ {1|key} | {24|length} | {{1|4|…|c} | <V>value}}}"];
+node1[label = "{timestamp|{ {1|key} | {4|length} | {{x|x|x|x} | 4 byte UINT}}}"];
+node2[label = "{packet number|{ {2|key} | {4|length} | {{y|y|y|y} | 4 byte UINT}}}"];
+node20[label = "{analog sensor 0|{ {20|key} | {2|length} | {{a|a} | 2 byte UINT}}}"];
+node21[label = "{analog sensor 1|{ {21|key} | {2|length} | {{b|b} | 2 byte UINT}}}"];
+node22[label = "{analog sensor 2|{ {22|key} | {2|length} | {{c|c} | 2 byte UINT}}}"];
+
+
+node0:V:s -> node1;
+node0:V:s -> node2;
+node0:V -> node20;
+node0:V:s -> node21;
+node0:V:s -> node22;
+}
