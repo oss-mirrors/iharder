@@ -630,7 +630,7 @@ public class KLV {
     }
 
 
-    public static void main(String[] args){
+/*    public static void main(String[] args){
             KLV klv;
         // Add one-byte subKLV
         for( int i = 0; i < 255; i++ ){
@@ -641,6 +641,7 @@ public class KLV {
             KLV k23 = klv.getSubKLVMap().get(23);
         }
     }
+*/
 
 
 
@@ -652,7 +653,7 @@ public class KLV {
      * Returns a list of all KLV sets in this payload (value field)
      * assuming the existing key length and length field encoding.
      */
-    public List<KLV> getSubKLVList(){
+    public List<KLV> getSubKLVList() throws Exception{
         return this.getSubKLVList(this.keyLength, this.lengthEncoding);
     }
 
@@ -662,7 +663,8 @@ public class KLV {
      * Returns a list of all KLV sets in this payload (value field)
      * assuming the given key length and length field encoding.
      */
-    public List<KLV> getSubKLVList( KeyLength keyLength, LengthEncoding lengthEncoding ){
+    public List<KLV> getSubKLVList( KeyLength keyLength, LengthEncoding lengthEncoding )
+    throws Exception{
         return KLV.bytesToList(
                 this.value,0,this.value.length, keyLength, lengthEncoding );
     }
@@ -678,7 +680,7 @@ public class KLV {
      * same key value, then the latter one will overwrite the earlier one.
      *
      */
-    public Map<Integer,KLV> getSubKLVMap(){
+    public Map<Integer,KLV> getSubKLVMap() throws Exception{
         return this.getSubKLVMap(this.keyLength, this.lengthEncoding);
     }
 
@@ -691,7 +693,7 @@ public class KLV {
      * same key value, then the latter one will overwrite the earlier one.
      *
      */
-    public Map<Integer,KLV> getSubKLVMap( KeyLength keyLength, LengthEncoding lengthEncoding ){
+    public Map<Integer,KLV> getSubKLVMap( KeyLength keyLength, LengthEncoding lengthEncoding ) throws Exception{
         return KLV.bytesToMap(
                 this.value,0,this.value.length, keyLength, lengthEncoding );
     }
@@ -1926,7 +1928,7 @@ public class KLV {
      */
     public static java.util.List<KLV> bytesToList(
             byte[] bytes, int offset, int length,
-            KeyLength keyLength, LengthEncoding lengthEncoding ){
+            KeyLength keyLength, LengthEncoding lengthEncoding )throws Exception{
         LinkedList<KLV> list = new LinkedList<KLV>();
 
         int currentPos = offset;    // Keep track of where we are
@@ -1938,8 +1940,7 @@ public class KLV {
                 list.add( klv );
             } catch( Exception exc ){
                 // Stop trying for more?
-                System.err.println("KLV: Stopped parsing with exception: " + exc.getMessage() );
-                break;
+                throw new Exception("KLV: Stopped parsing list of KLVs with exception: " + exc.getMessage(), exc );
             }   // end catch
 
         }   // end while
@@ -1965,7 +1966,7 @@ public class KLV {
      */
     public static Map<Integer,KLV> bytesToMap(
             byte[] bytes, int offset, int length,
-            KeyLength keyLength, LengthEncoding lengthEncoding ){
+            KeyLength keyLength, LengthEncoding lengthEncoding ) throws Exception{
 
         Map<Integer,KLV> map = new HashMap<Integer,KLV>();
 
@@ -2058,3 +2059,4 @@ public class KLV {
 
 
 }   // end class KLV
+
