@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="ImageSnap" default="xcodeBuild" basedir=".">
+<project name="ImageSnap" default="deploy" basedir=".">
   <property name="cli.name"           value="imagesnap" />
   <property name="deploy.base.dir"    value="${ant.project.name}-v" />
 

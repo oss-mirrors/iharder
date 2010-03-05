@@ -4,8 +4,6 @@
 //
 //  Created by Robert Harder on 9/10/09.
 //
-// CHANGELOG
-// 2009-10-13: Fixed bug whereby everything was saved as TIFF. Oops.
 
 #import "ImageSnap.h"
 
@@ -64,7 +62,7 @@
     return device;
 }
 
-
+// Returns the named capture device or nil if not found.
 +(QTCaptureDevice *)deviceNamed:(NSString *)name{
     QTCaptureDevice *result = nil;
     
@@ -79,7 +77,7 @@
 }   // end
 
 
-// Saves an image to a file or standard out if path == nil.
+// Saves an image to a file or standard out if path is nil or "-" (hyphen).
 + (BOOL) saveImage:(NSImage *)image toPath: (NSString*)path{
     
     NSString *ext = [path pathExtension];
@@ -338,14 +336,13 @@ QTCaptureDevice *getDefaultDevice();
 // Thanks to the example http://lists.apple.com/archives/cocoa-dev/2003/Apr/msg01638.html
 // for reminding me how to do it.
 int main (int argc, const char * argv[]) {
+    NSApplicationLoad();    // May be necessary for 10.5 not to crash.
     
 	NSAutoreleasePool *pool;
 	pool = [[NSAutoreleasePool alloc] init];
     [NSApplication sharedApplication];
 	
     int result = processArguments(argc, argv);
-    
-    //    [NSApp run];
     
     //	[pool release];
     [pool drain];

@@ -13,7 +13,7 @@
 
 BOOL g_verbose = NO;
 BOOL g_quiet = NO;
-NSString *VERSION = @"0.2.3";
+NSString *VERSION = @"0.2.4";
 
 
 @interface ImageSnap : NSObject {
