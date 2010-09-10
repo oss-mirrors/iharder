@@ -12,9 +12,9 @@ import junit.framework.TestCase;
  *
  * @author rob
  */
-public class ResolveNullChar extends TestCase {
+public class Base64Test extends TestCase {
     
-    public ResolveNullChar(String testName) {
+    public Base64Test(String testName) {
         super(testName);
     }
 

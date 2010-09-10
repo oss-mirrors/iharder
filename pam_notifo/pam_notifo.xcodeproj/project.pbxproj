@@ -1,0 +1,161 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 45;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		D44DA5BC123AA9DA00413BD9 /* pam_notifo */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = D44DA5BF123AA9F900413BD9 /* Build configuration list for PBXAggregateTarget "pam_notifo" */;
+			buildPhases = (
+				D44DA5BB123AA9DA00413BD9 /* ShellScript */,
+			);
+			dependencies = (
+			);
+			name = pam_notifo;
+			productName = pam_notifo;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXFileReference section */
+		D44DA80F123AD13700413BD9 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		D44DA82F123AE78D00413BD9 /* pam_notifo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pam_notifo.c; sourceTree = "<group>"; };
+		D44DA85B123AE8D400413BD9 /* ReadMe.txt */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 0; lastKnownFileType = text; path = ReadMe.txt; sourceTree = "<group>"; wrapsLines = 1; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* pam_notifo4 */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = pam_notifo4;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				D44DA80F123AD13700413BD9 /* Makefile */,
+				D44DA82F123AE78D00413BD9 /* pam_notifo.c */,
+				D44DA85B123AE8D400413BD9 /* ReadMe.txt */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB914E08733D8E0010E9CD /* Build configuration list for PBXProject "pam_notifo" */;
+			compatibilityVersion = "Xcode 3.1";
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* pam_notifo4 */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D44DA5BC123AA9DA00413BD9 /* pam_notifo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D44DA5BB123AA9DA00413BD9 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here\n\nCC=clang\n\n${CC} -lcurl -lpam ${ARCH} -bundle -flat_namespace -undefined suppress -o pam_notifo.so pam_notifo.c\n\nexit 0";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB914F08733D8E0010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+			};
+			name = Debug;
+		};
+		1DEB915008733D8E0010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.6;
+			};
+			name = Release;
+		};
+		D44DA5BD123AA9DB00413BD9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = pam_notifo;
+			};
+			name = Debug;
+		};
+		D44DA5BE123AA9DB00413BD9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				PRODUCT_NAME = pam_notifo;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB914E08733D8E0010E9CD /* Build configuration list for PBXProject "pam_notifo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB914F08733D8E0010E9CD /* Debug */,
+				1DEB915008733D8E0010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D44DA5BF123AA9F900413BD9 /* Build configuration list for PBXAggregateTarget "pam_notifo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D44DA5BD123AA9DB00413BD9 /* Debug */,
+				D44DA5BE123AA9DB00413BD9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
