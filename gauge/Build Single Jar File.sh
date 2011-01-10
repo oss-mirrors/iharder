@@ -19,6 +19,6 @@ cd ..
 # Make jar file of main code
 echo Main-Class: net.iharder.gauge.Example> manifest.txt
 cd build
-jar cmf ../manifest.txt ../Gauges.jar *
+jar cmf ../manifest.txt ../gauges.jar *
 cd ..
 rm manifest.txt
