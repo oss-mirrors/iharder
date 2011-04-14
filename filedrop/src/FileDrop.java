@@ -38,7 +38,7 @@ import java.io.Reader;
  *
  * <p>I'm releasing this code into the Public Domain. Enjoy.
  * </p>
- * <p><em>Original author: Robert Harder, rharder@usa.net</em></p>
+ * <p><em>Original author: Robert Harder, rob@iharder.net</em></p>
  * <p>2007-09-12 Nathan Blomquist -- Linux (KDE/Gnome) support added.</p>
  *
  * @author  Robert Harder
