@@ -154,14 +154,23 @@
  * Activates the video source, saves a frame, stops the source,
  * and saves the file.
  */
+
 +(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path{
+    return [self saveSingleSnapshotFrom:device toFile:path withWarmup:nil];
+}
+     
++(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path withWarmup:(NSNumber *)warmup{
     ImageSnap *snap;
     NSImage *image = nil;
     
     snap = [[ImageSnap alloc] init];            // Instance of this ImageSnap class
+    NSLog(@"Start...");
     if( [snap startSession:device] ){           // Try starting session
+        NSLog(@"Snapping...");
         image = [snap snapshot];                // Capture a frame
+        NSLog(@"Stopping...");
         [snap stopSession];                     // Stop session
+        NSLog(@"Stopped.");
     }   // end if: able to start session
     
     [snap release];
@@ -358,6 +367,8 @@ int processArguments(int argc, const char * argv[] ){
 	
 	NSString *filename = nil;
 	QTCaptureDevice *device = nil;
+    NSNumber *warmup = nil;
+
 	
 	int i;
 	for( i = 1; i < argc; ++i ){
@@ -402,10 +413,20 @@ int processArguments(int argc, const char * argv[] ){
                                 error( "Device \"%s\" not found.\n", argv[i+1] );
                                 return 11;
                             }   // end if: not found
-                            ++i;
+                            ++i; // Account for "follow on" argument
                         } else {
-                            error( "Not enough arguments given.\n" );
-                            return 10;
+                            error( "Not enough arguments given with 'd' flag.\n" );
+                            return (int)'d';
+                        }
+                        
+                    // Specify a warmup period before picture snaps
+                    case 'w':
+                        if( i+1 < argc ){
+                            warmup = [NSNumber numberWithFloat:[[NSString stringWithUTF8String:argv[i+1]] floatValue]];
+                            ++i; // Account for "follow on" argument
+                        } else {
+                            error( "Not enough arguments given with 'w' flag.\n" );
+                            return (int)'w';
                         }
                         
                 }	// end switch: flag value
@@ -443,7 +464,7 @@ int processArguments(int argc, const char * argv[] ){
 	
     
     // Image capture
-    if( [ImageSnap saveSingleSnapshotFrom:device toFile:filename] ){
+    if( [ImageSnap saveSingleSnapshotFrom:device toFile:filename withWarmup:warmup] ){
         console( "%s\n", [filename UTF8String] );
     } else {
         error( "Error.\n" );

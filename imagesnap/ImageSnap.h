@@ -68,6 +68,7 @@ NSString *VERSION = @"0.2.4";
  * and saves the file.
  */
 +(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path;
++(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path withWarmup:(NSNumber *)warmup;
 
 -(id)init;
 -(void)dealloc;
