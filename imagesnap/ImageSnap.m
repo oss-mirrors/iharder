@@ -34,9 +34,9 @@
 
 - (void)dealloc{
 	
-	mCaptureSession ? [mCaptureSession release]:0;
-	mCaptureDeviceInput ? [mCaptureDeviceInput release]:0;
-	mCaptureDecompressedVideoOutput ? [mCaptureDecompressedVideoOutput release]:0;
+	if( mCaptureSession )					[mCaptureSession release];
+	if( mCaptureDeviceInput )				[mCaptureDeviceInput release];
+	if( mCaptureDecompressedVideoOutput )	[mCaptureDecompressedVideoOutput release];
     CVBufferRelease(mCurrentImageBuffer);
     
     [super dealloc];
@@ -114,13 +114,14 @@
     
     
     // TIFF. Special case. Can save immediately.
-    if( [@"tif" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
+    if( [@"tif"  rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ||
+	    [@"tiff" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         return tiffData;
     }
     
     // JPEG
-    else if( [@"jpeg" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound || 
-             [@"jpg"  rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
+    else if( [@"jpg"  rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound || 
+             [@"jpeg" rangeOfString:format options:NSCaseInsensitiveSearch].location != NSNotFound ){
         imageType = NSJPEGFileType;
         imageProps = [NSDictionary dictionaryWithObject:[NSNumber numberWithFloat:0.9] forKey:NSImageCompressionFactor];
         
@@ -183,22 +184,29 @@
  * or session is not started.
  */
 -(NSImage *)snapshot{
-    
+    verbose( "Taking snapshot...\n");
+	
     CVImageBufferRef frame = nil;               // Hold frame we find
     while( frame == nil ){                      // While waiting for a frame
+		
+		//verbose( "\tEntering synchronized block to see if frame is captured yet...");
         @synchronized(self){                    // Lock since capture is on another thread
             frame = mCurrentImageBuffer;        // Hold current frame
             CVBufferRetain(frame);              // Retain it (OK if nil)
         }   // end sync: self
+		//verbose( "Done.\n" );
+		
         if( frame == nil ){                     // Still no frame? Wait a little while.
             [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 0.1]];
         }   // end if: still nothing, wait
+		
     }   // end while: no frame yet
     
     // Convert frame to an NSImage
     NSCIImageRep *imageRep = [NSCIImageRep imageRepWithCIImage:[CIImage imageWithCVImageBuffer:frame]];
     NSImage *image = [[[NSImage alloc] initWithSize:[imageRep size]] autorelease];
     [image addRepresentation:imageRep];
+	verbose( "Snapshot taken.\n" );
     
     return image;
 }
@@ -210,19 +218,24 @@
  * Blocks until session is stopped.
  */
 -(void)stopSession{
+	verbose("Stopping session...\n" );
     
     // Make sure we've stopped
     while( mCaptureSession != nil ){
+		verbose("\tCaptureSession != nil\n");
 
+		verbose("\tStopping CaptureSession...");
         [mCaptureSession stopRunning];
+		verbose("Done.\n");
 
         if( [mCaptureSession isRunning] ){
+			verbose( "[mCaptureSession isRunning]");
             [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 0.1]];
         }else {
-            
-            mCaptureSession ? [mCaptureSession release]:0;
-            mCaptureDeviceInput ? [mCaptureDeviceInput release]:0;
-            mCaptureDecompressedVideoOutput ? [mCaptureDecompressedVideoOutput release]:0;
+            verbose( "\tShutting down 'stopSession(..)'" );
+            if( mCaptureSession )					[mCaptureSession release];
+            if( mCaptureDeviceInput )				[mCaptureDeviceInput release];
+            if( mCaptureDecompressedVideoOutput )	[mCaptureDecompressedVideoOutput release];
             
             mCaptureSession = nil;
             mCaptureDeviceInput = nil;
@@ -237,7 +250,13 @@
  * Begins the capture session. Frames begin coming in.
  */
 -(BOOL)startSession:(QTCaptureDevice *)device{
-    if( device == nil ) return NO;
+	
+	verbose( "Starting capture session...\n" );
+	
+    if( device == nil ) {
+		verbose( "\tCannot start session: no device provided.\n" );
+		return NO;
+	}
     
     NSError *error = nil;
     
@@ -247,15 +266,19 @@
         [mCaptureSession isRunning] ){
         return YES;
     }   // end if: already running
+	
     else if( mCaptureSession != nil ){
+		verbose( "\tStopping previous session.\n" );
         [self stopSession];
     }   // end if: else stop session
     
 	
 	// Create the capture session
+	verbose( "\tCreating QTCaptureSession..." );
     mCaptureSession = [[QTCaptureSession alloc] init];
+	verbose( "Done.\n");
 	if( ![device open:&error] ){
-		error( "Could not create capture session.\n" );
+		error( "\tCould not create capture session.\n" );
         [mCaptureSession release];
         mCaptureSession = nil;
 		return NO;
@@ -263,9 +286,11 @@
     
 	
 	// Create input object from the device
+	verbose( "\tCreating QTCaptureDeviceInput with %s...", [[device description] UTF8String] );
 	mCaptureDeviceInput = [[QTCaptureDeviceInput alloc] initWithDevice:device];
+	verbose( "Done.\n");
 	if (![mCaptureSession addInput:mCaptureDeviceInput error:&error]) {
-		error( "Could not convert device to input device.\n");
+		error( "\tCould not convert device to input device.\n");
         [mCaptureSession release];
         [mCaptureDeviceInput release];
         mCaptureSession = nil;
@@ -275,10 +300,12 @@
     
 	
 	// Decompressed video output
+	verbose( "\tCreating QTCaptureDecompressedVideoOutput...");
 	mCaptureDecompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
 	[mCaptureDecompressedVideoOutput setDelegate:self];
+	verbose( "Done.\n" );
 	if (![mCaptureSession addOutput:mCaptureDecompressedVideoOutput error:&error]) {
-		error( "Could not create decompressed output.\n");
+		error( "\tCould not create decompressed output.\n");
         [mCaptureSession release];
         [mCaptureDeviceInput release];
         [mCaptureDecompressedVideoOutput release];
@@ -289,14 +316,17 @@
 	}
 
     // Clear old image?
+	verbose("\tEntering synchronized block to clear memory...");
     @synchronized(self){
         if( mCurrentImageBuffer != nil ){
             CVBufferRelease(mCurrentImageBuffer);
             mCurrentImageBuffer = nil;
         }   // end if: clear old image
     }   // end sync: self
+	verbose( "Done.\n");
     
 	[mCaptureSession startRunning];
+	verbose("Session started.\n");
     
     return YES;
 }   // end startSession
@@ -309,13 +339,16 @@
      withSampleBuffer:(QTSampleBuffer *)sampleBuffer 
        fromConnection:(QTCaptureConnection *)connection
 {
+	verbose( "." );
     if (videoFrame == nil ) {
+		verbose( "'nil' Frame captured.\n" );
         return;
     }
     
     // Swap out old frame for new one
     CVImageBufferRef imageBufferToRelease;
     CVBufferRetain(videoFrame);
+	
     @synchronized(self){
         imageBufferToRelease = mCurrentImageBuffer;
         mCurrentImageBuffer = videoFrame;
@@ -444,7 +477,9 @@ int processArguments(int argc, const char * argv[] ){
     // Make sure we have a filename
 	if( filename == nil ){
 		filename = generateFilename();
+		verbose( "No filename specified. Using %s\n", [filename UTF8String] );
 	}	// end if: no filename given
+	
     if( filename == nil ){
         error( "No suitable filename could be determined.\n" );
         return 1;
@@ -454,7 +489,9 @@ int processArguments(int argc, const char * argv[] ){
     // Make sure we have a device
 	if( device == nil ){
 		device = getDefaultDevice();
+		verbose( "No device specified. Using %s\n", [[device description] UTF8String] );
 	}	// end if: no device given
+	
     if( device == nil ){
         error( "No video devices found.\n" );
         return 2;
@@ -498,9 +535,9 @@ void printUsage(int argc, const char * argv[]){
 int listDevices(){
 	NSArray *devices = [ImageSnap videoDevices];
     
-    [devices count] > 0 ?
-    printf("Video Devices:\n") :
-    printf("No video devices found.\n");
+    [devices count] > 0 
+		? printf("Video Devices:\n") 
+		: printf("No video devices found.\n");
     
 	for( QTCaptureDevice *device in devices ){
 		printf( "%s\n", [[device description] UTF8String] );

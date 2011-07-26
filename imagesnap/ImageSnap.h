@@ -9,7 +9,8 @@
 #include "ImageSnap.h"
 
 #define error(...) fprintf(stderr, __VA_ARGS__)
-#define console(...) (g_quiet ? 0 : printf(__VA_ARGS__))
+#define console(...) (!g_quiet && printf(__VA_ARGS__))
+#define verbose(...) (g_verbose && !g_quiet && fprintf(stderr, __VA_ARGS__))
 
 BOOL g_verbose = NO;
 BOOL g_quiet = NO;
