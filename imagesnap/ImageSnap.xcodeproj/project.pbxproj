@@ -169,7 +169,7 @@
 				INSTALL_PATH = /usr/local/bin;
 				PRODUCT_NAME = imagesnap;
 				RUN_CLANG_STATIC_ANALYZER = YES;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -181,7 +181,7 @@
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = /usr/local/bin;
 				PRODUCT_NAME = imagesnap;
-				SDKROOT = macosx10.5;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};

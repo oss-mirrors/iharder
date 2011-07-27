@@ -165,13 +165,13 @@
     NSImage *image = nil;
     
     snap = [[ImageSnap alloc] init];            // Instance of this ImageSnap class
-    NSLog(@"Start...");
+    //NSLog(@"Start...");
     if( [snap startSession:device] ){           // Try starting session
-        NSLog(@"Snapping...");
+        //NSLog(@"Snapping...");
         image = [snap snapshot];                // Capture a frame
-        NSLog(@"Stopping...");
+        //NSLog(@"Stopping...");
         [snap stopSession];                     // Stop session
-        NSLog(@"Stopped.");
+        //NSLog(@"Stopped.");
     }   // end if: able to start session
     
     [snap release];
@@ -430,6 +430,10 @@ int processArguments(int argc, const char * argv[] ){
                     case 'v':
                         g_verbose = YES;
                         break;
+                    
+                    case 'q':
+                        g_quiet = YES;
+                        break;
 
                         
                     // List devices
@@ -461,6 +465,7 @@ int processArguments(int argc, const char * argv[] ){
                             error( "Not enough arguments given with 'w' flag.\n" );
                             return (int)'w';
                         }
+                    
                         
                 }	// end switch: flag value
             }   // end else: not dash only
@@ -522,6 +527,8 @@ void printUsage(int argc, const char * argv[]){
     printf( "  -h          This help message\n" );
     printf( "  -v          Verbose mode\n");
     printf( "  -l          List available video devices\n" );
+    printf( "  -q          Quiet mode. Do not output any text.\n");
+//    printf( "  -w x.xx     Warmup. Delay snapshot x.xx seconds after warming up camera\n" );
     printf( "  -d device   Use named video device\n" );
 }
 
