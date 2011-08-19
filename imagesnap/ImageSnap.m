@@ -610,7 +610,7 @@ void printUsage(int argc, const char * argv[]){
     printf( "  -l          List available video devices\n" );
     printf( "  -t x.xx     Take a picture every x.xx seconds\n" );
     printf( "  -q          Quiet mode. Do not output any text\n");
-    printf( "  -w x.xx    Warmup. Delay snapshot x.xx seconds after turning on camera\n" );
+    printf( "  -w x.xx     Warmup. Delay snapshot x.xx seconds after turning on camera\n" );
     printf( "  -d device   Use named video device\n" );
 }
 
