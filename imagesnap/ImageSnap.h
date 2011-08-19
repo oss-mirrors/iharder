@@ -14,7 +14,8 @@
 
 BOOL g_verbose = NO;
 BOOL g_quiet = NO;
-NSString *VERSION = @"0.2.4";
+//double g_timelapse = -1;
+NSString *VERSION = @"0.2.5";
 
 
 @interface ImageSnap : NSObject {
@@ -70,6 +71,7 @@ NSString *VERSION = @"0.2.4";
  */
 +(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path;
 +(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path withWarmup:(NSNumber *)warmup;
++(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path withWarmup:(NSNumber *)warmup withTimelapse:(NSNumber *)timelapse;
 
 -(id)init;
 -(void)dealloc;

@@ -159,23 +159,88 @@
 +(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path{
     return [self saveSingleSnapshotFrom:device toFile:path withWarmup:nil];
 }
-     
+
 +(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device toFile:(NSString *)path withWarmup:(NSNumber *)warmup{
+    return [self saveSingleSnapshotFrom:device toFile:path withWarmup:warmup withTimelapse:nil];
+}
+     
++(BOOL)saveSingleSnapshotFrom:(QTCaptureDevice *)device 
+                       toFile:(NSString *)path 
+                   withWarmup:(NSNumber *)warmup 
+                withTimelapse:(NSNumber *)timelapse{
     ImageSnap *snap;
     NSImage *image = nil;
+    double interval = timelapse == nil ? -1 : [timelapse doubleValue];
     
     snap = [[ImageSnap alloc] init];            // Instance of this ImageSnap class
-    //NSLog(@"Start...");
+    verbose("Starting device...");
     if( [snap startSession:device] ){           // Try starting session
-        //NSLog(@"Snapping...");
-        image = [snap snapshot];                // Capture a frame
+        verbose("Device started.\n");
+        
+        if( warmup == nil ){
+            // Skip warmup
+            verbose("Skipping warmup period.\n");
+        } else {
+            double delay = [warmup doubleValue];
+            verbose("Delaying %.2lf seconds for warmup...",delay);
+            NSDate *now = [[NSDate alloc] init];
+            [[NSRunLoop currentRunLoop] runUntilDate:[now dateByAddingTimeInterval: [warmup doubleValue]]];
+            [now release];
+            verbose("Warmup complete.\n");
+        }
+        
+        if ( interval > 0 ) {
+            
+            verbose("Time lapse: snapping every %.2lf seconds to current directory.\n", interval);
+            
+            NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+            [dateFormatter setDateFormat:@"yyyy-MM-dd_HH-mm-ss.SSS"];
+            
+            // wait a bit to make sure the camera is initialized
+            //[[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow: 1.0]];
+            
+            for (unsigned long seq=0; ; seq++)
+            {
+                NSDate *now = [[NSDate alloc] init];
+                NSString *nowstr = [dateFormatter stringFromDate:now];
+                
+                verbose(" - Snapshot %5lu", seq);
+                verbose(" (%s)\n", [nowstr UTF8String]);
+                
+                // create filename
+                NSString *filename = [NSString stringWithFormat:@"snapshot-%05d-%s.jpg", seq, [nowstr UTF8String]];
+                
+                // capture and write
+                image = [snap snapshot];                // Capture a frame
+                if (image != nil)  {
+                    [ImageSnap saveImage:image toPath:filename];
+                    console( "%s\n", [filename UTF8String]);
+                } else {
+                    error( "Image capture failed.\n" );
+                }
+                
+                // sleep
+                [[NSRunLoop currentRunLoop] runUntilDate:[now dateByAddingTimeInterval: interval]];
+                
+                [now release];
+            }
+
+        } else {
+            image = [snap snapshot];                // Capture a frame
+            
+        }
         //NSLog(@"Stopping...");
         [snap stopSession];                     // Stop session
         //NSLog(@"Stopped.");
     }   // end if: able to start session
     
     [snap release];
-    return image == nil ? NO : [ImageSnap saveImage:image toPath:path];
+    
+    if ( interval > 0 ){
+        return YES;
+    } else {
+        return image == nil ? NO : [ImageSnap saveImage:image toPath:path];
+    }
 }   // end
 
 
@@ -401,6 +466,7 @@ int processArguments(int argc, const char * argv[] ){
 	NSString *filename = nil;
 	QTCaptureDevice *device = nil;
     NSNumber *warmup = nil;
+    NSNumber *timelapse = nil;
 
 	
 	int i;
@@ -455,6 +521,7 @@ int processArguments(int argc, const char * argv[] ){
                             error( "Not enough arguments given with 'd' flag.\n" );
                             return (int)'d';
                         }
+                        break;
                         
                     // Specify a warmup period before picture snaps
                     case 'w':
@@ -465,6 +532,20 @@ int processArguments(int argc, const char * argv[] ){
                             error( "Not enough arguments given with 'w' flag.\n" );
                             return (int)'w';
                         }
+                        break;
+                        
+                    // Timelapse
+                    case 't':
+                        if( i+1 < argc ){
+                            timelapse = [NSNumber numberWithDouble:[[NSString stringWithUTF8String:argv[i+1]] doubleValue]];
+                            //g_timelapse = [timelapse doubleValue];
+                            ++i; // Account for "follow on" argument
+                        } else {
+                            error( "Not enough arguments given with 't' flag.\n" );
+                            return (int)'t';
+                        }
+                        break;
+
                     
                         
                 }	// end switch: flag value
@@ -506,7 +587,7 @@ int processArguments(int argc, const char * argv[] ){
 	
     
     // Image capture
-    if( [ImageSnap saveSingleSnapshotFrom:device toFile:filename withWarmup:warmup] ){
+    if( [ImageSnap saveSingleSnapshotFrom:device toFile:filename withWarmup:warmup withTimelapse:timelapse] ){
         console( "%s\n", [filename UTF8String] );
     } else {
         error( "Error.\n" );
@@ -527,8 +608,9 @@ void printUsage(int argc, const char * argv[]){
     printf( "  -h          This help message\n" );
     printf( "  -v          Verbose mode\n");
     printf( "  -l          List available video devices\n" );
-    printf( "  -q          Quiet mode. Do not output any text.\n");
-//    printf( "  -w x.xx     Warmup. Delay snapshot x.xx seconds after warming up camera\n" );
+    printf( "  -t x.xx     Take a picture every x.xx seconds\n" );
+    printf( "  -q          Quiet mode. Do not output any text\n");
+    printf( "  -w x.xx    Warmup. Delay snapshot x.xx seconds after turning on camera\n" );
     printf( "  -d device   Use named video device\n" );
 }
 
